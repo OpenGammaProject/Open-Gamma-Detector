@@ -9,4 +9,24 @@ Software aims to be as simple as possible to understand and maintain; to achieve
 microntroller - the Adafruit ItsyBitsy M4 Express. This board can be programmed over micro USB and is powerful (fast)
 enough for the purpose.
 
-More info will follow shortly.
+## Hardware
+
+This project contains of essentially two PCBs, one for the SiPM (`sipm` folder) that will be mounted on top of your scintillation crystal.
+It will then be connected to the other part: the evaluation hardware and counter (`detector` folder).
+
+_To Do: Explain how to mount SiPM and connect it._
+
+__All the detector hardware needs a re-design. Ideally all the hardware can be mounted on one small PCB on top of the crystal.__
+
+## Software
+
+_To Do: What Arduino sketches are there, what libraries and board definitions are needed, how to program,
+PC software: different scripts, installation, how to use, data output._
+
+## Example measurements
+
+_To Do: Will add some example measurements of Am241, some uranium glaze, radium, pitchblende ..._
+
+## Limitations and Ideas
+
+_Will contain: Water cooling SiPM? Trying to do some gamma spectroscopy? Dual opamp stage for the pre-amp? This is where the fun begins._
