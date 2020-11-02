@@ -14,7 +14,7 @@ enough for the purpose.
 This project contains of essentially two PCBs, one for the SiPM (`sipm` folder) that will be mounted on top of your scintillation crystal.
 It will then be connected to the other part: the evaluation hardware and counter (`detector` folder).
 
-_To Do: Explain how to mount SiPM and connect it._
+_To Do: Explain how to mount SiPM and connect it. What crystals to use?_
 
 __All the detector hardware needs a re-design. Ideally all the hardware can be mounted on one small PCB on top of the crystal.__
 
@@ -29,4 +29,4 @@ _To Do: Will add some example measurements of Am241, some uranium glaze, radium,
 
 ## Limitations and Ideas
 
-_Will contain: Water cooling SiPM? Trying to do some gamma spectroscopy? Dual opamp stage for the pre-amp? This is where the fun begins._
+_Will contain: (Water-) Cooling SiPM? Trying to do some gamma spectroscopy? Dual opamp stage for the pre-amp? This is where the fun begins._
