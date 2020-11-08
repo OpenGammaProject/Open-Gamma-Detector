@@ -9,9 +9,9 @@ import time
 import csv
 import matplotlib.pyplot as plt
 
-filename = "bg-neu.csv"
+filename = "out.csv"
 
-plot = False
+plot = True
 refresh_rate = 1 #Hz
 
 #dataarr = []

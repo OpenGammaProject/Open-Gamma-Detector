@@ -7,7 +7,7 @@
 import csv
 import time
 
-filename = "tritium-neu.csv"
+filename = "out.csv"
 
 values = {}
 

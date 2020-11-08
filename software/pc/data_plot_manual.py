@@ -7,7 +7,7 @@
 import csv
 import matplotlib.pyplot as plt
 
-filename = "am241-1.csv"
+filename = "out.csv"
 
 #dataarr = []
 #plt.ion()
