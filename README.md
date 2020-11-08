@@ -37,10 +37,82 @@ __The detector hardware needs a slight re-design. Ideally most of the hardware c
 
 ## Software
 
+### Arduino Board
 
+Before we can flash the MCU we have to do the Arduino IDE setup. Because I'm using the Adafruit Itsy Bitsy M4 there are some steps we have to go through
+in order for this to work properly. Fortunately, Adafruit already has a great [tutorial](https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/setup)
+on how to do this.
 
-_To Do: What Arduino sketches are there, what libraries and board definitions are needed, how to program,
-PC software: different scripts, installation, how to use, data output._
+After you've completed all the steps successfully you can go ahead and download the `opensc.ino` located in the [opensc folder](software/microcontroller/) and open
+the ino file. You might be prompted to create a folder for this sketch, just say yes.
+
+First of all, in your boards manager select the Adafruit ItsyBitsy M4, the default options are ok here, you might want to set `optimize` to something fast like -O3 or -Ofast - we've got plenty of space anyway. You will also need the following libraries, just download those from the lib manager:
+
+* [Adafruit SSD1306](https://github.com/adafruit/Adafruit_SSD1306)
+* [Adafruit DotStar](https://github.com/adafruit/Adafruit_DotStar)
+* [Adafruit SPIFlash](https://github.com/adafruit/Adafruit_SPIFlash)
+
+Now you're ready to flash the sketch!
+
+_ToDo: Software Calibration!_
+
+_ToDo: Stand-alone measurements and readout w/o serial connection_
+
+### PC Software
+
+Now to get all the data from your MCU to your PC there are a couple of python scripts that will deal with the serial input. These can be found in `software/pc/`, 
+please download the whole directory and cd to it. You will need the latest version of Python 3 and a couple of packages.
+If you're on Windows you can get python via the Windows Store, if you're on any other OS you'll figure it out pretty easily.
+To get all the required packages, open a terminal window and type in the following command:
+
+```bash
+pip3 install -r requirements.txt
+```
+
+Here is a short description of the two main python scripts:
+
+#### serial_data.py
+
+This will take the serial data in, output some live info as well as an optional live histogram and print the data to a csv file.
+There are essentially three settings for you to change:
+
+```text
+filename = "out.csv"  --> That's where all the data will be printed to
+plot = True           --> When true, there will be a live plot
+refresh_rate = 1 #Hz  --> Refresh rate for the live plot
+```
+
+Please also check the line `ser = serial.Serial("COM3", 2000000)` for the correct serial port.
+The csv file will always start with the following header:
+
+```text
+### Begin OpenSC Data ###
+
+timestamp in seconds;timestamp in nanoseconds
+
+```
+
+All the data will be formatted like this:
+
+```text
+timestamp in nanoseconds;nanoseconds since the last event;event amplitude (V)
+```
+
+#### hist_processor.py
+
+This will take the output file from serial_data.py and convert the data to make it really easy to plot a histogram.
+All the event voltages from 0.000 to 3.300 will be counted with a resolution of 0.001V. The number of events per mV will then be printed in ascending order (so from 0 to 3.3) to the output file which will be `YOURINPUTFILENAME-p.csv`.
+
+There are only two things for you to change here:
+
+```text
+filename = "out.csv"  --> The input file name
+RELATIVE = False      --> If this is true each number of events (again, per mV) will be divided by the total number of events
+```
+
+After you created your histogram data with this script you can go into MS Office/LibreOffice, import the csv, select all the data and e.g. do a line chart or bar chart or whatever. Obviously do not use the built-in histogram function with this. You can, however, directly import the serial output csv and do a histogram if your software of choice supports it.
+
+**The last file (`data_plot_manual.py`) just takes the serial data as an input and plots it.**
 
 ## Example measurements
 
