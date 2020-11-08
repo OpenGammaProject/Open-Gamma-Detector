@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ##
-##  First test in evaluation software.
-##  This will connect to serial and grab all the data.
-##
+##  This will use the live serial input and output the data to csv.
+##  Plus optionally do a live plot.
+##  OpenSC, 2020, phnx.
 
 import serial
 import time
@@ -14,10 +14,9 @@ filename = "out.csv"
 plot = True
 refresh_rate = 1 #Hz
 
-#dataarr = []
 if plot:
     plt.ion()
-    plt.figure("Test Plot")
+    plt.figure("Live Histogram")
 
 ser = serial.Serial("COM3", 2000000)
 ser.flushInput()
@@ -43,13 +42,12 @@ while i < imax:
 
 with open(filename,"a") as f:
             writer = csv.writer(f, delimiter=";")
-            writer.writerow(["### Begin Cosmicuino Data ###"])
+            writer.writerow(["### Begin OpenSC Data ###"])
             writer.writerow([time.time(),nano])
 
 while True:
     try:
         ser_bytes = ser.readline()
-        #print(ser_bytes.decode("utf-8"), end='') #convert bytes to str w\o newline
 
         now = time.time_ns()
         dt = now - nano
@@ -83,7 +81,7 @@ while True:
                 print_data += [ round(values[key]/delta_time,5) ]
             
             plt.plot(print_data, label="Some Test", linewidth=0.3, marker=",")
-            plt.title("Some Title")
+            plt.title("Live Histogram")
             #plt.xscale('log')
             #plt.yscale('log')
             #plt.ylim([0,.2])

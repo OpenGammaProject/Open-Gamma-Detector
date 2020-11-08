@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 ##
-##  First test in evaluation software.
-##  This will connect to serial and grab all the data.
-##
+##  This will use the output data from serial_data.py and
+##  output data compatible to do an easy histogram.
+##  OpenSC, 2020, phnx.
 
 import csv
 import time

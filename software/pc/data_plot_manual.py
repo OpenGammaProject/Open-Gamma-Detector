@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 ##
-##  First test in evaluation software.
-##  This will connect to serial and grab all the data.
-##
+##  This will use the output data from serial_data.py and
+##  plot an histogram.
+##  OpenSC, 2020, phnx.
 
 import csv
 import matplotlib.pyplot as plt
 
 filename = "out.csv"
 
-#dataarr = []
-#plt.ion()
-plt.figure("Test Plot")
+plt.figure("OpenSC Histogram")
 
 values = {}
 
@@ -38,8 +36,8 @@ print_data = []
 for key in values:
     print_data += [ values[key] ]
 
-plt.plot(print_data, label="Some Test", linewidth=0.05, marker=",")
-plt.title("Some Title")
+plt.plot(print_data, label="", linewidth=0.05, marker=",")
+plt.title("OpenSC Histogram")
 #plt.xscale('log')
 #plt.yscale('log')
 #plt.ylim([0,20])
