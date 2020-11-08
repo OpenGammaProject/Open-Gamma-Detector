@@ -11,14 +11,33 @@ enough for the purpose.
 
 ## Hardware
 
+This project utilizes a silicon photomultiplier (short SiPM) which is way more robust than a traditional photomultiplier tube and does not need any high voltage supply. I'll link some in-depth datasheets about this particular SiPM:
+
+* [C-Series SiPM Sensors datasheet](https://www.mouser.at/datasheet/2/308/MICROC-SERIES-D-1489614.pdf)
+* [Biasing and Readout of ON Semiconductor SiPM Sensors](https://www.onsemi.com/pub/Collateral/AND9782-D.PDF)
+* [Introduction to the SiliconPhotomultiplier (SiPM)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF)
+
 This project contains of essentially two PCBs, one for the SiPM (`sipm` folder) that will be mounted on top of your scintillation crystal.
 It will then be connected to the other part: the evaluation hardware and counter (`detector` folder).
 
-_To Do: Explain how to mount SiPM and connect it. What crystals to use?_
+Attention when mounting the SiPM to the PCB: One of the four legs in each corner is slightly bigger than the rest, this one must be lined up with the dot on the pcb!
 
-__All the detector hardware needs a re-design. Ideally all the hardware can be mounted on one small PCB on top of the crystal.__
+After you soldered all the components to the SiPM PCB you can mount it to your crystal. For that I am using a small (18x30mm) standard NaI(Tl) crystal.
+These can be bought cheaply from ebay for example. Most of the cheap sellers are from Russia, Ukraine or similar.
+However, there are many more types of scintillation materials that you can use. Just be sure it's sensitive to gamma radiation and it's peak emission wavelength
+is near the peak sensitivity of the SiPM which is at about 420nm.
+
+You'll also want to use something to optically couple the crystal with the SiPM in order to minimize reflection and therefore increase photon detection rates.
+I'm using some standard silicone grease; just apply a thin layer, then press the two parts together and wrap them with a couple of layers of electrical tape so that
+no light can get in.
+
+After that just connect the three jumper wires to the MCU board according to the schematics and you're ready to go.
+
+__The detector hardware needs a slight re-design. Ideally most of the hardware can be mounted on one small PCB on top of the crystal.__
 
 ## Software
+
+
 
 _To Do: What Arduino sketches are there, what libraries and board definitions are needed, how to program,
 PC software: different scripts, installation, how to use, data output._
@@ -29,4 +48,4 @@ _To Do: Will add some example measurements of Am241, some uranium glaze, radium,
 
 ## Limitations and Ideas
 
-_Will contain: (Water-) Cooling SiPM? Trying to do some gamma spectroscopy? Dual opamp stage for the pre-amp? This is where the fun begins._
+_Will contain: (Water-) Cooling SiPM? Shielding background radiation. Trying to do some gamma spectroscopy? Dual opamp stage for the pre-amp? This is where the fun begins._
