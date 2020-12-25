@@ -129,4 +129,20 @@ I've tried with all samples to keep the distance as short as possible. But of co
 
 ## Limitations and Ideas
 
-_Will contain: (Water-) Cooling SiPM? Shielding background radiation. Trying to do some gamma spectroscopy? Dual opamp stage for the pre-amp? This is where the fun begins._
+### Cooling the SiPM
+
+During operation all the electronics including the photomultiplier naturally slightly heat up. Due to the analysis hardware being connected only by a couple of wires in some (if low) distance all of it's heat shouldn't affect the SiPM PCB really. Also due to the SiPM being connected to a rather big copper area of the PCB it's heat too should not increase the temperature much over ambient (if at all that is). So air or water cooling alone won't improve performance significantly. However, one could cool the SiPM PCB with a peltier module to sub-ambient temperatures. SensL already provides peltier-cooled SiPMs with their [MiniSM](https://www.sensl.com/downloads/ds/DS-MiniSM.pdf) series of sensor modules. According to their [datasheet AND9770 (Figure 27)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF) every 10°C reduction in temperature decreases the dark count rate by 50%!
+
+### Shielding Background Radiation
+
+Shielding the ambient background can be done ideally using a wide enough layer of lead (bricks) all around the detector. The SiPM and the sample can then be put into the structure to get the best measurements possible. But be sure to get "clean" lead with a low enough percentage of isotopes if you can as they too can be radioactive and introduce even more radiation to the system.
+
+See Wikipedia: [Lead Castle](https://en.wikipedia.org/w/index.php?title=Lead_castle&oldid=991799816)
+
+### Gamma Spectroscopy
+
+Todo
+
+### Fix: Dual Op-Amp Input? 
+
+Todo
