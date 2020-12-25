@@ -116,7 +116,16 @@ After you created your histogram data with this script you can go into MS Office
 
 ## Example measurements
 
-_To Do: Will add some example measurements of Am241, some uranium glaze, radium, pitchblende ..._
+I've tried with all samples to keep the distance as short as possible. But of course I did not break into the smoke detector housing (for example) so I could only get so close to the sample, please keep this in mind.
+
+|Sample Material|Counts per seconds averaged over 60 seconds|
+|:------:|:-----------------------------------------:|
+|Background radiation, no sample|21.58|
+|Am-241 (**still inside**) a regular smoke detector (0.9 micro curies)|145.95|
+|Uranium glaze on an electric plug (~1930/40s)|49.9|
+|Wristwatch with Radium dials|todo|
+|Pitchblende (amount unknown)|todo|
+
 
 ## Limitations and Ideas
 
