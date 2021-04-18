@@ -36,7 +36,7 @@ const float BAT_FACT = 0.39394; //voltage divider factor for battery voltage
 const uint16_t SERIAL_TIMEOUT = 5000; //timeout for serial wait, milliseconds
 const uint16_t MAX_RAM_BUFFER = 32768; //maximum number of datapoints to buffer in RAM
 const bool LOG_DATA = false; //true if all data also gets saved to the data file
-const uint8_t REFRESH_INT = 2;
+const uint8_t REFRESH_INT = 5;
 
 volatile uint32_t events = 0; //event counter
 volatile uint16_t adc_data[MAX_RAM_BUFFER] = {};
@@ -148,8 +148,9 @@ void setup() {
 void loop() {
   //Serial.println(FreeRam());
   //Serial.println(3.3 / 4095 * analogRead(BAT_PIN) / BAT_FACT, 2);
-  update_display();
+  
   delay(REFRESH_INT * 1000);
+  update_display();
 }
 
 void event_int() {
@@ -157,7 +158,7 @@ void event_int() {
   //delayMicroseconds(1);
   volatile uint16_t readv = analogRead(AIN_PIN);
 
-  Serial.println(3.3 / 4095 * readv, 3);
+  //Serial.println(3.3 / 4095 * readv, 3);
   if(LOG_DATA){
     if(data_size >= MAX_RAM_BUFFER){
       write_data();
@@ -177,12 +178,14 @@ void update_display() {
   display.setCursor(0, 0);
   display.setTextSize(2);
 
-  float cps = events / REFRESH_INT;
+  float cps = events / float(REFRESH_INT);
   events = 0;
   float cpm = cps * 60;
 
   display.println(cpm,2);
   display.display();
+  
+  Serial.println(cps,2);
 }
 
 extern "C" char *sbrk(int i);
