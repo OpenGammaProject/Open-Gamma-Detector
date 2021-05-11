@@ -1,37 +1,37 @@
 #!/usr/bin/env python
 ##
-##  This will use the live serial input and output the data to csv.
-##  Plus optionally do a live plot.
-##  OpenSC, 2020, phnx.
+##  This will use the serial input and output the data to csv.
+##  Optional live plot of the spectrum included.
+##  2021
 
 import serial
 import time
 import csv
 import matplotlib.pyplot as plt
 
+## BEGIN USER CONFIG
 filename = "out.csv"
-
 plot = True
-refresh_rate = 1 #Hz
+refresh_rate = 2 # Live Plot Hz
+avg_reset = 20 # s
+## END USER CONFIG
 
 if plot:
     plt.ion()
-    plt.figure("Live Histogram")
+    plt.figure("Scintillation Counter")
 
 ser = serial.Serial("COM3", 2000000)
 ser.flushInput()
 
 avg_count = 0
 avg_t = 0
-
-nano = time.time_ns() #get starting nanoseconds
-start = time.time() #get start time
-
+nano = time.time_ns() # Get ns start
+start = time.time() # Get s start
 rt = 1/refresh_rate
 last_ref = start
+last_avg_refr = time.time()
 
 values = {}
-
 i = 0
 imax = 3.3
 decimal = 3
@@ -42,7 +42,7 @@ while i < imax:
 
 with open(filename,"a") as f:
             writer = csv.writer(f, delimiter=";")
-            writer.writerow(["### Begin OpenSC Data ###"])
+            writer.writerow(["### Begin Measurement Data ###"])
             writer.writerow([time.time(),nano])
 
 while True:
@@ -57,14 +57,15 @@ while True:
         avg_count += 1
         avg_t = t / avg_count
 
-        if avg_t == 0: #DIVISION BY ZERO WORKAROUND
-            continue   #TOO FAST PULSES?
-
         data = float(ser_bytes.decode("utf-8"))
 
         delta_time = time.time() - start
 
-        print(f"{round(data,3)} V: {round((1 / avg_t) * 1000000000,2)} 1/s --- {round(delta_time,1)}s")
+        print(f"{round(data,3)} V: {round((1 / avg_t) * 1000000000,2)} cps --- {round(delta_time,1)}s")
+
+        if time.time() - last_avg_refr >= avg_reset:
+            last_avg_refr = time.time()
+            avg_count = 0
 
         values[round(data,3)] += 1
         
@@ -80,8 +81,8 @@ while True:
             for key in values:
                 print_data += [ round(values[key]/delta_time,5) ]
             
-            plt.plot(print_data, label="Some Test", linewidth=0.3, marker=",")
-            plt.title("Live Histogram")
+            plt.plot(print_data, linewidth=0.3, marker=",")
+            plt.title("Live Pulse Spectrum")
             #plt.xscale('log')
             #plt.yscale('log')
             #plt.ylim([0,.2])

@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 ##
-##  This will use the output data from serial_data.py and
-##  output data compatible to do an easy histogram.
-##  OpenSC, 2020, phnx.
+##  This will take the output data from serial_data.py and
+##  add up the total number of pulses per voltage.
+##  Prints it out as one line per voltage.
+##  2021
 
 import csv
 import time
 
+## BEGIN USER CONFIG
 filename = "out.csv"
+RELATIVE = False
+## END USER CONFIG
 
 values = {}
-
-RELATIVE = False
 total = 1
-
 start = time.time()
 
 i = 0
