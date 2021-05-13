@@ -20,11 +20,13 @@ void set_lights(const uint8_t r = 0, const uint8_t g = 0, const uint8_t b = 0) {
 
 void event_int() {
   digitalWrite(LED_BUILTIN, HIGH); // Activity LED
-  digitalWrite(RST_PIN, HIGH); // Reset peak detector
 
   Serial.println(3.3 / 4095 * analogRead(AIN_PIN), 3);
-
+  
+  digitalWrite(RST_PIN, HIGH); // Reset peak detector
+  delayMicroseconds(1);
   digitalWrite(RST_PIN, LOW);
+  
   digitalWrite(LED_BUILTIN, LOW);
 }
 
