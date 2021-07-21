@@ -1,5 +1,7 @@
 # Open Scintillation Counter
 
+## !Note: This repo is still very much work in progress. I am currently working on finishing this project.
+
 Open hardware for a simple all-in-one scintillation counter design using a popular NaI(Tl) scintillation crystal.
 
 Hardware design has been done in EasyEDA and all the needed files for you to import the project as well as
