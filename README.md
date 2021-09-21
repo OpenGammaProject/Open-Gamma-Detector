@@ -11,6 +11,8 @@ Software aims to be as simple as possible to understand and maintain; to achieve
 microntroller - the Adafruit ItsyBitsy M4 Express. This board can be programmed over micro USB and is powerful (fast)
 enough for the purpose.
 
+**To do/Note: The Raspberry Pi Pico is much cheaper, faster and more versatile than the ItsyBitsy M4 Express using the [Arduino-Pico](https://github.com/earlephilhower/arduino-pico) library. Might change to that in the future hardware-wise. The software can be easily adapted to work for the Pico, more will follow.**
+
 ## Hardware
 
 This project utilizes a silicon photomultiplier (short SiPM) which is way more robust than a traditional photomultiplier tube and does not need any high voltage supply. I'll link some in-depth datasheets about this particular SiPM:
