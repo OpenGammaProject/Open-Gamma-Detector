@@ -16,7 +16,7 @@ enough for the purpose.
 ## Working principle
 
 <p align="center">
-  <img src="docs/flow.png">
+  <img src="docs/flow.drawio.png">
 </p>
   
 ## Hardware
