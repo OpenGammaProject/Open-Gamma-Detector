@@ -156,3 +156,7 @@ Todo
 ### Fix: Dual Op-Amp Input? 
 
 Todo
+
+### True stand-alone operation
+
+Todo: Using a battery and modifying the software to avoid the use of an additional recording device.
