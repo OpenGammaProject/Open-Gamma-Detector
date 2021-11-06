@@ -21,6 +21,8 @@ enough for the purpose.
   
 ## Hardware
 
+**To do: Add PCB Renders**
+
 This project utilizes a silicon photomultiplier (short SiPM) which is way more robust than a traditional photomultiplier tube and does not need any high voltage supply. I'll link some in-depth datasheets about this particular SiPM:
 
 * [C-Series SiPM Sensors datasheet](https://www.mouser.at/datasheet/2/308/MICROC-SERIES-D-1489614.pdf)
