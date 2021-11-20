@@ -1,6 +1,10 @@
 # Open Scintillation Counter
 
-## !Note: This repo is still very much work in progress. I am currently working on finishing this project.
+## This repo is still very much work in progress. I am currently working on finishing this project.
+
+**In the meantime please enjoy this nice Lu-176 spectrum made with the (new) detector:**
+
+![Lu-176 spectrum](docs/lu-176.png)
 
 Open hardware for a simple, yet powerful, all-in-one scintillation counter design using a popular NaI(Tl)
 scintillation crystal. Can be used for gamma spectroscopy while being much cheaper than any off-the-shelf platform.
