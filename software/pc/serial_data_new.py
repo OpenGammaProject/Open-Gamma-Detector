@@ -10,17 +10,18 @@ import csv
 import matplotlib.pyplot as plt
 
 ## BEGIN USER CONFIG
-filename = "out.csv"
+filename = "bg-pico.csv"
 plot = True
-refresh_rate = 2 # Live Plot Hz
+refresh_rate = 1 # Live Plot Hz
 avg_reset = 20 # s
 ## END USER CONFIG
 
 if plot:
     plt.ion()
-    plt.figure("Scintillation Counter")
+    fig = plt.figure("Scintillation Counter")
+    plt.title("Live Pulse Spectrum")
 
-ser = serial.Serial("COM3", 2000000)
+ser = serial.Serial("COM4", 2000000)
 ser.flushInput()
 
 avg_count = 0
@@ -31,22 +32,21 @@ rt = 1/refresh_rate
 last_ref = start
 last_avg_refr = time.time()
 
-values = {}
-i = 0
-imax = 3.3
-decimal = 3
+values = [0] * 4096
 
-while i < imax:
-    i += 1/pow(10,decimal)
-    values[round(i,3)] = 0
-
+"""
 with open(filename,"a") as f:
-            writer = csv.writer(f, delimiter=",")
+            writer = csv.writer(f, delimiter=";")
             writer.writerow(["### Begin Measurement Data ###"])
             writer.writerow([time.time(),nano])
+"""
 
 while True:
     try:
+        # 30 Min Measurement
+        if time.time() - start >= 1800:
+            break
+        
         ser_bytes = ser.readline()
 
         now = time.time_ns()
@@ -57,17 +57,17 @@ while True:
         avg_count += 1
         avg_t = t / avg_count
 
-        data = float(ser_bytes.decode("utf-8"))
+        data = int(ser_bytes.decode("utf-8"))
 
         delta_time = time.time() - start
 
-        print(f"{round(data,3)} V: {round((1 / avg_t) * 1000000000,2)} cps --- {round(delta_time,1)}s")
-
+        print(f"{round(data/4095*3.3,3)} V: {round((1 / avg_t) * 1000000000,2)} cps --- {round(delta_time,1)}s")
+        
         if time.time() - last_avg_refr >= avg_reset:
             last_avg_refr = time.time()
             avg_count = 0
 
-        values[round(data,3)] += 1
+        values[data] += 1
         
         with open(filename,"a",newline="") as f:
             writer = csv.writer(f, delimiter=";")
@@ -78,16 +78,16 @@ while True:
 
             print_data = []
 
-            for key in values:
-                print_data += [ round(values[key]/delta_time,5) ]
+            for val in values:
+                print_data += [ round(val/delta_time,5) ]
             
             plt.plot(print_data, linewidth=0.3, marker=",")
-            plt.title("Live Pulse Spectrum")
+            #plt.hist(print_data, bins=100)
             #plt.xscale('log')
             #plt.yscale('log')
             #plt.ylim([0,.2])
             plt.draw()
-            plt.pause(0.0001)
+            plt.pause(1e-17)
             plt.clf()
         
     except KeyboardInterrupt:
