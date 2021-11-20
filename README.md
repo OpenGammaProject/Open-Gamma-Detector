@@ -36,19 +36,24 @@ This project consists of two PCBs - one carrier board for the SiPM (`electronics
 your scintillation crystal. It will then be connected to the other board: the main detector (`electronics/detector` folder)
 which includes amplification, pulse detection and energy measurement.
 
-Attention when mounting the SiPM to its PCB: One of the four legs in each corner is slightly bigger than the rest,
-this one must be lined up with the dot on the PCB!
-
-After you soldered all the components to the SiPM PCB you can mount it to your crystal.
-For that I am using a small (18x30mm) standard NaI(Tl) crystal. These can be bought cheaply second-hand from ebay or any comparable
-platform. Most of the sellers I found are from Russia and the Ukraine, but that depends on where you're located.
-
-You'll also want to optically couple the crystal to the SiPM in order to minimize reflection, therefore
-increasing transmission and photon detection rates. I'm using standard silicone grease because, again, it's cheap and
-readily available. Only apply a thin layer, then press the two parts together and wrap them with a couple of layers of
-electrical tape so that no light can get in and overexpose the highly sensitive SiPM.
+The heart of the detector board is the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/) which uses its (calibrated)
+ADC to measure the pulse amplitude (e.g. the energy) immediately after an event occurs (using an interrupt).
 
 ## Software
+
+### Raspberry Pi Pico
+
+The Arduino IDE sketch can be found in `/arduino`.
+
+To program the Pico with the Arduino IDE, you will need the following board configs:
+
+* [Arduino-Pico](https://github.com/earlephilhower/arduino-pico)
+
+In addition, I wrote my own little library to calibrate the Pico's ADC using a simple linear calibration which is also used in the sketch:
+
+* [Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction)
+
+### PC
 
 I'm currently working on my own version of an Web-MCA designed to allow uploading custom gamma spectrum data and also use the
 detector output directly to do some live-plotting. More info will follow.
