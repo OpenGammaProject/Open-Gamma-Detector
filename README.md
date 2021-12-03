@@ -55,7 +55,7 @@ To program the Pico with the Arduino IDE, you will need the following board conf
 
 In addition, I wrote my own little library to calibrate the Pico's ADC using a simple linear calibration which is also used in the sketch:
 
-* [Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction)
+* [Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction) ![arduino-library-badge](https://www.ardu-badge.com/badge/PicoAnalogCorrection.svg?)
 
 ### PC
 
