@@ -1,10 +1,11 @@
 /*
-   Scintillation Counter Sketch
-   Adapted to be used with the Raspberry Pi Pico
-   Simple detector sketch returning the pulse heights
+   Open Gamma Detector Sketch
+   To be used with the Raspberry Pi Pico!
+   
+   Triggers on newly detected pulses and prints the
+   measured ADC value to the serial port, then resets.
 
-   ADC Settings:
-    - Standard is 12-bit, 4096
+   2022, NuclearPhoenix.
 */
 
 #include <PicoAnalogCorrection.h> // Analog Calibration
@@ -19,7 +20,7 @@ const uint8_t INT_PIN = 13; // Signal interrupt pin
 const uint8_t RST_PIN = 5; // Peak detector MOSFET reset pin
 const uint8_t LED = 25; // LED on GP25
 
-PicoAnalogCorrection pico; // (10,4095)
+PicoAnalogCorrection pico; // (2,4095)
 
 void event_int() {
   digitalWrite(LED, HIGH); // Activity LED
@@ -27,10 +28,9 @@ void event_int() {
   uint16_t m = pico.analogCRead(AIN_PIN,5); // Average 5 corrected measurements
   
   digitalWrite(RST_PIN, HIGH); // Reset peak detector
-  delayMicroseconds(1);
+  delayMicroseconds(5);
   digitalWrite(RST_PIN, LOW);
-
-  //Serial.println(3.3 / 4095 * m, 3);
+  
   Serial.println(m);
   
   digitalWrite(LED, LOW);
@@ -51,6 +51,8 @@ void setup1() {
   pinMode(RST_PIN, OUTPUT);
   pinMode(AIN_PIN, INPUT);
   pinMode(LED, OUTPUT);
+
+  analogReadResolution(12); // 12-bit ADC, 4096 channels
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), event_int, HIGH);
 
