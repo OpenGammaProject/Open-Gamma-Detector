@@ -20,7 +20,7 @@ const uint8_t INT_PIN = 13; // Signal interrupt pin
 const uint8_t RST_PIN = 5; // Peak detector MOSFET reset pin
 const uint8_t LED = 25; // LED on GP25
 
-PicoAnalogCorrection pico; // (2,4095)
+PicoAnalogCorrection pico; // (10,4092)
 
 void event_int() {
   digitalWrite(LED, HIGH); // Activity LED
@@ -31,7 +31,7 @@ void event_int() {
   delayMicroseconds(5);
   digitalWrite(RST_PIN, LOW);
   
-  Serial.println(m);
+  Serial.println(String(m) + ';');
   
   digitalWrite(LED, LOW);
 }
