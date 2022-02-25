@@ -20,7 +20,9 @@ const uint8_t INT_PIN = 13; // Signal interrupt pin
 const uint8_t RST_PIN = 5; // Peak detector MOSFET reset pin
 const uint8_t LED = 25; // LED on GP25
 
-PicoAnalogCorrection pico; // (10,4092)
+const uint8_t ADC_RES = 12; // Use 12-bit ADC resolution
+
+PicoAnalogCorrection pico(ADC_RES); // (10,4092)
 
 void event_int() {
   digitalWrite(LED, HIGH); // Activity LED
@@ -52,7 +54,7 @@ void setup1() {
   pinMode(AIN_PIN, INPUT);
   pinMode(LED, OUTPUT);
 
-  analogReadResolution(12); // 12-bit ADC, 4096 channels
+  analogReadResolution(ADC_RES);
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), event_int, HIGH);
 
