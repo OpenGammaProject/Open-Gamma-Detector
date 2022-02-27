@@ -34,6 +34,12 @@ Here are some renders of the detector PCB. Size is roughly 6x6 cm.
 
 ![PCB Back View](docs/pcb_back.png)
 
+### Scintillator Assembly
+
+The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the most expensive part and you'll want to use it as long as possible. You need to apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this usecase but you can use some standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you plug the board in and you're ready to go.
+
+I got all of my scintillators (used NaI(Tl), LYSO, ...) from eBay. Just search for some keywords or specific types, you'll definitely find something! Otherwise you can obviously also buy brand-new scintillators, however, these are very expensive (depends, but a factor of 10x is normal). Just be sure to look out for signs of wear and tear like scratches on the window or yellowing in NaI crystals as these can deteriorate performance significantly.
+
 ## Software
 
 ### Raspberry Pi Pico
