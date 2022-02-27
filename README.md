@@ -6,11 +6,22 @@ Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the n
 
 The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro USB and is powerful (dual core, good ADC) enough for the purpose and also exceptionally cheap.
 
-## Working principle
+## Working Principle
 
 <p align="center">
   <img src="docs/flow.drawio.png">
 </p>
+
+## Key Features
+
+Here are some of the most important key facts:
+
+* Compact design: Only 60 x 60 mm (not including scintillator).
+* All-in-one detector: No external sound card required.
+* Micro-USB serial connection and power.
+* Low-voltage device: No HV needed for PMT.
+* Low power consumption: ~25 mA @ 5V.
+* Easily programmable using the Arduino IDE.
 
 ## Hardware
 
