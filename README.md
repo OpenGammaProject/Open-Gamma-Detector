@@ -83,6 +83,10 @@ Spectrum of a standard household (ionization) smoke detector. Contains roughly 0
 
 ![Am-176 spectrum](docs/am-241.png)
 
+Spectrum of a small tea cup with pure Uraninite (Pitchblende) glaze. You can see isotopes of the Uranium series and also a distinct U-235 plateau.
+
+![Uraninite Glaze](docs/glaze.png)
+
 ## Some Ideas
 
 #### Cooling the SiPM
