@@ -9,7 +9,7 @@ The software aims to be as simple as possible to understand and maintain; to ach
 ## Working Principle
 
 <p align="center">
-  <img src="docs/flow.drawio.png">
+  <img alt="Working Principle Flow Chart" title="Working Principle Flow Chart" src="docs/flow.drawio.png">
 </p>
 
 ## Key Features
@@ -41,9 +41,10 @@ The heart of the detector board is the Raspberry Pi Pico which uses its (calibra
 
 Here are some renders of the detector PCB. Size is roughly 6x6 cm.
 
-![PCB Front View](docs/pcb_front.png)
-
-![PCB Back View](docs/pcb_back.png)
+<p align="center">
+  <img alt="Front Side PCB" title="Front Side PCB" src="docs/pcb_front.png" style="width:49%">
+  <img alt="Back Side PCB" title="Back Side PCB" src="docs/pcb_back.png" style="width:49%">
+</p>
 
 ### Scintillator Assembly
 
