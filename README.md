@@ -4,7 +4,7 @@ Open hardware for a simple, yet powerful, all-in-one scintillation counter desig
 
 Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the needed files for you to import the project as well as the schematics can be found in the `electronics` folder. There are also Gerber files available for you to go directly to the PCB manufacturing step.
 
-The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro USB and is powerful (dual core, good ADC) enough for the purpose and also exceptionally cheap.
+The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro USB and is powerful (dual core, good ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
 
 ## Working Principle
 
@@ -19,9 +19,11 @@ Here are some of the most important key facts:
 * Compact design: Only 60 x 60 mm (not including scintillator).
 * All-in-one detector: No external sound card required.
 * Micro-USB serial connection and power.
+* Easily programmable using the Arduino IDE.
 * Low-voltage device: No HV needed for PMT.
 * Low power consumption: ~25 mA @ 5V.
-* Easily programmable using the Arduino IDE.
+* Capable of up to 10,000 counts per second with a serial connection.
+* 4096 ADC channels for the energy range of about 30 keV to 1300 keV.
 
 ## Hardware
 
@@ -62,11 +64,26 @@ To program the Pico you will need the following board configs:
 
 * [Arduino-Pico](https://github.com/earlephilhower/arduino-pico)
 
-The installation and additional documentation can also be found there. In addition, I wrote my own little library to calibrate the Pico's ADC using a simple linear calibration which is also used in the sketch:
+The installation and additional documentation can also be found there. You will also need the following libraries. In addition, I wrote my own little library to calibrate the Pico's ADC using a simple linear calibration which is also used:
 
 * [Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction) ![arduino-library-badge](https://www.ardu-badge.com/badge/PicoAnalogCorrection.svg?)
+* [SimpleShell](https://github.com/cafehaine/SimpleShell) ![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell.svg?)
 
-It can be installed by searching the name using the IDE's library manager.
+They can be installed by searching the name using the IDE's library manager.
+
+#### Serial Interface
+
+You can also control your spectrometer using the serial interface. The following commands are available, a trailing `-` indicating an additional parameter is needed for the call.
+
+Commands:
+- ``read temp`` reads the µC temperature in °C.
+- ``read vsys`` reads the board's input voltage.
+- ``read usb`` true or false depending on a USB connection. Thus always true if you can read it.
+- ``read cal`` reads the calibration values from Arduino-Pico-Analog-Correction.
+- ``cal calibrate -`` calibrates the ADC using Arduino-Pico-Analog-Correction. The parameter being the number of measurements used to average the reading, e.g. `cal calibrate -5000`.
+- ``ser int -`` Enable or disable the event serial output. Takes `enable` or `disable` as parameter, e.g. `ser int -disable`.
+- ``ogc info`` prints misc information about the firmware.
+
 
 ### PC
 
