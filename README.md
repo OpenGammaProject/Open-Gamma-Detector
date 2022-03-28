@@ -34,7 +34,7 @@ This project utilizes a silicon photomultiplier (short SiPM) which is way smalle
 * [Introduction to the SiliconPhotomultiplier (SiPM)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF)
 * [Biasing and Readout of ON Semiconductor SiPM Sensors](https://www.onsemi.com/pub/Collateral/AND9782-D.PDF)
 
-The hardware consists of two PCBs: one carrier board for the SiPM (`electronics/sipm` folder) that will be mounted on top of your scintillation crystal. It will then be connected to the other board: the main detector (`electronics/detector` folder) which includes amplification, pulse detection and energy measurement.
+The hardware consists of two PCBs: one carrier board for the SiPM (`electronics/sipm` folder) that will be mounted on top of your scintillation crystal. It will then be connected to the other board: the main detector (`electronics/detector` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly you may use it with the detector board by leaving the pin header out and soldering wires directly to the pads.
 
 The heart of the detector board is the Raspberry Pi Pico which uses its (calibrated) ADC to measure the pulse amplitude (e.g. the energy) immediately after an event occurs using an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC:
 
@@ -110,6 +110,8 @@ Spectrum of a small tea cup with pure Uraninite (Pitchblende) glaze. You can see
 #### Cooling the SiPM
 
 During operation all the electronics including the photomultiplier naturally slightly heat up. Due to the detector board being connected only by a single pin connector all of it's heat shouldn't affect the SiPM PCB much. Also due to the SiPM being connected to a rather big copper area of the PCB it's heat should not increase the temperature much over ambient (if at all that is). So air or water cooling alone won't improve performance significantly. However, you could cool the SiPM PCB with a peltier module to sub-ambient temperatures. According to the [datasheet AND9770 (Figure 27)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF) every 10°C reduction in temperature decreases the dark count rate by 50%! But be sure to correct the overvoltage in this case as it also changes with temperature.
+
+Note that the required breakdown voltage of the SiPM increases linearly with 21.5 mV/°C, see the [C-Series SiPM Sensors Datasheet](https://www.onsemi.com/pdf/datasheet/microc-series-d.pdf). This means that you would also need to temperature correct the PSU voltage if you wanted to use it with considerably different temperatures.
 
 #### Shielding Background Radiation
 
