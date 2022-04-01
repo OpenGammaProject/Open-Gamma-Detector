@@ -14,7 +14,7 @@
 #include <SimpleShell.h> // Serial Commands
 //#include <LittleFS.h> // On-board Flash File System
 
-const String FWVERS = "1.0.0"; // Firmware Version Code
+const String FWVERS = "1.0.1"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
@@ -34,8 +34,9 @@ PicoAnalogCorrection pico(ADC_RES); // (10,4092)
 
 volatile bool ser_output = true; // Wheter data should be Serial.println'ed
 //volatile bool flash_save = false; // Wheter data will be written to flash
+volatile bool geiger_mode = false; // Measure only cps, not energy
 
-//volatile uint32_t spectrum[4096]; // Holds the spectrum histogram written to flash
+volatile uint32_t spectrum[4096]; // Holds the spectrum histogram written to flash
 String output_data; // Serial output string of all events 
 
 
@@ -48,6 +49,21 @@ void toggleSerialInterrupt(String *args) {
     ser_output = true;
   } else if (command == "disable") {
     ser_output = false;
+  } else {
+    Serial.println("No valid input '" + command + "'!");
+  }
+}
+
+
+void toggleGeigerMode(String *args) {
+  String command = *args;
+  command.replace("set mode -","");
+  command.trim();
+
+  if (command == "geiger") {
+    geiger_mode = true;
+  } else if (command == "energy") {
+    geiger_mode = false;
   } else {
     Serial.println("No valid input '" + command + "'!");
   }
@@ -137,6 +153,13 @@ void deviceInfo(String *args) {
 }
 
 
+void getSpectrumData(String *args) {
+  for (size_t i = 0; i < 4096; i++) {
+    Serial.println(spectrum[i]);
+  }
+}
+
+
 void serialEvent() {
   Shell.handleEvent(); // Handle the serial input
 }
@@ -145,7 +168,14 @@ void serialEvent() {
 void eventInt() {
   digitalWrite(LED, HIGH); // Activity LED
 
-  uint16_t mean = pico.analogCRead(AIN_PIN, 5);
+  uint16_t mean;
+
+  if (geiger_mode) {
+    mean = 1;
+  } else {
+    mean = pico.analogCRead(AIN_PIN, 5);
+  }
+  
 
   /*
   uint8_t msize = 10;
@@ -191,6 +221,7 @@ void eventInt() {
   if (ser_output) {
     output_data += String(mean) + ";";
   }
+  spectrum[mean] += 1;
 
   digitalWrite(LED, LOW);
 }
@@ -212,13 +243,16 @@ void setup() {
   Shell.registerCommand(new ShellCommand(readSupplyVoltage, F("read vsys")));
   Shell.registerCommand(new ShellCommand(readUSB, F("read usb")));
   Shell.registerCommand(new ShellCommand(readCalibration, F("read cal")));
-  
+
+  Shell.registerCommand(new ShellCommand(getSpectrumData, F("read spectrum")));
+
+  Shell.registerCommand(new ShellCommand(toggleGeigerMode, F("set mode -")));
   Shell.registerCommand(new ShellCommand(setCalibration, F("cal calibrate -")));
   Shell.registerCommand(new ShellCommand(toggleSerialInterrupt, F("ser int -")));
   //Shell.registerCommand(new ShellCommand(toggleFileWrite, F("fs write -")));
   //Shell.registerCommand(new ShellCommand(filesysInfo, F("fs info")));
   Shell.registerCommand(new ShellCommand(deviceInfo, F("ogc info")));
-  
+
   Shell.begin(2000000);
 
   /*
@@ -228,7 +262,7 @@ void setup() {
     }
   */
 
-  pico.calibrateAdc(GND_PIN, VCC_PIN, 10000); // Calibrate ADC on start-up
+  //pico.calibrateAdc(GND_PIN, VCC_PIN, 10000); // Calibrate ADC on start-up
 
   Serial.println("Welcome from Open Gamma Detector!");
   Serial.println("Firmware Version " + FWVERS);
@@ -267,7 +301,7 @@ void loop() {
     output_data = "";
   }
   
-  delay(1000); // Wait 1s
+  delay(1000); // Wait for 1 sec
 }
 
 
