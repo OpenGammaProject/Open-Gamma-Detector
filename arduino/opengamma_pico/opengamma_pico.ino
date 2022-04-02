@@ -14,7 +14,7 @@
 #include <SimpleShell.h> // Serial Commands
 //#include <LittleFS.h> // On-board Flash File System
 
-const String FWVERS = "1.0.1"; // Firmware Version Code
+const String FWVERS = "1.0.2"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
@@ -37,12 +37,12 @@ volatile bool ser_output = true; // Wheter data should be Serial.println'ed
 volatile bool geiger_mode = false; // Measure only cps, not energy
 
 volatile uint32_t spectrum[4096]; // Holds the spectrum histogram written to flash
-String output_data; // Serial output string of all events 
+String output_data; // Serial output string of all events
 
 
 void toggleSerialInterrupt(String *args) {
   String command = *args;
-  command.replace("ser int -","");
+  command.replace("ser int -", "");
   command.trim();
 
   if (command == "enable") {
@@ -57,20 +57,22 @@ void toggleSerialInterrupt(String *args) {
 
 void toggleGeigerMode(String *args) {
   String command = *args;
-  command.replace("set mode -","");
+  command.replace("set mode -", "");
   command.trim();
 
   if (command == "geiger") {
     geiger_mode = true;
+    output_data = "";
   } else if (command == "energy") {
     geiger_mode = false;
+    output_data = "";
   } else {
     Serial.println("No valid input '" + command + "'!");
   }
 }
 
 /*
-void toggleFileWrite(String *args) {
+  void toggleFileWrite(String *args) {
   String command = *args;
   command.replace("fs write -","");
   command.trim();
@@ -82,7 +84,7 @@ void toggleFileWrite(String *args) {
   } else {
     Serial.println("No valid input '" + command + "'!");
   }
-}
+  }
 */
 
 void readTemp(String *args) {
@@ -106,7 +108,7 @@ void readUSB(String *args) {
 
 void readSupplyVoltage(String *args) {
   Serial.print("Supply Voltage: ");
-  Serial.print(3.0 * pico.analogCRead(VSYS_MEAS,5) * 3.3 / 4095.0, 3);
+  Serial.print(3.0 * pico.analogCRead(VSYS_MEAS, 5) * 3.3 / 4095.0, 3);
   Serial.println(" V");
 }
 
@@ -119,9 +121,9 @@ void readCalibration(String *args) {
 
 void setCalibration(String *args) {
   String command = *args;
-  command.replace("cal calibrate -","");
+  command.replace("cal calibrate -", "");
   command.trim();
-  
+
   long meas_num = command.toInt();
 
   if (meas_num <= 0) {
@@ -140,10 +142,10 @@ void setCalibration(String *args) {
 }
 
 /*
-void filesysInfo(String *args) {
+  void filesysInfo(String *args) {
   FSInfo fs_info;
   Serial.println(LittleFS.info(fs_info));
-}
+  }
 */
 
 void deviceInfo(String *args) {
@@ -175,27 +177,27 @@ void eventInt() {
   } else {
     mean = pico.analogCRead(AIN_PIN, 5);
   }
-  
+
 
   /*
-  uint8_t msize = 10;
-  uint16_t meas[msize];
+    uint8_t msize = 10;
+    uint16_t meas[msize];
 
-  for (size_t i = 0; i < msize; i++) {
+    for (size_t i = 0; i < msize; i++) {
     meas[i] = pico.analogCRead(AIN_PIN);;
-  }
+    }
 
-  float mean = 0.0;
-  for (size_t i = 0; i < msize; i++) {
-  mean += meas[i];
-  }
-  mean /= msize;
+    float mean = 0.0;
+    for (size_t i = 0; i < msize; i++) {
+    mean += meas[i];
+    }
+    mean /= msize;
 
-  float var = 0.0;
-  for (size_t i = 0; i < msize; i++) {
-  var += sq(meas[i] - mean);
-  }
-  var /= msize;
+    float var = 0.0;
+    for (size_t i = 0; i < msize; i++) {
+    var += sq(meas[i] - mean);
+    }
+    var /= msize;
   */
 
   digitalWrite(RST_PIN, HIGH); // Reset peak detector
@@ -203,19 +205,19 @@ void eventInt() {
   digitalWrite(RST_PIN, LOW);
 
   /*
-  if (ser_output) {
+    if (ser_output) {
     if (Serial) {
       Serial.print(String(mean) + ';');
       //Serial.print(' ' + String(sqrt(var)) + ';');
       //Serial.println(' ' + String(sqrt(var)/mean) + ';');
     }
-  }
+    }
   */
 
   /*
-  if (flash_save) {
+    if (flash_save) {
     spectrum[mean] += 1;
-  }
+    }
   */
 
   if (ser_output) {
@@ -283,7 +285,7 @@ void setup1() {
 
 void loop() {
   /*
-  if (flash_save) { // Save data to flash file system
+    if (flash_save) { // Save data to flash file system
     unsigned long micro = micros();
     if (f) {
       for (size_t i = 0; i < 4096; i++) {
@@ -291,7 +293,7 @@ void loop() {
       }
     }
     Serial.println(micros() - micro);
-  }
+    }
   */
 
   if (ser_output) {
@@ -300,7 +302,7 @@ void loop() {
     }
     output_data = "";
   }
-  
+
   delay(1000); // Wait for 1 sec
 }
 
