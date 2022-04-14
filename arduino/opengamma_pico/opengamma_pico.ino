@@ -170,29 +170,29 @@ void serialEvent() {
 void eventInt() {
   digitalWrite(LED, HIGH); // Activity LED
 
-  uint16_t mean;
+  uint16_t mean = 0;
 
-  if (geiger_mode) {
-    mean = 1;
-  } else {
-    mean = pico.analogCRead(AIN_PIN, 5);
-  }
-
-
-  /*
-    uint8_t msize = 10;
+  if (!geiger_mode) {
+    //mean = pico.analogCRead(AIN_PIN, 5);
+    // Do not use pico.analogCRead when using a custom Vref source!
+    uint8_t msize = 5; // 5 measurements
     uint16_t meas[msize];
 
     for (size_t i = 0; i < msize; i++) {
-    meas[i] = pico.analogCRead(AIN_PIN);;
+      meas[i] = analogRead(AIN_PIN); //pico.analogCRead(AIN_PIN);
     }
 
-    float mean = 0.0;
+    float avg = 0.0;
     for (size_t i = 0; i < msize; i++) {
-    mean += meas[i];
+      // Pico-ADC DNL issues, see https://pico-adc.markomo.me/INL-DNL/#dnl
+      avg += meas[i];
     }
-    mean /= msize;
+    avg /= msize;
 
+    mean = round(avg); // float --> uint16_t ADC channel
+  }
+
+  /*
     float var = 0.0;
     for (size_t i = 0; i < msize; i++) {
     var += sq(meas[i] - mean);
@@ -200,19 +200,10 @@ void eventInt() {
     var /= msize;
   */
 
-  digitalWrite(RST_PIN, HIGH); // Reset peak detector
+  // Reset sample and hold circuit
+  digitalWrite(RST_PIN, HIGH);
   delayMicroseconds(1); // Discharge for 1µs, plenty for over 99% discharge
   digitalWrite(RST_PIN, LOW);
-
-  /*
-    if (ser_output) {
-    if (Serial) {
-      Serial.print(String(mean) + ';');
-      //Serial.print(' ' + String(sqrt(var)) + ';');
-      //Serial.println(' ' + String(sqrt(var)/mean) + ';');
-    }
-    }
-  */
 
   /*
     if (flash_save) {
@@ -222,6 +213,8 @@ void eventInt() {
 
   if (ser_output) {
     output_data += String(mean) + ";";
+    //Serial.print(' ' + String(sqrt(var)) + ';');
+    //Serial.println(' ' + String(sqrt(var)/mean) + ';');
   }
   spectrum[mean] += 1;
 
