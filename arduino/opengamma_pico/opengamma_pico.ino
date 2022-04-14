@@ -184,7 +184,6 @@ void eventInt() {
 
     float avg = 0.0;
     for (size_t i = 0; i < msize; i++) {
-      // Pico-ADC DNL issues, see https://pico-adc.markomo.me/INL-DNL/#dnl
       avg += meas[i];
     }
     avg /= msize;
@@ -212,9 +211,14 @@ void eventInt() {
   */
 
   if (ser_output) {
-    output_data += String(mean) + ";";
-    //Serial.print(' ' + String(sqrt(var)) + ';');
-    //Serial.println(' ' + String(sqrt(var)/mean) + ';');
+    // Pico-ADC DNL issues, see https://pico-adc.markomo.me/INL-DNL/#dnl
+    // Discard channels 512, 1536, 2560, and 3584. For now. OOF
+    // See RP2040 datasheet Appendix B: Errata
+    if (mean != 511 && mean != 1535 && mean != 2559 && mean != 3583) {
+      output_data += String(mean) + ";";
+      //Serial.print(' ' + String(sqrt(var)) + ';');
+      //Serial.println(' ' + String(sqrt(var)/mean) + ';');
+    }
   }
   spectrum[mean] += 1;
 
