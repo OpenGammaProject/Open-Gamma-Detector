@@ -218,6 +218,8 @@ void eventInt() {
       output_data += String(mean) + ";";
       //Serial.print(' ' + String(sqrt(var)) + ';');
       //Serial.println(' ' + String(sqrt(var)/mean) + ';');
+    } else {
+      output_data += String(0) + ";"; // Fix discarded channel for real cps value
     }
   }
   spectrum[mean] += 1;
@@ -227,7 +229,7 @@ void eventInt() {
 
 
 void setup() {
-  pinMode(PS_PIN, OUTPUT);
+  pinMode(PS_PIN, OUTPUT_4MA);
   digitalWrite(PS_PIN, LOW); // Enable Power-Saving
 
   pinMode(GND_PIN, INPUT);
@@ -270,9 +272,9 @@ void setup() {
 
 void setup1() {
   pinMode(INT_PIN, INPUT);
-  pinMode(RST_PIN, OUTPUT);
+  pinMode(RST_PIN, OUTPUT_8MA);
   pinMode(AIN_PIN, INPUT);
-  pinMode(LED, OUTPUT);
+  pinMode(LED, OUTPUT_4MA);
 
   analogReadResolution(ADC_RES);
 
