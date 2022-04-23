@@ -1,6 +1,6 @@
 # Open Gamma Detector
 
-Open hardware for a simple, yet powerful multichannel analyzer using a popular NaI(Tl) scintillation crystal. Can be used for gamma spectroscopy while being significantly cheaper than any off-the-shelf platform.
+Open hardware for a simple, yet powerful scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal. Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf platform.
 
 Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the needed files for you to import the project as well as the schematics can be found in the `electronics` folder. There are also Gerber files available for you to go directly to the PCB manufacturing step.
 
