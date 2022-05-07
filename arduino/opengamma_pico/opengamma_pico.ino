@@ -171,6 +171,7 @@ void eventInt() {
   digitalWrite(LED, HIGH); // Activity LED
 
   uint16_t mean = 0;
+  delayMicroseconds(1); // Wait to allow the sample/hold circuit to stabilize
 
   if (!geiger_mode) {
     //mean = pico.analogCRead(AIN_PIN, 5);
@@ -272,7 +273,7 @@ void setup() {
 
 void setup1() {
   pinMode(INT_PIN, INPUT);
-  pinMode(RST_PIN, OUTPUT_8MA);
+  pinMode(RST_PIN, OUTPUT_12MA);
   pinMode(AIN_PIN, INPUT);
   pinMode(LED, OUTPUT_4MA);
 
