@@ -2,9 +2,9 @@
 
 Open hardware for a simple, yet powerful scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal. Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf platform.
 
-Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the needed files for you to import the project as well as the schematics can be found in the `electronics` folder. There are also Gerber files available for you to go directly to the PCB manufacturing step.
+Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the needed files for you to import the project as well as the schematic can be found in the `hardware` folder. There is also a Gerber file available for you to go directly to the PCB manufacturing step.
 
-The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro USB and is powerful (dual core, good ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
+The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro-USB and is powerful (dual core, good ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
 
 __This project is also on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer)!__
 
@@ -37,14 +37,14 @@ This project utilizes a silicon photomultiplier (short SiPM) which is way smalle
 * [Introduction to the SiliconPhotomultiplier (SiPM)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF)
 * [Biasing and Readout of ON Semiconductor SiPM Sensors](https://www.onsemi.com/pub/Collateral/AND9782-D.PDF)
 
-The hardware consists of two PCBs: one carrier board for the SiPM (`electronics/sipm` folder) that will be mounted on top of your scintillation crystal. It will then be connected to the other board: the main detector (`electronics/detector` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly you may use it with the detector board by leaving the pin header out and soldering wires directly to the pads.
+The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly you may use it with the detector board by leaving the pin header out and soldering wires directly to the pads. Otherwise, you can use my [SiPM carrier board](https://github.com/Open-Gamma-Project/SiPM-Carrier-Board) and plug it directly into the pin header.
 
-The heart of the detector board is the Raspberry Pi Pico which uses its (calibrated) ADC to measure the pulse amplitude (e.g. the energy) immediately after an event occurs using an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC:
+The heart of the detector board is the Raspberry Pi Pico which uses its ADC to measure the pulse amplitude (i.e. the energy) immediately after an event occurs using an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC:
 
 * [Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf)
 * [Characterizing the Raspberry Pi Pico ADC](https://pico-adc.markomo.me/)
 
-Here are some renders of the detector PCB. Size is roughly 6x6 cm.
+Here are some renders of the detector PCB. Size is roughly 6 x 6 cm.
 
 <p align="center">
   <img alt="Front Side PCB" title="Front Side PCB" src="docs/pcb_front.png" style="width:49%">
@@ -53,7 +53,7 @@ Here are some renders of the detector PCB. Size is roughly 6x6 cm.
 
 ### Scintillator Assembly
 
-The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the most expensive part and you'll want to use it as long as possible. You need to apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this usecase but you can use some standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you plug the board in and you're ready to go.
+The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the most expensive part and you'll want to use it as long as possible. You need to apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can use some standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you plug the board in and you're ready to go.
 
 I got all of my scintillators (used NaI(Tl), LYSO, ...) from eBay. Just search for some keywords or specific types, you'll definitely find something! Otherwise you can obviously also buy brand-new scintillators, however, these are very expensive (depends, but a factor of 10x is normal). Just be sure to look out for signs of wear and tear like scratches on the window or yellowing in NaI crystals as these can deteriorate performance significantly.
 
