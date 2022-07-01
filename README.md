@@ -18,8 +18,8 @@ Here are some of the most important key facts:
 * Easily programmable using the standard Arduino IDE.
 * Low-voltage device: No HV needed for a photomultiplier tube.
 * Low power consumption: ~25 mA @ 5 V.
-* Geiger Mode: Capable of up to 30,000 cps without energy measurement.
-* Default Mode: Capable of up to 10,000 cps while also measuring energy.
+* Default Mode: Capable of up to around 40,000 cps while also measuring energy.
+* Geiger Mode: Capable of up to around 100,000 cps without energy measurement.
 * 4096 ADC channels for the energy range of about 30 keV to 1300 keV.
 
 ## Working Principle
@@ -86,7 +86,7 @@ Commands:
 - ``read spectrum`` reads the histogram data of all energy measurements since start-up.
 - ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a 3x higher saturation limit.
 - ``cal calibrate -`` calibrates the ADC using Arduino-Pico-Analog-Correction. The parameter being the number of measurements used to average the reading, e.g. `cal calibrate -5000` takes 5000 measurements.
-- ``ser int -`` Enable or disable the event serial output. Takes `enable` or `disable` as parameter, e.g. `ser int -disable` to disable event outputs.
+- ``ser int -`` Change or disable the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `ser int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
 - ``ogc info`` prints miscellaneous information about the firmware.
 
 ### PC
