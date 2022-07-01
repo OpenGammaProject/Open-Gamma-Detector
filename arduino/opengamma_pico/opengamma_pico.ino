@@ -33,9 +33,9 @@ PicoAnalogCorrection pico(ADC_RES); // (10,4092)
 
 volatile bool ser_output = true; // Wheter data should be Serial.println'ed
 volatile bool geiger_mode = false; // Measure only cps, not energy
-volatile bool print_spectrum = false; // Print the finishes spectrum, not just 
+volatile bool print_spectrum = false; // Print the finishes spectrum, not just
 
-volatile uint32_t spectrum[uint16_t(pow(2,ADC_RES))]; // Holds the spectrum histogram written to flash
+volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))]; // Holds the spectrum histogram written to flash
 volatile uint16_t events[50000];
 volatile uint16_t event_position = 0;
 
@@ -132,8 +132,9 @@ void setCalibration(String *args) {
 
 
 void deviceInfo(String *args) {
-  Serial.println("Open Gamma Counter");
-  Serial.println("2022. github.com/Open-Gamma-Project");
+  Serial.println("--Open Gamma Detector--");
+  Serial.println("By NuclearPhoenix, Open Gamma Project");
+  Serial.println("2022. https://github.com/Open-Gamma-Project");
   Serial.println("Firmware Version: " + FWVERS);
 }
 
@@ -158,7 +159,7 @@ void eventInt() {
 
   if (!geiger_mode) {
     //mean = pico.analogCRead(AIN_PIN, 5);
-    
+
     uint8_t msize = 1; // x measurements to average
     uint16_t meas[msize];
 
@@ -180,7 +181,7 @@ void eventInt() {
       }
       avg += meas[i];
     }
-    
+
     if (msize - invalid <= 0) { // Catch divide by zero crash
       avg = 0;
     } else {
@@ -239,12 +240,12 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(readTemp, F("read temp")));
   Shell.registerCommand(new ShellCommand(readSupplyVoltage, F("read vsys")));
   Shell.registerCommand(new ShellCommand(readUSB, F("read usb")));
+  Shell.registerCommand(new ShellCommand(deviceInfo, F("read info")));
   Shell.registerCommand(new ShellCommand(readCalibration, F("read cal")));
   Shell.registerCommand(new ShellCommand(getSpectrumData, F("read spectrum")));
   Shell.registerCommand(new ShellCommand(toggleGeigerMode, F("set mode -")));
   Shell.registerCommand(new ShellCommand(setCalibration, F("cal calibrate -")));
   Shell.registerCommand(new ShellCommand(serialInterruptMode, F("ser int -")));
-  Shell.registerCommand(new ShellCommand(deviceInfo, F("ogc info")));
 
   Shell.begin(2000000);
 
@@ -271,7 +272,7 @@ void loop1() {
   if (ser_output) {
     if (Serial) {
       if (print_spectrum) {
-        for (uint16_t index = 0; index < uint16_t(pow(2,ADC_RES)); index++) {
+        for (uint16_t index = 0; index < uint16_t(pow(2, ADC_RES)); index++) {
           Serial.print(String(spectrum[index]) + ";");
           //spectrum[index] = 0;
         }
@@ -284,9 +285,9 @@ void loop1() {
       }
       Serial.println();
     }
-    
+
     event_position = 0;
   }
-  
+
   delay(1000); // Wait for 1 sec
 }

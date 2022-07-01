@@ -1,6 +1,6 @@
 # Open Gamma Detector
 
-__This project is also on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project logs and progress updates.__
+__This project is on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project logs, progress updates and other announcements.__
 
 Open hardware for a simple, yet powerful scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal. Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf platform. Uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
 
@@ -82,12 +82,12 @@ Commands:
 - ``read temp`` reads the microcontroller temperature in °C.
 - ``read vsys`` reads the board's input voltage.
 - ``read usb`` true or false depending on a USB connection. Thus always true if you are using the serial-over-USB connection.
+- ``read info`` prints miscellaneous information about the firmware.
 - ``read cal`` reads the calibration values from Arduino-Pico-Analog-Correction.
 - ``read spectrum`` reads the histogram data of all energy measurements since start-up.
 - ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a 3x higher saturation limit.
 - ``cal calibrate -`` calibrates the ADC using Arduino-Pico-Analog-Correction. The parameter being the number of measurements used to average the reading, e.g. `cal calibrate -5000` takes 5000 measurements.
 - ``ser int -`` Change or disable the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `ser int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
-- ``ogc info`` prints miscellaneous information about the firmware.
 
 ### PC
 
