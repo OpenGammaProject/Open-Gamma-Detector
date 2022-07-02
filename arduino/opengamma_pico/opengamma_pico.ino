@@ -160,14 +160,14 @@ void eventInt() {
   if (!geiger_mode) {
     //mean = pico.analogCRead(AIN_PIN, 5);
 
-    uint8_t msize = 1; // x measurements to average
+    uint8_t msize = 5; // x measurements to average
     uint16_t meas[msize];
 
-    digitalWrite(PS_PIN, HIGH); // Disable Power-Saving
+    //digitalWrite(PS_PIN, HIGH); // Disable Power-Saving
     for (size_t i = 0; i < msize; i++) {
       meas[i] = analogRead(AIN_PIN);
     }
-    digitalWrite(PS_PIN, LOW); // Enable Power-Saving
+    //digitalWrite(PS_PIN, LOW); // Enable Power-Saving
 
     float avg = 0.0;
     uint8_t invalid = 0;
@@ -265,6 +265,7 @@ void setup1() {
 
 void loop() {
   // Do not use, because interrupts run on this core!
+  __wfi(); // Wait For Interrupt
 }
 
 
@@ -289,5 +290,5 @@ void loop1() {
     event_position = 0;
   }
 
-  delay(1000); // Wait for 1 sec
+  delay(1000); // Wait for 1 sec, better: sleep for power saving?!
 }
