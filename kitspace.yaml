@@ -1,0 +1,33 @@
+summary: Open hardware for a DIY all-in-one gamma-ray spectrometer using popular scintillation crystals and a Raspberry Pi Pico.
+
+site: https://nuclearphoenix.xyz # A site you would like to link to (include http:// or https://)
+
+color: green # for example
+   # The solder resist color of the preview rendering. If left undefined "green" is used. Can be one of:
+       # - green
+       # - red
+       # - blue
+       # - black
+       # - white
+       # - orange
+       # - purple
+       # - yellow
+
+bom: hardware/BOM.csv
+  # A path to your 1-click-bom in case it isn't `1-click-bom.tsv`. Supported extensions are:
+  # - .tsv
+  # - .csv
+  # - .ods
+  # - .xlsx
+  # Check out https://github.com/kitspace/1clickBOM#readme for more details
+
+gerbers: hardware/ # A path to your folder of gerbers in case it isn't `gerbers/`.
+
+pcb-services: [aisler, pcbway, oshpark, jlcpcb]
+  # A list of the PCB services you would like to have included on your
+  # page. If left undefined all are included. Otherwise ust be a list of Kitspace
+  # sponsors, possible values are:
+  #      - aisler
+  #      - pcbway
+  #      - oshpark
+  #      - jlcpcb
