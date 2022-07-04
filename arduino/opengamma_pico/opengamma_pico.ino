@@ -10,12 +10,13 @@
    TODO: Enable file system writing for saving spectra.
    TODO: Fix ADC issues with averaging around the channels (3 channels 4x)
    TODO: Save settings in flash storage!
+   TODO: Clear Spectrum Function
 */
 
 #include <PicoAnalogCorrection.h> // Analog Calibration
 #include <SimpleShell.h> // Serial Commands
 
-const String FWVERS = "1.1.0"; // Firmware Version Code
+const String FWVERS = "1.1.1"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
@@ -28,6 +29,7 @@ const uint8_t RST_PIN = 5; // Peak detector MOSFET reset pin
 const uint8_t LED = 25; // LED on GP25
 
 const uint8_t ADC_RES = 12; // Use 12-bit ADC resolution
+const uint16_t EVENT_SPACE = 50000; // Buffer this many events for Serial.print
 
 PicoAnalogCorrection pico(ADC_RES); // (10,4092)
 
@@ -36,7 +38,7 @@ volatile bool geiger_mode = false; // Measure only cps, not energy
 volatile bool print_spectrum = false; // Print the finishes spectrum, not just
 
 volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))]; // Holds the spectrum histogram written to flash
-volatile uint16_t events[50000];
+volatile uint16_t events[EVENT_SPACE];
 volatile uint16_t event_position = 0;
 
 
@@ -204,7 +206,9 @@ void eventInt() {
     spectrum[mean] += 1;
     //Serial.print(' ' + String(sqrt(var)) + ';');
     //Serial.println(' ' + String(sqrt(var)/mean) + ';');
-    event_position++;
+    if (event_position < EVENT_SPACE-1) { // Only increment if 
+      event_position++;
+    }
   }
 
   // Reset sample and hold circuit
