@@ -1,4 +1,6 @@
-# Open Gamma Detector
+# Open Gamma Detector Rev. 1.0
+
+__This is the branch for the first revision of the detector board! The latest version can be found in the `main` branch.__
 
 __This project is on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project logs, progress updates and other announcements.__
 
