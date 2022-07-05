@@ -49,7 +49,7 @@ The heart of the detector board is the Raspberry Pi Pico which uses its ADC to m
 * [Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf)
 * [Characterizing the Raspberry Pi Pico ADC](https://pico-adc.markomo.me/)
 
-Here are some front and back side renders of the detector PCB. Size is about 12 x 5 cm.
+Here are some front and back side renders of the detector PCB. Size is about 12 x 5 cm. If you don't need the additional space to mechanically mount the SiPM/scintillator assembly to the rest of the detector board, you can just cut it off at the white line and you're left with a smaller detector.
 
 <p align="center">
   <img alt="Front Side PCB" title="Front Side PCB" src="docs/pcb_front.png" style="width:49%">
