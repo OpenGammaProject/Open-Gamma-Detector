@@ -14,15 +14,18 @@ For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspa
 
 Here are some of the most important key facts:
 
-* Compact design: Only 60 x 60 mm (not including scintillator).
+* Compact design: Total size 120 x 50 mm. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount the scintillator.
 * All-in-one detector: No external parts (e.g. sound card) required to record gamma spectra.
 * Micro-USB serial connection and power.
 * Easily programmable using the standard Arduino IDE.
 * Low-voltage device: No HV needed for a photomultiplier tube.
+* SiPM voltage range from 28 V to 33 V.
 * Low power consumption: ~25 mA @ 5 V.
+* Adjustable preamp gain for the SiPM pulses (affects energy range & resolution).
 * Default Mode: Capable of up to around 40,000 cps while also measuring energy.
 * Geiger Mode: Capable of up to around 100,000 cps without energy measurement.
 * 4096 ADC channels for the energy range of about 30 keV to 1300 keV.
+* Additional broken-out power pins and I2C header for displays, etc.
 
 ## Working Principle
 
@@ -39,14 +42,14 @@ This project utilizes a silicon photomultiplier (short SiPM) which is way smalle
 * [Introduction to the SiliconPhotomultiplier (SiPM)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF)
 * [Biasing and Readout of ON Semiconductor SiPM Sensors](https://www.onsemi.com/pub/Collateral/AND9782-D.PDF)
 
-The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board by leaving the pin header out and soldering wires directly to the pads. Otherwise, you can use my [SiPM carrier board](https://github.com/Open-Gamma-Project/SiPM-Carrier-Board) and plug it directly into the pin header.
+The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board and soldering wires directly to the correct pads. Otherwise, you can use my [SiPM carrier board](https://github.com/Open-Gamma-Project/SiPM-Carrier-Board), which holds the SiPM and all the optimal decoupling.
 
 The heart of the detector board is the Raspberry Pi Pico which uses its ADC to measure the pulse amplitude (i.e. the energy) immediately after an event occurs starting with an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC, if you're interested:
 
 * [Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf)
 * [Characterizing the Raspberry Pi Pico ADC](https://pico-adc.markomo.me/)
 
-Here are some front and back side renders of the detector PCB. Size is roughly 6 x 6 cm.
+Here are some front and back side renders of the detector PCB. Size is about 12 x 5 cm.
 
 <p align="center">
   <img alt="Front Side PCB" title="Front Side PCB" src="docs/pcb_front.png" style="width:49%">
@@ -55,7 +58,7 @@ Here are some front and back side renders of the detector PCB. Size is roughly 6
 
 ### Scintillator Assembly
 
-The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you plug the board in and you're ready to go.
+The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board. There are holes on each side of the PCB for some cable ties.
 
 I got all of my scintillators (used NaI(Tl), LYSO, ...) from eBay. Just search for some keywords or specific types, you'll probably find something! Otherwise you can obviously also buy brand-new scintillators, however, these are much more expensive (depends, but a factor of 10x is normal). Just be sure to look out for signs of wear and tear like scratches on the window or yellowing (!) in NaI crystals as these can deteriorate performance significantly.
 
@@ -99,7 +102,7 @@ You can of course use any other serial monitor or gamma-spectroscopy software th
 
 ## Example Spectra
 
-Spectrum of a tiny (~5 g) LYSO scintillator showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak:
+Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak:
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
