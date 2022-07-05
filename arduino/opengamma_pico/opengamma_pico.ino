@@ -16,7 +16,7 @@
 #include <PicoAnalogCorrection.h> // Analog Calibration
 #include <SimpleShell.h> // Serial Commands
 
-const String FWVERS = "1.1.1"; // Firmware Version Code
+const String FWVERS = "2.0.0"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
@@ -24,8 +24,8 @@ const uint8_t VSYS_MEAS = A3; // VSYS/3
 const uint8_t VBUS_MEAS = 24; // VBUS Sense Pin
 
 const uint8_t AIN_PIN = A1; // Analog input pin
-const uint8_t INT_PIN = 13; // Signal interrupt pin
-const uint8_t RST_PIN = 5; // Peak detector MOSFET reset pin
+const uint8_t INT_PIN = 16; // Signal interrupt pin
+const uint8_t RST_PIN = 22; // Peak detector MOSFET reset pin
 const uint8_t LED = 25; // LED on GP25
 
 const uint8_t ADC_RES = 12; // Use 12-bit ADC resolution
