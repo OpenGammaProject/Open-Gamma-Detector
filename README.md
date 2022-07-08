@@ -108,9 +108,13 @@ You can of course use any other serial monitor or gamma-spectroscopy software th
 
 ![Background spectrum](docs/bg.png)
 
-Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak:
+Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak (4h measurement):
 
 ![Lu-176 spectrum](docs/lu-176.png)
+
+The same LYSO sample with the same lead shielding, but using a newer "9%" NaI(Tl) scintillator and only a 2h measurement. Energy resolution @307 keV is about 15% now instead of the ~18% above:
+
+![Lu-176 spectrum](docs/lu-176-new.png)
 
 Spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µC of Am-241. Gamma peaks at 26.34 and 59.54 keV:
 
