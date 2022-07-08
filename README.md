@@ -104,6 +104,10 @@ You can of course use any other serial monitor or gamma-spectroscopy software th
 
 ## Example Spectra
 
+1 hour long background spectrum with no samples:
+
+![Background spectrum](docs/bg.png)
+
 Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak:
 
 ![Lu-176 spectrum](docs/lu-176.png)
