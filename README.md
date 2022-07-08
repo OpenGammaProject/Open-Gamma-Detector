@@ -112,7 +112,7 @@ Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing a
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
-The same LYSO sample with the same lead shielding, but using a newer "9%" NaI(Tl) scintillator and only a 2h measurement. Energy resolution @307 keV is about 15% now instead of the ~18% above:
+The same LYSO sample with the same lead shielding, but using a newer "9%" NaI(Tl) scintillator and only a 2h measurement. Energy resolution @ 307 keV is now about 15% now instead of the ~18% above:
 
 ![Lu-176 spectrum](docs/lu-176-new.png)
 
