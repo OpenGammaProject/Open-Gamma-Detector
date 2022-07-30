@@ -64,7 +64,7 @@ On the back side of the PCB there is place for two optional components:
 
 These can be retrofitted easily and are quite affordable. Both are optional and should only be used if you know what you are doing.
 
-There are also broken-out pins for the power supply and I2C connections. These can be used to modify the device, e.g. by adding a display or using a battery charger.
+There are also broken-out pins for the power supply and I2C connections. These can be used to modify the device, e.g. by adding a display or using a battery charger. You can have a look at the great [Raspberry Pi Pico datasheet](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf) for more info on this.
 
 ### Scintillator Assembly
 
