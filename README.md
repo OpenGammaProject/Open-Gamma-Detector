@@ -58,6 +58,14 @@ Here are some front and back side renders of the detector PCB. Size is about 12 
   <img alt="Back Side PCB" title="Back Side PCB" src="docs/pcb_back.png" style="width:49%">
 </p>
 
+On the back side of the PCB there is place for two optional components:
+* a voltage reference for the ADC (LM4040AIM3-3.0+T recommended) to get rid of most power supply related noise and inaccuracy
+* and a 0 Ω link to connect the analog ground to the rest of the ground plane.
+
+These can be retrofitted easily and are quite affordable. Both are optional and should only be used if you know what you are doing.
+
+There are also broken-out pins for the power supply and I2C connections. These can be used to modify the device, e.g. by adding a display or using a battery charger.
+
 ### Scintillator Assembly
 
 The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board. There are holes on each side of the PCB for some cable ties.
