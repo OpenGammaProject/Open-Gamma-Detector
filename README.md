@@ -100,11 +100,10 @@ Commands:
 - ``read vsys`` reads the board's input voltage.
 - ``read usb`` true or false depending on a USB connection. Thus always true if you are using the serial-over-USB connection.
 - ``read info`` prints miscellaneous information about the firmware.
-- ``read cal`` reads the calibration values from Arduino-Pico-Analog-Correction.
 - ``read spectrum`` reads the histogram data of all energy measurements since start-up.
 - ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a 3x higher saturation limit.
-- ``cal calibrate -`` calibrates the ADC using Arduino-Pico-Analog-Correction. The parameter being the number of measurements used to average the reading, e.g. `cal calibrate -5000` takes 5000 measurements.
 - ``ser int -`` Change or disable the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `ser int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
+- ``set reset -`` Change or disable a periodic reset of the sample and hold circuit. This is enabled by default to help with mains interference to the capacitor when the detector is not shielded properly. Takes `enable` or `disable` as parameters. Adds an additional 4 ms dead time when enabled.
 
 ### PC
 
