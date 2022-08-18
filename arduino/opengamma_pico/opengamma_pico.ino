@@ -1,4 +1,5 @@
 /*
+
    Open Gamma Detector Sketch
    To be used with the Raspberry Pi Pico!
 
@@ -8,20 +9,21 @@
    2022, NuclearPhoenix.
 
    TODO: Enable file system writing for saving spectra.
-   TODO: Fix ADC issues with averaging around the channels (3 channels 4x)
+   TODO: There are still some ADC issues?
    TODO: Save settings in flash storage!
-   TODO: Clear Spectrum Function
+   TODO: Clear Spectrum Function.
+
 */
 
-#include <PicoAnalogCorrection.h> // Analog Calibration
 #include <SimpleShell.h> // Serial Commands
 
-const String FWVERS = "2.0.0"; // Firmware Version Code
+const String FWVERS = "2.1.0"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
 const uint8_t VSYS_MEAS = A3; // VSYS/3
 const uint8_t VBUS_MEAS = 24; // VBUS Sense Pin
+const uint8_t PS_PIN = 23; // SMPS power save pin
 
 const uint8_t AIN_PIN = A1; // Analog input pin
 const uint8_t INT_PIN = 16; // Signal interrupt pin
@@ -31,11 +33,10 @@ const uint8_t LED = 25; // LED on GP25
 const uint8_t ADC_RES = 12; // Use 12-bit ADC resolution
 const uint16_t EVENT_SPACE = 50000; // Buffer this many events for Serial.print
 
-PicoAnalogCorrection pico(ADC_RES); // (10,4092)
-
 volatile bool ser_output = true; // Wheter data should be Serial.println'ed
 volatile bool geiger_mode = false; // Measure only cps, not energy
 volatile bool print_spectrum = false; // Print the finishes spectrum, not just
+volatile bool auto_reset = true; // Periodically reset S&H circuit
 
 volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))]; // Holds the spectrum histogram written to flash
 volatile uint16_t events[EVENT_SPACE];
@@ -55,6 +56,22 @@ void serialInterruptMode(String *args) {
     print_spectrum = false;
   } else if (command == "disable") {
     ser_output = false;
+    print_spectrum = false;
+  } else {
+    Serial.println("No valid input '" + command + "'!");
+  }
+}
+
+
+void toggleAutoReset(String *args) {
+  String command = *args;
+  command.replace("set reset -", "");
+  command.trim();
+
+  if (command == "enable") {
+    auto_reset = true;
+  } else if (command == "disable") {
+    auto_reset = false;
   } else {
     Serial.println("No valid input '" + command + "'!");
   }
@@ -99,45 +116,18 @@ void readUSB(String *args) {
 
 void readSupplyVoltage(String *args) {
   Serial.print("Supply Voltage: ");
-  Serial.print(3.0 * pico.analogCRead(VSYS_MEAS, 5) * 3.3 / 4095.0, 3);
+  Serial.print(3.0 * analogRead(VSYS_MEAS) * 3.3 / 4095.0, 3);
   Serial.println(" V");
 }
 
 
-void readCalibration(String *args) {
-  Serial.print("Offset: ");
-  pico.returnCalibrationValues();
-}
-
-
-void setCalibration(String *args) {
-  String command = *args;
-  command.replace("cal calibrate -", "");
-  command.trim();
-
-  long meas_num = command.toInt();
-
-  if (meas_num <= 0) {
-    Serial.println("No valid input '" + command + "'!");
-    return;
-  }
-
-  Serial.println("Calibrating using " + String(meas_num) + " ADC measurements.");
-  Serial.println("Please wait.");
-
-  pico.calibrateAdc(GND_PIN, VCC_PIN, meas_num);
-
-  Serial.println("Done calibrating.");
-
-  readCalibration(args);
-}
-
-
 void deviceInfo(String *args) {
-  Serial.println("--Open Gamma Detector--");
+  Serial.println("=========================");
+  Serial.println("-- Open Gamma Detector --");
   Serial.println("By NuclearPhoenix, Open Gamma Project");
   Serial.println("2022. https://github.com/Open-Gamma-Project");
   Serial.println("Firmware Version: " + FWVERS);
+  Serial.println("=========================");
 }
 
 
@@ -153,6 +143,13 @@ void serialEvent() {
 }
 
 
+void resetSampleHold() { // Reset sample and hold circuit
+  digitalWrite(RST_PIN, HIGH);
+  delayMicroseconds(1); // Discharge for 1µs, plenty for over 99% discharge
+  digitalWrite(RST_PIN, LOW);
+}
+
+
 void eventInt() {
   digitalWrite(LED, HIGH); // Activity LED
 
@@ -160,8 +157,6 @@ void eventInt() {
   delayMicroseconds(1); // Wait to allow the sample/hold circuit to stabilize
 
   if (!geiger_mode) {
-    //mean = pico.analogCRead(AIN_PIN, 5);
-
     uint8_t msize = 5; // x measurements to average
     uint16_t meas[msize];
 
@@ -206,15 +201,12 @@ void eventInt() {
     spectrum[mean] += 1;
     //Serial.print(' ' + String(sqrt(var)) + ';');
     //Serial.println(' ' + String(sqrt(var)/mean) + ';');
-    if (event_position < EVENT_SPACE-1) { // Only increment if 
+    if (event_position < EVENT_SPACE - 1) { // Only increment if
       event_position++;
     }
   }
 
-  // Reset sample and hold circuit
-  digitalWrite(RST_PIN, HIGH);
-  delayMicroseconds(1); // Discharge for 1µs, plenty for over 99% discharge
-  digitalWrite(RST_PIN, LOW);
+  resetSampleHold(); // Reset sample and hold circuit
 
   digitalWrite(LED, LOW);
 }
@@ -227,6 +219,8 @@ void setup() {
   pinMode(LED, OUTPUT_4MA);
 
   analogReadResolution(ADC_RES);
+
+  resetSampleHold(); // Reset sample and hold circuit
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
 }
@@ -245,11 +239,10 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(readSupplyVoltage, F("read vsys")));
   Shell.registerCommand(new ShellCommand(readUSB, F("read usb")));
   Shell.registerCommand(new ShellCommand(deviceInfo, F("read info")));
-  Shell.registerCommand(new ShellCommand(readCalibration, F("read cal")));
   Shell.registerCommand(new ShellCommand(getSpectrumData, F("read spectrum")));
   Shell.registerCommand(new ShellCommand(toggleGeigerMode, F("set mode -")));
-  Shell.registerCommand(new ShellCommand(setCalibration, F("cal calibrate -")));
   Shell.registerCommand(new ShellCommand(serialInterruptMode, F("ser int -")));
+  Shell.registerCommand(new ShellCommand(toggleAutoReset, F("set reset -")));
 
   Shell.begin(2000000);
 
@@ -260,16 +253,20 @@ void setup1() {
     }
   */
 
-  //pico.calibrateAdc(GND_PIN, VCC_PIN, 10000); // Calibrate ADC on start-up
-
-  Serial.println("Welcome from Open Gamma Detector!");
+  Serial.println("Welcome to the Open Gamma Detector!");
   Serial.println("Firmware Version " + FWVERS);
 }
 
 
 void loop() {
-  // Do not use, because interrupts run on this core!
-  __wfi(); // Wait For Interrupt
+  // Interrupts run on this core
+  //__wfi(); // Wait For Interrupt
+  
+  if (auto_reset) {
+    resetSampleHold();
+  }
+  
+  delayMicroseconds(500);
 }
 
 
