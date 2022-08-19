@@ -145,7 +145,7 @@ void serialEvent() {
 
 void resetSampleHold() { // Reset sample and hold circuit
   digitalWrite(RST_PIN, HIGH);
-  delayMicroseconds(1); // Discharge for 1µs, plenty for over 99% discharge
+  delayMicroseconds(1); // Discharge for 1 µs, actually takes 2 µs - enough for a discharge
   digitalWrite(RST_PIN, LOW);
 }
 
@@ -206,7 +206,7 @@ void eventInt() {
     }
   }
 
-  resetSampleHold(); // Reset sample and hold circuit
+  resetSampleHold();
 
   digitalWrite(LED, LOW);
 }
@@ -220,7 +220,7 @@ void setup() {
 
   analogReadResolution(ADC_RES);
 
-  resetSampleHold(); // Reset sample and hold circuit
+  resetSampleHold(); // Reset before enabling the interrupts to avoid jamming
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
 }
@@ -261,11 +261,11 @@ void setup1() {
 void loop() {
   // Interrupts run on this core
   //__wfi(); // Wait For Interrupt
-  
+
   if (auto_reset) {
     resetSampleHold();
   }
-  
+
   delayMicroseconds(500);
 }
 
