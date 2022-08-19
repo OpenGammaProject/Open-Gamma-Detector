@@ -12,21 +12,22 @@ For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspa
 
 _The fully assembled main detector board with the Pico on it will also be available for purchase [soon](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/208359-assembled-detector-boards)._
 
-## Key Features
+![Photo of the detector board](docs/img1.jpg)
+
+## Specifications
 
 Here are some of the most important key facts:
 
 * Compact design: Total size 120 x 50 mm. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount the scintillator.
 * All-in-one detector: No external parts (e.g. sound card) required to record gamma spectra.
-* Micro-USB serial connection and power.
 * Easily programmable using the standard Arduino IDE.
 * Low-voltage device: No HV needed for a photomultiplier tube.
 * SiPM voltage range from 28 V to 33 V.
-* Low power consumption: ~25 mA @ 5 V.
+* Low power consumption: ~15 mA @ 5V in standard operation.
 * Adjustable preamp gain for the SiPM pulses (affects energy range & resolution).
-* Default Mode: Capable of up to around 40,000 cps while also measuring energy.
-* Geiger Mode: Capable of up to around 100,000 cps without energy measurement.
-* 4096 ADC channels for the energy range of about 30 keV to 1300 keV.
+*	Customizable energy range with 4096 ADC channels.
+* Default Mode: Capable of at least around 40,000 cps while also measuring energy.
+* Geiger Mode: Capable of at least around 110,000 cps without energy measurement.
 * Additional broken-out power pins and I2C header for displays, etc.
 
 ## Working Principle
@@ -62,7 +63,7 @@ On the back side of the PCB there is place for two optional components:
 * a voltage reference for the ADC (LM4040AIM3-3.0+T recommended) to get rid of most power supply related noise and inaccuracy
 * and a 0 Ω link to connect the analog ground to the rest of the ground plane.
 
-These can be retrofitted easily and are quite affordable. Both are optional and should only be used if you know what you are doing.
+These can be retrofitted easily and are quite affordable. Both are optional and should only be used if you know what you are doing. You can't really do anything wrong with using the voltage reference, though.
 
 There are also broken-out pins for the power supply and I2C connections. These can be used to modify the device, e.g. by adding a display or using a battery charger. You can have a look at the great [Raspberry Pi Pico datasheet](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf) for more info on this.
 
@@ -70,9 +71,15 @@ The resistor R4 on the front side is optional as well. It will raise the input v
 
 ### Scintillator Assembly
 
-The finished SiPM carrier board is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board. There are holes on each side of the PCB for some cable ties.
+The finished [SiPM carrier board](https://github.com/Open-Gamma-Project/SiPM-Carrier-Board) is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board. There are holes on each side of the PCB for some cable ties.
 
 I got all of my scintillators (used NaI(Tl), LYSO, ...) from eBay. Just search for some keywords or specific types, you'll probably find something! Otherwise you can obviously also buy brand-new scintillators, however, these are much more expensive (depends, but a factor of 10x is normal). Just be sure to look out for signs of wear and tear like scratches on the window or yellowing (!) in NaI crystals as these can deteriorate performance significantly.
+
+### Shielding
+
+Due to the detector measuring small voltages, energy resolution being limited by noise and a tiny 220 pF capacitor being on board, it is generally pretty sensitive to EMI. In fact, without any shielding and periodically discharging the capacitor, mains electricity would slowly charge it until the device gets overwhelmed with noise. To mitigate this effect, the Arduino sketch is programmed to clear the cap every 500 µs by default, which is enough to mostly fix this issue. However, this adds an additional ~4 ms dead time which could be roughly equivalent to 500 missed events in geiger mode.
+
+For the best performance, you will need to put your detector into a metal enclosure. It doesn't need to be a thick metal case, a tin can will most likely suffice.
 
 ## Software
 
@@ -86,8 +93,8 @@ To program the Pico you will need the following board configs:
 
 The installation and additional documentation can be found in the respective GitHub repo, it's not complicated at all and you only need to do it once. You will also need the following additional libraries:
 
-* [Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction) ![arduino-library-badge](https://www.ardu-badge.com/badge/PicoAnalogCorrection.svg?)
 * [SimpleShell](https://github.com/cafehaine/SimpleShell) ![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell.svg?)
+* ~~[Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction) ![arduino-library-badge](https://www.ardu-badge.com/badge/PicoAnalogCorrection.svg?)~~
 
 They can be installed by searching their names using the IDE's built-in library manager.
 
@@ -113,23 +120,21 @@ You can of course use any other serial monitor or gamma-spectroscopy software th
 
 ## Example Spectra
 
-1 hour long background spectrum with no samples:
+Here is a small collection of example spectra I could make quickly without putting much effort into the detector settings (gain, threshold, SiPM voltage). In addition, neither the electronics nor the scintillator and sample were shielded whatsoever.
+
+Two hour long background spectrum with no samples:
 
 ![Background spectrum](docs/bg.png)
 
-Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak (4h measurement):
+Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak (2h measurement):
 
 ![Lu-176 spectrum](docs/lu-176.png)
-
-The same LYSO sample with the same lead shielding, but using a newer "9%" NaI(Tl) scintillator and only a 2h measurement. Energy resolution @ 307 keV is now about 15% now instead of the ~18% above:
-
-![Lu-176 spectrum](docs/lu-176-new.png)
 
 Spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µC of Am-241. Gamma peaks at 26.34 and 59.54 keV:
 
 ![Am-176 spectrum](docs/am-241.png)
 
-Spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series and also a distinct U-235 plateau:
+Spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series:
 
 ![Uraninite Glaze](docs/glaze.png)
 
@@ -151,7 +156,7 @@ Note that the required breakdown voltage of the SiPM increases linearly with 21.
 
 #### Shielding Background Radiation
 
-Shielding the ambient background can be done ideally using a wide enough layer of lead (bricks) all around the detector with a thin layer of lower-Z material on the inside (to avoid backscattering). The SiPM and the sample can then be put into the structure to get the best measurements possible (low background).
+Shielding the ambient background can be done ideally using a wide enough layer of lead (bricks) all around the detector with a thin layer of lower-Z material on the inside (to avoid backscattering) such as copper. The SiPM and the sample can then be put into the structure to get the best measurements possible (low background).
 
 See Wikipedia: [Lead Castle](https://en.wikipedia.org/w/index.php?title=Lead_castle&oldid=991799816)
 
