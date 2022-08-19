@@ -25,7 +25,7 @@ Here are some of the most important key facts:
 * SiPM voltage range from 28 V to 33 V.
 * Low power consumption: ~15 mA @ 5V in standard operation.
 * Adjustable preamp gain for the SiPM pulses (affects energy range & resolution).
-*	Customizable energy range with 4096 ADC channels.
+* Customizable energy range with 4096 ADC channels.
 * Default Mode: Capable of at least around 40,000 cps while also measuring energy.
 * Geiger Mode: Capable of at least around 110,000 cps without energy measurement.
 * Additional broken-out power pins and I2C header for displays, etc.
