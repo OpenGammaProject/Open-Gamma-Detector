@@ -94,9 +94,14 @@ To program the Pico you will need the following board configs:
 The installation and additional documentation can be found in the respective GitHub repo, it's not complicated at all and you only need to do it once. You will also need the following additional libraries:
 
 * [SimpleShell](https://github.com/cafehaine/SimpleShell) ![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell.svg?)
+* [ArduinoJson](https://github.com/bblanchon/ArduinoJson) ![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)
 * ~~[Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction) ![arduino-library-badge](https://www.ardu-badge.com/badge/PicoAnalogCorrection.svg?)~~
 
 They can be installed by searching their names using the IDE's built-in library manager.
+
+Please have a look at the `USER SETTINGS` in the Arduino sketch. The most important setting here is the `VREF_VOLTAGE`. If you soldered in the voltage reference then this probably needs to be set to `3.0`, otherwise leave `3.3` as is.
+
+Flash the Pico by choosing the `Raspberry Pi Pico` under `Tools/Board/Raspberry Pi RP2040 Boards` and then selecting `Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)`, leaving everything else at the default value. You can then press the big `Upload` button.
 
 #### Serial Interface
 
@@ -106,11 +111,16 @@ Commands:
 - ``read temp`` reads the microcontroller temperature in °C.
 - ``read vsys`` reads the board's input voltage.
 - ``read usb`` true or false depending on a USB connection. Thus always true if you are using the serial-over-USB connection.
-- ``read info`` prints miscellaneous information about the firmware.
-- ``read spectrum`` reads the histogram data of all energy measurements since start-up.
-- ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a 3x higher saturation limit.
-- ``ser int -`` Change or disable the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `ser int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
-- ``set reset -`` Change or disable a periodic reset of the sample and hold circuit. This is enabled by default to help with mains interference to the capacitor when the detector is not shielded properly. Takes `enable` or `disable` as parameters. Adds an additional 4 ms dead time when enabled.
+- ``read spectrum`` reads the histogram data of all energy measurements since the last clear (start-up).
+- ``read info`` prints miscellaneous information about the firmware and the state of the device.
+- ``read fs`` prints miscellaneous information about the filesystem used for saving the config.
+- ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a ~3x higher saturation limit.
+- ``set int -`` changes or disables the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `set int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
+- ``set reset -`` changes or disables a periodic reset of the sample and hold circuit. This is enabled by default to help with mains interference to the capacitor when the detector is not shielded properly. Takes `enable` or `disable` as parameters. Adds an additional 4 ms dead time when enabled.
+- ``set averaging -`` changes the number of measurements that get averaged to represent each individual gamma pulse. Parameter needs to be an integer like this: `set averaging -2` sets averaging to 2. Minimum is 1.
+- ``clear spectrum`` clears the on-board spectrum and reverts all channels back to zero.
+- ``reset settings`` clears all the settings and reverts them back to their default values.
+- ``reboot`` reboots the device after one second.
 
 ### PC
 
