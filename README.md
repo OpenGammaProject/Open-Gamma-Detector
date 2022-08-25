@@ -10,7 +10,7 @@ The software aims to be as simple as possible to understand and maintain; to ach
 
 For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). In addition, you'll also need to buy the SiPM (MICROFC-60035-SMT-TR1) at a distributor of your choice.
 
-_The fully assembled main detector board with the Pico on it will also be available for purchase [soon](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/208359-assembled-detector-boards)._
+_The fully assembled main detector board can also be purchased [here](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner makerfabs!_
 
 ![Photo of the detector board](docs/img1.jpg)
 
