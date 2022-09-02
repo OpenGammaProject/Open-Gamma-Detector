@@ -69,6 +69,10 @@ There are also broken-out pins for the power supply and I2C connections. These c
 
 The resistor R4 on the front side is optional as well. It will raise the input voltage of the preamp and therefore also the output so that even lower signals are above the inherent swing of the op amp at a given gain. This way you _might_ be able to read lower energies for a fixed gain up to the SiPM noise. But due to the preamp as well as SiPM gain being variable now and this voltage divider also introducing some noise into the signal I opted to leave this part out by default.
 
+**Here is a helpful image about the potentiometer settings for Rev. 2.0/b:**
+
+![Potentiometer Controls](docs/controls.jpg)
+
 ### Scintillator Assembly
 
 The finished [SiPM carrier board](https://github.com/Open-Gamma-Project/SiPM-Carrier-Board) is there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board. There are holes on each side of the PCB for some cable ties.
@@ -154,7 +158,7 @@ Spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its gl
 
 2. It's very important to get the SiPM/scintillator assembly light-tight. Otherwise you'll either run into problems with lower energies where noise dominates or outright not measure anything at all, because the sensor is saturating.
 
-3. At the moment the detector board only works with a fixed preamp gain (if you didn't change it) and fixed SiPM voltage. In [the near future](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/208062-new-detector-revision-coming-soon) this will be addressed to allow many different kinds of SiPMs and scintillators to be used.
+3. Due to the global parts shortage many chips are much harder to come by, if at all that is. This is most severe for high-quality op amps and other specialized parts such as the DC/DC converters and the tiny peak detector cap. This makes it much harder for me to choose from components and maybe even limiting the performance. Parts that are listed in the BOM should be available easily and with high reliability and stock so that they don't run out quickly. Notably, this also drives the cost of the detector up by a large factor, again mostly due to the op amps and also the SiPMs.
 
 ## Some Ideas
 
