@@ -24,7 +24,7 @@
 #include <ArduinoJson.h> // Load and save the settings file
 #include <LittleFS.h> // Used for FS, stores the settings file
 
-const String FWVERS = "2.2.0"; // Firmware Version Code
+const String FWVERS = "2.2.1"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
@@ -152,6 +152,7 @@ void measAveraging(String *args) {
 
 float analogReadTempCorrect() {
   // Copy from arduino-pico/cores/rp2040/wiring_analog.cpp
+  adc_init(); // Init ADC just to be sure
   adc_set_temp_sensor_enabled(true);
 
   // ## ADDED: Disable interrupts shortly
@@ -164,7 +165,7 @@ float analogReadTempCorrect() {
 
   // ## ADDED: Reset S&H after the detached interrupt and re-enable interrupts
   //digitalWrite(PS_PIN, LOW); // Re-Enable Power Saving
-  resetSampleHold(); //
+  resetSampleHold();
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
 
   adc_set_temp_sensor_enabled(false);
