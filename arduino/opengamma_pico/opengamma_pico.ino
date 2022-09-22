@@ -38,7 +38,7 @@ const uint8_t RST_PIN = 22; // Peak detector MOSFET reset pin
 const uint8_t LED = 25; // LED on GP25
 
 /*
-   BEGIN USER SETTINGS
+    BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
 const float VREF_VOLTAGE = 3.3; // ADC reference voltage, defaults 3.3, with reference 3.0
