@@ -24,7 +24,7 @@
 #include <ArduinoJson.h> // Load and save the settings file
 #include <LittleFS.h> // Used for FS, stores the settings file
 
-const String FWVERS = "2.2.1"; // Firmware Version Code
+const String FWVERS = "2.2.2"; // Firmware Version Code
 
 const uint8_t GND_PIN = A0; // GND meas pin
 const uint8_t VCC_PIN = A2; // VCC meas pin
@@ -400,6 +400,8 @@ void eventInt() {
     SETUP FUNCTIONS
 */
 void setup() {
+  rp2040.wdt_begin(5000); // Enable hardware watchdog to check every 5s
+
   pinMode(INT_PIN, INPUT);
   pinMode(RST_PIN, OUTPUT_12MA);
   pinMode(AIN_PIN, INPUT);
@@ -494,6 +496,8 @@ void loop1() {
 
     event_position = 0;
   }
+
+  rp2040.wdt_reset(); // Reset watchdog, everything is fine
 
   delay(1000); // Wait for 1 sec, better: sleep for power saving?!
 }
