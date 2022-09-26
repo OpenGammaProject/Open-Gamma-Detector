@@ -8,9 +8,9 @@ Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the n
 
 The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro-USB and is powerful (dual core, good ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
 
-For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). In addition, you'll also need to buy the SiPM (MICROFC-60035-SMT-TR1) at a distributor of your choice.
+--> For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). In addition, you'll also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR1) at a distributor of your choice.
 
-_The fully assembled main detector board can also be purchased [here](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner makerfabs!_
+--> The fully assembled main detector board can also be purchased on the [makerfabs webshop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner. For this kit you'll then only need to get a separate SiPM and scintillator, everything else is included and assembled :)
 
 ![Photo of the detector board](docs/img1.jpg)
 
