@@ -10,7 +10,7 @@ The software aims to be as simple as possible to understand and maintain; to ach
 
 --> For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). In addition, you'll also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR1) at a distributor of your choice.
 
---> The fully assembled main detector board can also be purchased on the [makerfabs webshop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner. For this kit you'll then only need to get a separate SiPM and scintillator, everything else is included and assembled :)
+--> The fully assembled main detector board can also be purchased on the [Makerfabs webshop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner. For this kit you'll then only need to get a separate SiPM and scintillator, everything else is included and assembled :)
 
 ![Photo of the detector board](docs/img1.jpg)
 
