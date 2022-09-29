@@ -12,7 +12,10 @@ The software aims to be as simple as possible to understand and maintain; to ach
 
 --> The fully assembled main detector board can also be purchased on the [Makerfabs webshop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner. For this kit you'll then only need to get a separate SiPM and scintillator, everything else is included and assembled :)
 
-![Photo of the detector board](docs/img1.jpg)
+<p align="center">
+  <img alt="Photo of the detector board" title="Photo of the detector board" height="290px" src="docs/img1.jpg">
+  <img alt="Photo of the detector board with mounted SiPM and crystal" title="Photo of the detector board with mounted SiPM and crystal" height="290px" src="docs/img2.jpg">
+</p>
 
 ## Specifications
 
