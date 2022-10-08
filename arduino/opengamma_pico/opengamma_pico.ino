@@ -15,53 +15,54 @@
    ##   Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)
 
    TODO: There are still some ADC issues?
+   TODO: Coincidence measurements?
 
 */
 
-#include <hardware/adc.h> // For corrected temp readings
+#include <hardware/adc.h>  // For corrected temp readings
 
-#include <SimpleShell.h> // Serial Commands/Console
-#include <ArduinoJson.h> // Load and save the settings file
-#include <LittleFS.h> // Used for FS, stores the settings file
+#include <SimpleShell.h>  // Serial Commands/Console
+#include <ArduinoJson.h>  // Load and save the settings file
+#include <LittleFS.h>     // Used for FS, stores the settings file
 
-const String FWVERS = "2.2.2"; // Firmware Version Code
+const String FWVERS = "2.2.2";  // Firmware Version Code
 
-const uint8_t GND_PIN = A0; // GND meas pin
-const uint8_t VCC_PIN = A2; // VCC meas pin
-const uint8_t VSYS_MEAS = A3; // VSYS/3
-const uint8_t VBUS_MEAS = 24; // VBUS Sense Pin
-const uint8_t PS_PIN = 23; // SMPS power save pin
+const uint8_t GND_PIN = A0;    // GND meas pin
+const uint8_t VCC_PIN = A2;    // VCC meas pin
+const uint8_t VSYS_MEAS = A3;  // VSYS/3
+const uint8_t VBUS_MEAS = 24;  // VBUS Sense Pin
+const uint8_t PS_PIN = 23;     // SMPS power save pin
 
-const uint8_t AIN_PIN = A1; // Analog input pin
-const uint8_t INT_PIN = 16; // Signal interrupt pin
-const uint8_t RST_PIN = 22; // Peak detector MOSFET reset pin
-const uint8_t LED = 25; // LED on GP25
+const uint8_t AIN_PIN = A1;  // Analog input pin
+const uint8_t INT_PIN = 16;  // Signal interrupt pin
+const uint8_t RST_PIN = 22;  // Peak detector MOSFET reset pin
+const uint8_t LED = 25;      // LED on GP25
 
 /*
     BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
-const float VREF_VOLTAGE = 3.3; // ADC reference voltage, defaults 3.3, with reference 3.0
-const uint8_t ADC_RES = 12; // Use 12-bit ADC resolution
-const uint16_t EVENT_SPACE = 50000; // Buffer this many events for Serial.print
+const float VREF_VOLTAGE = 3.3;       // ADC reference voltage, defaults 3.3, with reference 3.0
+const uint8_t ADC_RES = 12;           // Use 12-bit ADC resolution
+const uint16_t EVENT_BUFFER = 50000;  // Buffer this many events for Serial.print
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
-  volatile bool ser_output = true; // Wheter data should be Serial.println'ed
-  volatile bool geiger_mode = false; // Measure only cps, not energy
-  volatile bool print_spectrum = false; // Print the finishes spectrum, not just
-  volatile bool auto_reset = true; // Periodically reset S&H circuit
-  volatile uint8_t meas_avg = 5; // Number of meas. averaged each event, higher=longer dead time
+  volatile bool ser_output = true;       // Wheter data should be Serial.println'ed
+  volatile bool geiger_mode = false;     // Measure only cps, not energy
+  volatile bool print_spectrum = false;  // Print the finishes spectrum, not just
+  volatile bool auto_reset = true;       // Periodically reset S&H circuit
+  volatile uint8_t meas_avg = 5;         // Number of meas. averaged each event, higher=longer dead time
 };
 /*
    END USER SETTINGS
 */
 
-volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))]; // Holds the spectrum histogram written to flash
-volatile uint16_t events[EVENT_SPACE]; // Buffer array for single events
-volatile uint16_t event_position = 0;
+volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the spectrum histogram written to flash
+volatile uint16_t events[EVENT_BUFFER];                 // Buffer array for single events
+volatile uint16_t event_position = 0;                   // Target index in events array
 
-volatile Config conf; // Configuration object
+volatile Config conf;  // Configuration object
 
 
 void serialInterruptMode(String *args) {
@@ -152,14 +153,14 @@ void measAveraging(String *args) {
 
 float analogReadTempCorrect() {
   // Copy from arduino-pico/cores/rp2040/wiring_analog.cpp
-  adc_init(); // Init ADC just to be sure
+  adc_init();  // Init ADC just to be sure
   adc_set_temp_sensor_enabled(true);
 
   // ## ADDED: Disable interrupts shortly
   detachInterrupt(digitalPinToInterrupt(INT_PIN));
   //digitalWrite(PS_PIN, HIGH); // Disable Power Save For Better Noise
 
-  delay(1); // Allow things to settle.  Without this, readings can be erratic
+  delay(1);  // Allow things to settle.  Without this, readings can be erratic
   adc_select_input(4);
   int v = adc_read();
 
@@ -264,7 +265,7 @@ void rebootNow(String *args) {
 
 
 void serialEvent() {
-  Shell.handleEvent(); // Handle the serial input
+  Shell.handleEvent();  // Handle the serial input
 }
 
 
@@ -278,7 +279,7 @@ void saveSetting() {
     return;
   }
 
-  const int capacity = JSON_ARRAY_SIZE(5); // Number of settings that will be saved
+  const int capacity = JSON_ARRAY_SIZE(5);  // Number of settings that will be saved
   //DynamicJsonDocument doc(72);
   StaticJsonDocument<capacity> doc;
 
@@ -288,7 +289,7 @@ void saveSetting() {
   doc["auto_reset"] = conf.auto_reset;
   doc["meas_avg"] = conf.meas_avg;
 
-  serializeJson(doc, saveFile); //serializeJsonPretty()
+  serializeJson(doc, saveFile);  //serializeJsonPretty()
 
   saveFile.close();
   Serial.println("Successfuly written config to flash.");
@@ -329,18 +330,18 @@ void readSetting() {
 }
 
 
-void resetSampleHold() { // Reset sample and hold circuit
+void resetSampleHold() {  // Reset sample and hold circuit
   digitalWrite(RST_PIN, HIGH);
-  delayMicroseconds(1); // Discharge for 1 µs, actually takes 2 µs - enough for a discharge
+  delayMicroseconds(1);  // Discharge for 1 µs, actually takes 2 µs - enough for a discharge
   digitalWrite(RST_PIN, LOW);
 }
 
 
 void eventInt() {
-  digitalWrite(LED, HIGH); // Activity LED
+  digitalWrite(LED, HIGH);  // Activity LED
 
   uint16_t mean = 0;
-  delayMicroseconds(1); // Wait to allow the sample/hold circuit to stabilize
+  delayMicroseconds(1);  // Wait to allow the sample/hold circuit to stabilize
 
   if (!conf.geiger_mode) {
     uint16_t meas[conf.meas_avg];
@@ -359,35 +360,36 @@ void eventInt() {
       // See RP2040 datasheet Appendix B: Errata
       if (meas[i] == 511 || meas[i] == 1535 || meas[i] == 2559 || meas[i] == 3583) {
         invalid++;
-        continue; // Discard
+        continue;  // Discard
       }
       avg += meas[i];
     }
 
-    if (conf.meas_avg - invalid <= 0) { // Catch divide by zero crash
+    if (conf.meas_avg - invalid <= 0) {  // Catch divide by zero crash
       avg = 0;
     } else {
       avg /= (conf.meas_avg - invalid);
     }
 
-    mean = round(avg); // float --> uint16_t ADC channel
-  }
+    mean = round(avg);  // float --> uint16_t ADC channel
+    // Use median instead of average?
 
-  /*
-    float var = 0.0;
-    for (size_t i = 0; i < conf.meas_avg; i++) {
-    var += sq(meas[i] - mean);
-    }
-    var /= conf.meas_avg;
-  */
+    /*
+      float var = 0.0;
+      for (size_t i = 0; i < conf.meas_avg; i++) {
+      var += sq(meas[i] - mean);
+      }
+      var /= conf.meas_avg;
+    */
 
-  if (conf.ser_output) {
-    events[event_position] = mean;
-    spectrum[mean] += 1;
-    //Serial.print(' ' + String(sqrt(var)) + ';');
-    //Serial.println(' ' + String(sqrt(var)/mean) + ';');
-    if (event_position < EVENT_SPACE - 1) { // Only increment if
-      event_position++;
+    if (conf.ser_output) {
+      events[event_position] = mean;
+      spectrum[mean] += 1;
+      //Serial.print(' ' + String(sqrt(var)) + ';');
+      //Serial.println(' ' + String(sqrt(var)/mean) + ';');
+      if (event_position < EVENT_BUFFER - 1) {  // Only increment if
+        event_position++;
+      }
     }
   }
 
@@ -400,16 +402,16 @@ void eventInt() {
     SETUP FUNCTIONS
 */
 void setup() {
-  rp2040.wdt_begin(5000); // Enable hardware watchdog to check every 5s
+  rp2040.wdt_begin(5000);  // Enable hardware watchdog to check every 5s
 
   pinMode(INT_PIN, INPUT);
   pinMode(RST_PIN, OUTPUT_12MA);
   pinMode(AIN_PIN, INPUT);
-  pinMode(LED, OUTPUT_4MA);
+  pinMode(LED, OUTPUT);
 
   analogReadResolution(ADC_RES);
 
-  resetSampleHold(); // Reset before enabling the interrupts to avoid jamming
+  resetSampleHold();  // Reset before enabling the interrupts to avoid jamming
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
 }
@@ -417,7 +419,7 @@ void setup() {
 
 void setup1() {
   pinMode(PS_PIN, OUTPUT_4MA);
-  digitalWrite(PS_PIN, LOW); // Enable Power-Saving
+  digitalWrite(PS_PIN, LOW);  // Enable Power-Saving
 
   pinMode(GND_PIN, INPUT);
   pinMode(VCC_PIN, INPUT);
@@ -447,9 +449,9 @@ void setup1() {
     cfg.setAutoFormat(false);
     LittleFS.setConfig(cfg);
   */
-  LittleFS.begin(); // Starts FileSystem, autoformats if no FS is detected
+  LittleFS.begin();  // Starts FileSystem, autoformats if no FS is detected
 
-  readSetting(); // Read all the detector settings from flash
+  readSetting();  // Read all the detector settings from flash
   /*
     Serial.begin();
     while(!Serial) {
@@ -484,20 +486,19 @@ void loop1() {
           Serial.print(String(spectrum[index]) + ";");
           //spectrum[index] = 0;
         }
-      } else {
-        if (event_position > 0) {
-          for (uint16_t index = 0; index < event_position; index++) {
-            Serial.print(String(events[index]) + ";");
-          }
+        Serial.println();
+      } else if (event_position > 0) {
+        for (uint16_t index = 0; index < event_position; index++) {
+          Serial.print(String(events[index]) + ";");
         }
+        Serial.println();
       }
-      Serial.println();
     }
 
     event_position = 0;
   }
 
-  rp2040.wdt_reset(); // Reset watchdog, everything is fine
+  rp2040.wdt_reset();  // Reset watchdog, everything is fine
 
-  delay(1000); // Wait for 1 sec, better: sleep for power saving?!
+  delay(1000);  // Wait for 1 sec, better: sleep for power saving?!
 }
