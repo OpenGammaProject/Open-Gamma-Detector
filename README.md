@@ -175,13 +175,13 @@ Using multiple detector boards with updated firmware should be able to deliver s
 
 At the moment, though, I couldn't get a coincidence mode feature running due to misc timing issues. There might be a firmware update in the future to implement this feature.
 
-#### Cooling the SiPM
+### Cooling the SiPM
 
 During operation all the electronics including the photomultiplier naturally slightly heat up. Due to the detector board being connected only by a single pin connector all of it's heat shouldn't affect the SiPM PCB much if at all. Also due to the SiPM being connected to a rather big copper area of the PCB it's heat should not increase the temperature significantly over ambient. So air or water cooling alone won't improve performance considerably. However, you could cool the SiPM PCB with a peltier module to sub-ambient temperatures. According to the [datasheet AND9770 (Figure 27)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF) every 10°C reduction in temperature decreases the dark count rate by 50%! But be sure to correct the SiPM voltage (overvoltage) in this case as it also changes with temperature.
 
 Note that the required breakdown voltage of the SiPM increases linearly with 21.5 mV/°C, see the [C-Series SiPM Sensors Datasheet](https://www.onsemi.com/pdf/datasheet/microc-series-d.pdf). This means that you would also need to temperature correct the PSU voltage if you wanted to use it with considerably different temperatures.
 
-#### Shielding Background Radiation
+### Shielding Background Radiation
 
 Shielding the ambient background can be done ideally using a wide enough layer of lead (bricks) all around the detector with a thin layer of lower-Z material on the inside (to avoid backscattering) such as copper. The SiPM and the sample can then be put into the structure to get the best measurements possible (low background).
 
