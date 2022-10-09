@@ -147,13 +147,17 @@ Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing a
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
-Spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µC of Am-241. Gamma peaks at 26.34 and 59.54 keV:
+Spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µCi of Am-241. Gamma peaks at 26.34 and 59.54 keV:
 
 ![Am-176 spectrum](docs/am-241.png)
 
 Spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series:
 
 ![Uraninite Glaze](docs/glaze.png)
+
+Spectrum of a Na-22 test source, about ~2 µCi. You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy):
+
+![Na-22](docs/na-22.png)
 
 ## Known Limitations
 
