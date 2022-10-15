@@ -21,11 +21,12 @@
 
 #include <hardware/adc.h>  // For corrected temp readings
 
-#include <SimpleShell.h>  // Serial Commands/Console
-#include <ArduinoJson.h>  // Load and save the settings file
-#include <LittleFS.h>     // Used for FS, stores the settings file
+#include <SimpleShell.h>       // Serial Commands/Console
+#include <ArduinoJson.h>       // Load and save the settings file
+#include <LittleFS.h>          // Used for FS, stores the settings file
+#include <Adafruit_SSD1306.h>  // Used for OLEDs
 
-const String FWVERS = "2.2.2";  // Firmware Version Code
+const String FWVERS = "2.3.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -45,6 +46,9 @@ const uint8_t LED = 25;      // LED on GP25
 const float VREF_VOLTAGE = 3.3;       // ADC reference voltage, defaults 3.3, with reference 3.0
 const uint8_t ADC_RES = 12;           // Use 12-bit ADC resolution
 const uint16_t EVENT_BUFFER = 50000;  // Buffer this many events for Serial.print
+const uint8_t SCREEN_WIDTH = 128;     // OLED display width, in pixels
+const uint8_t SCREEN_HEIGHT = 64;     // OLED display height, in pixels
+const uint8_t SCREEN_ADDRESS = 0x3C;  //< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -53,6 +57,7 @@ struct Config {
   volatile bool print_spectrum = false;  // Print the finishes spectrum, not just
   volatile bool auto_reset = true;       // Periodically reset S&H circuit
   volatile uint8_t meas_avg = 5;         // Number of meas. averaged each event, higher=longer dead time
+  volatile bool enable_display = true;   // Enable I2C Display, see settings above
 };
 /*
    END USER SETTINGS
@@ -63,6 +68,7 @@ volatile uint16_t events[EVENT_BUFFER];                 // Buffer array for sing
 volatile uint16_t event_position = 0;                   // Target index in events array
 
 volatile Config conf;  // Configuration object
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 
 void serialInterruptMode(String *args) {
@@ -102,6 +108,26 @@ void toggleAutoReset(String *args) {
   } else if (command == "disable") {
     conf.auto_reset = false;
     Serial.println("Disabled auto-reset.");
+  } else {
+    Serial.println("No valid input '" + command + "'!");
+    Serial.println("Must be 'enable' or 'disable'.");
+    return;
+  }
+  saveSetting();
+}
+
+
+void setDisplay(String *args) {
+  String command = *args;
+  command.replace("set display -", "");
+  command.trim();
+
+  if (command == "enable") {
+    conf.enable_display = true;
+    Serial.println("Enabled display output. You might need to reset the device.");
+  } else if (command == "disable") {
+    conf.enable_display = false;
+    Serial.println("Disabled display output. You might need to reset the device.");
   } else {
     Serial.println("No valid input '" + command + "'!");
     Serial.println("Must be 'enable' or 'disable'.");
@@ -251,6 +277,7 @@ void resetSettings(String *args) {
   conf.print_spectrum = defaultConf.print_spectrum;
   conf.auto_reset = defaultConf.auto_reset;
   conf.meas_avg = defaultConf.meas_avg;
+  conf.enable_display = defaultConf.enable_display;
   Serial.println("Applied default settings.");
   saveSetting();
 }
@@ -279,15 +306,14 @@ void saveSetting() {
     return;
   }
 
-  const int capacity = JSON_ARRAY_SIZE(5);  // Number of settings that will be saved
-  //DynamicJsonDocument doc(72);
-  StaticJsonDocument<capacity> doc;
+  DynamicJsonDocument doc(1024);
 
   doc["ser_output"] = conf.ser_output;
   doc["geiger_mode"] = conf.geiger_mode;
   doc["print_spectrum"] = conf.print_spectrum;
   doc["auto_reset"] = conf.auto_reset;
   doc["meas_avg"] = conf.meas_avg;
+  doc["enable_display"] = conf.enable_display;
 
   serializeJson(doc, saveFile);  //serializeJsonPretty()
 
@@ -326,6 +352,8 @@ void readSetting() {
   conf.print_spectrum = doc["print_spectrum"];
   conf.auto_reset = doc["auto_reset"];
   conf.meas_avg = doc["meas_avg"];
+  conf.enable_display = doc["enable_display"];
+
   Serial.println("Successfuly loaded config from flash.");
 }
 
@@ -334,6 +362,48 @@ void resetSampleHold() {  // Reset sample and hold circuit
   digitalWrite(RST_PIN, HIGH);
   delayMicroseconds(1);  // Discharge for 1 µs, actually takes 2 µs - enough for a discharge
   digitalWrite(RST_PIN, LOW);
+}
+
+
+void drawSpectrum() {
+  const uint8_t BINSIZE = uint16_t(pow(2, ADC_RES)) / uint16_t(SCREEN_WIDTH);
+  uint32_t eventBins[SCREEN_WIDTH];
+  uint16_t offset = 0;
+  uint32_t max_num = 0;
+  uint32_t total = 0;
+
+  for (uint8_t i = 0; i < SCREEN_WIDTH; i++) {
+    uint32_t totalValue = 0;
+
+    for (uint16_t j = offset; j < offset + BINSIZE; j++) {
+      totalValue += spectrum[j];
+    }
+
+    offset += BINSIZE;
+    eventBins[i] = totalValue;
+
+    if (totalValue > max_num) {
+      max_num = totalValue;
+    }
+
+    total += totalValue;
+  }
+
+  float scale_factor = float(SCREEN_HEIGHT - 10) / float(max_num);
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+
+  display.print("Mean: ");
+  display.print(total * 1000.0 / millis());
+  display.println(" cps");
+
+  for (uint8_t i = 0; i < SCREEN_WIDTH; i++) {
+    uint8_t val = round(eventBins[i] * scale_factor);
+    display.drawLine(i, SCREEN_HEIGHT - 1, i, SCREEN_HEIGHT - val, SSD1306_WHITE);
+  }
+
+  display.display();
 }
 
 
@@ -382,7 +452,7 @@ void eventInt() {
       var /= conf.meas_avg;
     */
 
-    if (conf.ser_output) {
+    if (conf.ser_output || conf.enable_display) {
       events[event_position] = mean;
       spectrum[mean] += 1;
       //Serial.print(' ' + String(sqrt(var)) + ';');
@@ -433,6 +503,7 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(deviceInfo, F("read info")));
   Shell.registerCommand(new ShellCommand(fsInfo, F("read fs")));
 
+  Shell.registerCommand(new ShellCommand(setDisplay, F("set display -")));
   Shell.registerCommand(new ShellCommand(toggleGeigerMode, F("set mode -")));
   Shell.registerCommand(new ShellCommand(serialInterruptMode, F("set int -")));
   Shell.registerCommand(new ShellCommand(toggleAutoReset, F("set reset -")));
@@ -461,6 +532,23 @@ void setup1() {
 
   Serial.println("Welcome to the Open Gamma Detector!");
   Serial.println("Firmware Version " + FWVERS);
+
+  if (conf.enable_display) {
+    if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+      Serial.println("Failed communication with the display. Maybe the I2C address is incorrect?");
+      conf.enable_display = false;
+    } else {
+      display.setTextSize(1);  // Draw 2X-scale text
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0, 0);
+
+      display.clearDisplay();
+      display.println("Open Gamma Detector");
+      display.print("FW ");
+      display.println(FWVERS);
+      display.display();
+    }
+  }
 }
 
 /*
@@ -473,6 +561,8 @@ void loop() {
   if (conf.auto_reset) {
     resetSampleHold();
   }
+
+  rp2040.wdt_reset();  // Reset watchdog, everything is fine
 
   delayMicroseconds(500);
 }
@@ -498,7 +588,9 @@ void loop1() {
     event_position = 0;
   }
 
-  rp2040.wdt_reset();  // Reset watchdog, everything is fine
+  if (conf.enable_display) {
+    drawSpectrum();
+  }
 
   delay(1000);  // Wait for 1 sec, better: sleep for power saving?!
 }
