@@ -26,6 +26,7 @@ Here are some of the most important key facts:
 * Easily programmable using the standard Arduino IDE.
 * Low-voltage device: No HV needed for a photomultiplier tube.
 * SiPM voltage range from 28 V to 33 V.
+* OLED support out of the box
 * Low power consumption: ~15 mA @ 5V in standard operation.
 * Adjustable preamp gain for the SiPM pulses (affects energy range & resolution).
 * Customizable energy range with 4096 ADC channels.
