@@ -26,7 +26,7 @@
 #include <LittleFS.h>          // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>  // Used for OLEDs
 
-const String FWVERS = "2.3.0";  // Firmware Version Code
+const String FWVERS = "2.3.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -34,10 +34,11 @@ const uint8_t VSYS_MEAS = A3;  // VSYS/3
 const uint8_t VBUS_MEAS = 24;  // VBUS Sense Pin
 const uint8_t PS_PIN = 23;     // SMPS power save pin
 
-const uint8_t AIN_PIN = A1;  // Analog input pin
-const uint8_t INT_PIN = 16;  // Signal interrupt pin
-const uint8_t RST_PIN = 22;  // Peak detector MOSFET reset pin
-const uint8_t LED = 25;      // LED on GP25
+const uint8_t AIN_PIN = A1;         // Analog input pin
+const uint8_t INT_PIN = 16;         // Signal interrupt pin
+const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
+const uint8_t LED = 25;             // LED on GP25
+const uint16_t EVT_RESET_C = 1000;  // Number of counts after which the OLED stats will be reset
 
 /*
     BEGIN USER SETTINGS
@@ -66,6 +67,7 @@ struct Config {
 volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the spectrum histogram written to flash
 volatile uint16_t events[EVENT_BUFFER];                 // Buffer array for single events
 volatile uint16_t event_position = 0;                   // Target index in events array
+volatile uint32_t last_time = 0;                        // Last timestamp for OLED refresh
 
 volatile Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -261,11 +263,17 @@ void getSpectrumData(String *args) {
 }
 
 
-void clearSpectrumData(String *args) {
-  Serial.println("Clearing spectrum...");
+void clearSpectrum() {
   for (size_t i = 0; i < pow(2, ADC_RES); i++) {
     spectrum[i] = 0;
   }
+}
+
+
+void clearSpectrumData(String *args) {
+  Serial.println("Clearing spectrum...");
+  last_time = millis();
+  clearSpectrum();
   Serial.println("Cleared!");
 }
 
@@ -390,13 +398,20 @@ void drawSpectrum() {
   }
 
   float scale_factor = float(SCREEN_HEIGHT - 10) / float(max_num);
+  uint32_t time_delta = millis() - last_time;
 
   display.clearDisplay();
   display.setCursor(0, 0);
 
-  display.print("Mean: ");
-  display.print(total * 1000.0 / millis());
-  display.println(" cps");
+  display.print(total * 1000.0 / time_delta);
+  display.print(" cps");
+  display.setCursor(SCREEN_WIDTH - 36, 0);
+  display.print(analogReadTempCorrect(), 1);
+  display.println(" C");
+
+  display.setCursor(SCREEN_WIDTH - 36, 8);
+  display.print(time_delta / 1000.0, 1);
+  display.println(" s");
 
   for (uint8_t i = 0; i < SCREEN_WIDTH; i++) {
     uint8_t val = round(eventBins[i] * scale_factor);
@@ -404,6 +419,11 @@ void drawSpectrum() {
   }
 
   display.display();
+
+  if (total > EVT_RESET_C) {
+    last_time = millis();
+    clearSpectrum();
+  }
 }
 
 
