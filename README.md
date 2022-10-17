@@ -122,6 +122,7 @@ Commands:
 - ``read spectrum`` reads the histogram data of all energy measurements since the last clear (start-up).
 - ``read info`` prints miscellaneous information about the firmware and the state of the device.
 - ``read fs`` prints miscellaneous information about the filesystem used for saving the config.
+- ``set display -`` either `enable` or `disable` to enable (default) OLED support or force disable it.
 - ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a ~3x higher saturation limit.
 - ``set int -`` changes or disables the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `set int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
 - ``set reset -`` changes or disables a periodic reset of the sample and hold circuit. This is enabled by default to help with mains interference to the capacitor when the detector is not shielded properly. Takes `enable` or `disable` as parameters. Adds an additional 4 ms dead time when enabled.
