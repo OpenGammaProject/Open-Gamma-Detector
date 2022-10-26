@@ -16,6 +16,7 @@
 
    TODO: There are still some ADC issues?
    TODO: Coincidence measurements?
+   TODO: Sleep modes instead of delays
 
 */
 
@@ -26,7 +27,7 @@
 #include <LittleFS.h>          // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>  // Used for OLEDs
 
-const String FWVERS = "2.3.1";  // Firmware Version Code
+const String FWVERS = "2.3.2";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -560,13 +561,13 @@ void setup1() {
     } else {
       display.setTextSize(1);  // Draw 2X-scale text
       display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0, 0);
 
       display.clearDisplay();
       display.println("Open Gamma Detector");
       display.print("FW ");
       display.println(FWVERS);
       display.display();
+      delay(1000);
     }
   }
 }
