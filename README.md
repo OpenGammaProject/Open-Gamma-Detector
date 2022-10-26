@@ -23,7 +23,7 @@ Here are some of the most important key facts:
 
 * Compact design: Total size 120 x 50 mm. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount the scintillator.
 * All-in-one detector: No external parts (e.g. sound card) required to record gamma spectra.
-* Easily programmable using the standard Arduino IDE.
+* Easily programmable using the standard Arduino IDE or ready-to-use firmware files.
 * Low-voltage device: No HV needed for a photomultiplier tube.
 * SiPM voltage range from 28 V to 33 V.
 * OLED support out of the box.
@@ -93,9 +93,21 @@ For the best performance, you will need to put your detector into a metal enclos
 
 ### Raspberry Pi Pico
 
-Programming is done using the Arduino IDE. The so-called "sketch" (i.e. the programmed software) can be found in `/arduino`.
+Programming is done using the Arduino IDE. The so-called "sketch" (i.e. the programmed software) can be found in `/software/opengamma_pico/`.
 
-To program the Pico you will need the following board configs:
+For convenience there is also a ready-to-use default firmware UF2 located in `/software/`, which is targeted at the standard Open Gamma Detector that you can build using the instructions or buy on the makerfabs store.
+
+#### Firmware File
+
+This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector bought from the makerfabs store.
+
+To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-USB connection. A file manager window should now pop up. Drag and drop the `opengamma_pico-XXX.uf2` file that you downloaded into this directory. The device will restart automatically once the transmission is completed and is ready to use!
+
+If you want to update or re-flash the firmware, press and hold the `BOOTSEL` button on the Raspberry Pi Pico _while_ plugging it in the USB port of your computer. A file manager windows should once again pop up and you can let go of the button. Drag and drop the UF2 file just like above.
+
+#### Arduino IDE
+
+To program the Pico you will need the following board configs in the latest release of the Arduino IDE:
 
 * [Arduino-Pico](https://github.com/earlephilhower/arduino-pico)
 
