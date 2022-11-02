@@ -17,6 +17,7 @@
    TODO: There are still some ADC issues?
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
+   TODO: Add more OLED features?
 
 */
 
