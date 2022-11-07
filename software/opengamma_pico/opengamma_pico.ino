@@ -60,7 +60,7 @@ struct Config {
   volatile bool print_spectrum = false;  // Print the finishes spectrum, not just
   volatile bool auto_reset = true;       // Periodically reset S&H circuit
   volatile uint8_t meas_avg = 5;         // Number of meas. averaged each event, higher=longer dead time
-  volatile bool enable_display = false;   // Enable I2C Display, see settings above
+  volatile bool enable_display = false;  // Enable I2C Display, see settings above
 };
 /*
    END USER SETTINGS
