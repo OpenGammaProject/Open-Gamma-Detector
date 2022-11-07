@@ -28,7 +28,7 @@
 #include <LittleFS.h>          // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>  // Used for OLEDs
 
-const String FWVERS = "2.3.2";  // Firmware Version Code
+const String FWVERS = "2.3.3";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -48,7 +48,7 @@ const uint16_t EVT_RESET_C = 1000;  // Number of counts after which the OLED sta
 // These are the default settings that can only be changed by reflashing the Pico
 const float VREF_VOLTAGE = 3.3;       // ADC reference voltage, defaults 3.3, with reference 3.0
 const uint8_t ADC_RES = 12;           // Use 12-bit ADC resolution
-const uint16_t EVENT_BUFFER = 50000;  // Buffer this many events for Serial.print
+const uint32_t EVENT_BUFFER = 50000;  // Buffer this many events for Serial.print
 const uint8_t SCREEN_WIDTH = 128;     // OLED display width, in pixels
 const uint8_t SCREEN_HEIGHT = 64;     // OLED display height, in pixels
 const uint8_t SCREEN_ADDRESS = 0x3C;  //< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
@@ -60,7 +60,7 @@ struct Config {
   volatile bool print_spectrum = false;  // Print the finishes spectrum, not just
   volatile bool auto_reset = true;       // Periodically reset S&H circuit
   volatile uint8_t meas_avg = 5;         // Number of meas. averaged each event, higher=longer dead time
-  volatile bool enable_display = true;   // Enable I2C Display, see settings above
+  volatile bool enable_display = false;   // Enable I2C Display, see settings above
 };
 /*
    END USER SETTINGS
@@ -458,9 +458,9 @@ void eventInt() {
     }
 
     if (conf.meas_avg - invalid <= 0) {  // Catch divide by zero crash
-      avg = 0;
+      avg = 0.0;
     } else {
-      avg /= (conf.meas_avg - invalid);
+      avg /= conf.meas_avg - invalid;
     }
 
     mean = round(avg);  // float --> uint16_t ADC channel
@@ -473,15 +473,17 @@ void eventInt() {
       }
       var /= conf.meas_avg;
     */
+  }
 
-    if (conf.ser_output || conf.enable_display) {
-      events[event_position] = mean;
-      spectrum[mean] += 1;
-      //Serial.print(' ' + String(sqrt(var)) + ';');
-      //Serial.println(' ' + String(sqrt(var)/mean) + ';');
-      if (event_position < EVENT_BUFFER - 1) {  // Only increment if
-        event_position++;
-      }
+  if (conf.ser_output || conf.enable_display) {
+    events[event_position] = mean;
+    spectrum[mean] += 1;
+    //Serial.print(' ' + String(sqrt(var)) + ';');
+    //Serial.println(' ' + String(sqrt(var)/mean) + ';');
+    if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
+      event_position = 0;
+    } else {
+      event_position++;
     }
   }
 
@@ -599,9 +601,10 @@ void loop1() {
           //spectrum[index] = 0;
         }
         Serial.println();
-      } else if (event_position > 0) {
+      } else if (event_position > 0 && event_position <= EVENT_BUFFER) {
         for (uint16_t index = 0; index < event_position; index++) {
-          Serial.print(String(events[index]) + ";");
+          Serial.print(events[index]);
+          Serial.print(";");
         }
         Serial.println();
       }
