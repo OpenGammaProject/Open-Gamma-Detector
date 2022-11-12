@@ -41,7 +41,7 @@ const uint8_t AIN_PIN = A1;         // Analog input pin
 const uint8_t INT_PIN = 16;         // Signal interrupt pin
 const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
 const uint8_t LED = 25;             // LED on GP25
-const uint16_t EVT_RESET_C = 1000;  // Number of counts after which the OLED stats will be reset
+const uint16_t EVT_RESET_C = 2000;  // Number of counts after which the OLED stats will be reset
 
 /*
     BEGIN USER SETTINGS
@@ -380,13 +380,13 @@ void resetSampleHold() {  // Reset sample and hold circuit
 
 
 void drawSpectrum() {
-  const uint8_t BINSIZE = round(pow(2, ADC_RES) / SCREEN_WIDTH);
+  const uint16_t BINSIZE = round(pow(2, ADC_RES) / SCREEN_WIDTH);
   uint32_t eventBins[SCREEN_WIDTH];
   uint16_t offset = 0;
   uint32_t max_num = 0;
   uint32_t total = 0;
 
-  for (uint8_t i = 0; i < SCREEN_WIDTH; i++) {
+  for (uint16_t i = 0; i < SCREEN_WIDTH; i++) {
     uint32_t totalValue = 0;
 
     for (uint16_t j = offset; j < offset + BINSIZE; j++) {
@@ -407,7 +407,7 @@ void drawSpectrum() {
     return;
   }
 
-  float scale_factor = float(SCREEN_HEIGHT - 10) / float(max_num);
+  float scale_factor = float(SCREEN_HEIGHT - 11) / float(max_num);
   uint32_t time_delta = millis() - last_time;
 
   if (time_delta <= 0) {  // Catch divide by zero
@@ -430,9 +430,6 @@ void drawSpectrum() {
   display.print(temp);
   display.println(" C");
 
-  display.print(millis() / 1000.0 / 60.0, 0);
-  display.println(" m");
-
   uint32_t seconds_running = round(time_delta / 1000.0);
 
   if (seconds_running < 10) {
@@ -447,12 +444,11 @@ void drawSpectrum() {
   display.print(seconds_running);
   display.println(" s");
 
-  display.display();
-
-  for (uint8_t i = 0; i < SCREEN_WIDTH; i++) {
-    uint8_t val = round(eventBins[i] * scale_factor);
-    display.drawLine(i, SCREEN_HEIGHT - 1, i, SCREEN_HEIGHT - val, SSD1306_WHITE);
+  for (uint16_t i = 0; i < SCREEN_WIDTH; i++) {
+    uint16_t val = round(eventBins[i] * scale_factor);
+    display.drawFastVLine(i, SCREEN_HEIGHT - val - 1, val, SSD1306_WHITE);
   }
+  display.drawFastHLine(0, SCREEN_HEIGHT - 1, SCREEN_WIDTH, SSD1306_WHITE);
 
   display.display();
 
