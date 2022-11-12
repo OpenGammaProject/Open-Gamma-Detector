@@ -18,6 +18,7 @@
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
    TODO: Add more OLED features?
+   TODO: Read Settings function
 
 */
 
@@ -28,7 +29,7 @@
 #include <LittleFS.h>          // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>  // Used for OLEDs
 
-const String FWVERS = "2.3.3";  // Firmware Version Code
+const String FWVERS = "2.3.4";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -182,24 +183,27 @@ void measAveraging(String *args) {
 
 
 float analogReadTempCorrect() {
+  digitalWrite(RST_PIN, HIGH);  // ADDED: Disable peak&hold
+
   // Copy from arduino-pico/cores/rp2040/wiring_analog.cpp
   adc_init();  // Init ADC just to be sure
   adc_set_temp_sensor_enabled(true);
 
-  // ## ADDED: Disable interrupts shortly
-  detachInterrupt(digitalPinToInterrupt(INT_PIN));
   //digitalWrite(PS_PIN, HIGH); // Disable Power Save For Better Noise
+  //detachInterrupt(digitalPinToInterrupt(INT_PIN)); // ADDED: Disable interrupts shortly
 
   delay(1);  // Allow things to settle.  Without this, readings can be erratic
   adc_select_input(4);
-  int v = adc_read();
+  uint16_t v = adc_read();
 
-  // ## ADDED: Reset S&H after the detached interrupt and re-enable interrupts
   //digitalWrite(PS_PIN, LOW); // Re-Enable Power Saving
-  resetSampleHold();
-  attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
+  //resetSampleHold(); // ADDED: Reset S&H after the detached interrupt and re-enable interrupts
+  //attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
 
   adc_set_temp_sensor_enabled(false);
+
+  digitalWrite(RST_PIN, LOW);  // ADDED: Enable peak&hold again
+
   return 27.0 - ((v * VREF_VOLTAGE / (pow(2, ADC_RES) - 1)) - 0.706) / 0.001721;
 }
 
@@ -376,7 +380,7 @@ void resetSampleHold() {  // Reset sample and hold circuit
 
 
 void drawSpectrum() {
-  const uint8_t BINSIZE = uint16_t(pow(2, ADC_RES)) / uint16_t(SCREEN_WIDTH);
+  const uint8_t BINSIZE = round(pow(2, ADC_RES) / SCREEN_WIDTH);
   uint32_t eventBins[SCREEN_WIDTH];
   uint16_t offset = 0;
   uint32_t max_num = 0;
@@ -399,21 +403,51 @@ void drawSpectrum() {
     total += totalValue;
   }
 
+  if (max_num <= 0) {  // No events accumulated, catch divide by zero
+    return;
+  }
+
   float scale_factor = float(SCREEN_HEIGHT - 10) / float(max_num);
   uint32_t time_delta = millis() - last_time;
+
+  if (time_delta <= 0) {  // Catch divide by zero
+    return;
+  }
 
   display.clearDisplay();
   display.setCursor(0, 0);
 
   display.print(total * 1000.0 / time_delta);
   display.print(" cps");
-  display.setCursor(SCREEN_WIDTH - 36, 0);
-  display.print(analogReadTempCorrect(), 1);
+
+  int16_t temp = round(analogReadTempCorrect());
+
+  if (temp < 0) {
+    display.setCursor(SCREEN_WIDTH - 30, 0);
+  } else {
+    display.setCursor(SCREEN_WIDTH - 24, 0);
+  }
+  display.print(temp);
   display.println(" C");
 
-  display.setCursor(SCREEN_WIDTH - 36, 8);
-  display.print(time_delta / 1000.0, 1);
+  display.print(millis() / 1000.0 / 60.0, 0);
+  display.println(" m");
+
+  uint32_t seconds_running = round(time_delta / 1000.0);
+
+  if (seconds_running < 10) {
+    display.setCursor(SCREEN_WIDTH - 18, 8);
+  } else if (seconds_running < 100) {
+    display.setCursor(SCREEN_WIDTH - 24, 8);
+  } else if (seconds_running < 1000) {
+    display.setCursor(SCREEN_WIDTH - 30, 8);
+  } else {
+    display.setCursor(SCREEN_WIDTH - 36, 8);
+  }
+  display.print(seconds_running);
   display.println(" s");
+
+  display.display();
 
   for (uint8_t i = 0; i < SCREEN_WIDTH; i++) {
     uint8_t val = round(eventBins[i] * scale_factor);
