@@ -4,6 +4,8 @@ Here are all the parts you need to build all the different 3D printed enclosures
 
 The case is designed to fit a scintillator with a maximum size of 5 x 5 x 5 cm. The USB connection will be extended to the outside via a short USB panel mount cable.
 
+All of the design work has been done by WEDBox, [box@wed.ch](mailto:box@wed.ch), many thanks!
+
 ## Main Body
 
 ### PCB Mount
