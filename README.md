@@ -89,6 +89,14 @@ Due to the detector measuring small voltages, energy resolution being limited by
 
 For the best performance, you will need to put your detector into a metal enclosure. It doesn't need to be a thick metal case, a tin can will most likely suffice.
 
+### 3D Printed Case
+
+You can get a 3D-printable case for the Open Gamma Detector with different styles of covers.
+
+All the STL files to print the two parts (main body and cover) can be found in [/enclosure](/enclosure), as well as some more info on the necessary screws and the USB extension cable.
+
+![Inside view of the box](docs/inside_box.jpg)
+
 ## Software
 
 ### Raspberry Pi Pico
