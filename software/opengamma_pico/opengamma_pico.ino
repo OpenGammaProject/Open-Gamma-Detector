@@ -62,7 +62,7 @@ struct Config {
   volatile bool auto_reset = true;       // Periodically reset S&H circuit
   volatile size_t meas_avg = 5;          // Number of meas. averaged each event, higher=longer dead time
   volatile bool enable_display = false;  // Enable I2C Display, see settings above
-  volatile bool trng_enabled = false;     // Enable the True Random Number Generator
+  volatile bool trng_enabled = false;    // Enable the True Random Number Generator
 };
 /*
    END USER SETTINGS
