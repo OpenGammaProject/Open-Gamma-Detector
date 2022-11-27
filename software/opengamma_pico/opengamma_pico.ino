@@ -18,7 +18,6 @@
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
    TODO: Add more OLED features?
-   TODO: Read Settings function
 
 */
 
@@ -29,7 +28,7 @@
 #include <LittleFS.h>          // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>  // Used for OLEDs
 
-const String FWVERS = "2.3.4";  // Firmware Version Code
+const String FWVERS = "2.4.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -52,7 +51,8 @@ const uint8_t ADC_RES = 12;           // Use 12-bit ADC resolution
 const uint32_t EVENT_BUFFER = 50000;  // Buffer this many events for Serial.print
 const uint8_t SCREEN_WIDTH = 128;     // OLED display width, in pixels
 const uint8_t SCREEN_HEIGHT = 64;     // OLED display height, in pixels
-const uint8_t SCREEN_ADDRESS = 0x3C;  //< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+const uint8_t SCREEN_ADDRESS = 0x3C;  // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+const uint8_t TRNG_BITS = 8;          // Number of bits for each random number, max 8
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -60,8 +60,9 @@ struct Config {
   volatile bool geiger_mode = false;     // Measure only cps, not energy
   volatile bool print_spectrum = false;  // Print the finishes spectrum, not just
   volatile bool auto_reset = true;       // Periodically reset S&H circuit
-  volatile uint8_t meas_avg = 5;         // Number of meas. averaged each event, higher=longer dead time
+  volatile size_t meas_avg = 5;          // Number of meas. averaged each event, higher=longer dead time
   volatile bool enable_display = false;  // Enable I2C Display, see settings above
+  volatile bool trng_enabled = false;     // Enable the True Random Number Generator
 };
 /*
    END USER SETTINGS
@@ -71,6 +72,11 @@ volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the spectrum hi
 volatile uint16_t events[EVENT_BUFFER];                 // Buffer array for single events
 volatile uint16_t event_position = 0;                   // Target index in events array
 volatile uint32_t last_time = 0;                        // Last timestamp for OLED refresh
+
+volatile uint32_t trng_stamps[3];          // Timestamps for True Random Number Generator
+volatile uint8_t trng_index = 0;           // Timestamp index for True Random Number Generator
+volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a byte together
+volatile uint8_t num_index = 0;            // Bit index for the generated number
 
 volatile Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -164,11 +170,31 @@ void toggleGeigerMode(String *args) {
 }
 
 
+void toggleTRNG(String *args) {
+  String command = *args;
+  command.replace("set trng -", "");
+  command.trim();
+
+  if (command == "enable") {
+    conf.trng_enabled = true;
+    Serial.println("Enabled True Random Number Generator output.");
+  } else if (command == "disable") {
+    conf.trng_enabled = false;
+    Serial.println("Disabled True Random Number Generator output.");
+  } else {
+    Serial.println("No valid input '" + command + "'!");
+    Serial.println("Must be 'enable' or 'disable'.");
+    return;
+  }
+  saveSetting();
+}
+
+
 void measAveraging(String *args) {
   String command = *args;
   command.replace("set averaging -", "");
   command.trim();
-  const uint8_t number = (uint8_t)command.toInt();
+  const size_t number = command.toInt();
 
   if (number > 0) {
     conf.meas_avg = number;
@@ -208,27 +234,6 @@ float analogReadTempCorrect() {
 }
 
 
-void readTemp(String *args) {
-  Serial.print("Temperature: ");
-  Serial.print(analogReadTempCorrect(), 1);
-  Serial.println(" Celsius");
-  //Serial.println(*args); // Print the arguments we've got
-}
-
-
-void readUSB(String *args) {
-  Serial.print("USB Connection: ");
-  Serial.println(digitalRead(VBUS_MEAS));
-}
-
-
-void readSupplyVoltage(String *args) {
-  Serial.print("Supply Voltage: ");
-  Serial.print(3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1), 3);
-  Serial.println(" V");
-}
-
-
 void deviceInfo(String *args) {
   Serial.println("=========================");
   Serial.println("-- Open Gamma Detector --");
@@ -238,6 +243,12 @@ void deviceInfo(String *args) {
   Serial.println("=========================");
   Serial.println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
   Serial.println("Runtime: " + String(millis() / 1000.0) + " s");
+  Serial.println("Temperature: " + String(round(analogReadTempCorrect())) + " °C");
+  Serial.println("USB Connection: " + String(bool(digitalRead(VBUS_MEAS))));
+
+  float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
+
+  Serial.println("Supply Voltage: " + String(round(v * 10.0) / 10.0) + " V");
   Serial.println("Free Heap Memory: " + String(rp2040.getFreeHeap()) + " B");
   Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap()) + " B");
   Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap()) + " B");
@@ -284,6 +295,38 @@ void clearSpectrumData(String *args) {
 }
 
 
+void readSettings(String *args) {
+  File saveFile = LittleFS.open("/config.json", "r");
+
+  if (!saveFile) {
+    Serial.println("Could not open save file!");
+    return;
+  }
+
+  String file = "";
+
+  while (saveFile.available()) {
+    file += saveFile.readString();
+  }
+
+  saveFile.close();
+
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, file);
+
+  if (error) {
+    Serial.print("Could not load config from json file: ");
+    Serial.println(error.f_str());
+    return;
+  }
+
+  serializeJsonPretty(doc, Serial);
+
+  Serial.println();
+  Serial.println("Read settings file successfully.");
+}
+
+
 void resetSettings(String *args) {
   const Config defaultConf;
   conf.ser_output = defaultConf.ser_output;
@@ -292,7 +335,9 @@ void resetSettings(String *args) {
   conf.auto_reset = defaultConf.auto_reset;
   conf.meas_avg = defaultConf.meas_avg;
   conf.enable_display = defaultConf.enable_display;
+  conf.trng_enabled = defaultConf.trng_enabled;
   Serial.println("Applied default settings.");
+
   saveSetting();
 }
 
@@ -328,6 +373,7 @@ void saveSetting() {
   doc["auto_reset"] = conf.auto_reset;
   doc["meas_avg"] = conf.meas_avg;
   doc["enable_display"] = conf.enable_display;
+  doc["trng_enabled"] = conf.trng_enabled;
 
   serializeJson(doc, saveFile);  //serializeJsonPretty()
 
@@ -367,6 +413,7 @@ void readSetting() {
   conf.auto_reset = doc["auto_reset"];
   conf.meas_avg = doc["meas_avg"];
   conf.enable_display = doc["enable_display"];
+  conf.trng_enabled = doc["trng_enabled"];
 
   Serial.println("Successfuly loaded config from flash.");
 }
@@ -462,6 +509,35 @@ void drawSpectrum() {
 void eventInt() {
   digitalWrite(LED, HIGH);  // Activity LED
 
+  if (conf.trng_enabled) {
+    // Calculations for the TRNG
+    if (trng_index < 2) {
+      trng_stamps[trng_index] = micros();
+      trng_index++;
+    } else {
+      trng_stamps[trng_index] = micros();
+      uint32_t delta0 = trng_stamps[1] - trng_stamps[0];
+      uint32_t delta1 = trng_stamps[2] - trng_stamps[1];
+
+      if (delta0 < delta1) {
+        bitWrite(random_num, num_index, 0);
+      } else {
+        bitWrite(random_num, num_index, 1);
+      }
+
+      if (num_index < TRNG_BITS - 1) {
+        num_index++;
+      } else {
+        Serial.print(random_num, DEC);
+        Serial.println(";");
+        random_num = 0b00000000;  // Clear number
+        num_index = 0;
+      }
+
+      trng_index = 0;
+    }
+  }
+
   uint16_t mean = 0;
   delayMicroseconds(1);  // Wait to allow the sample/hold circuit to stabilize
 
@@ -550,13 +626,12 @@ void setup1() {
   pinMode(VSYS_MEAS, INPUT);
   pinMode(VBUS_MEAS, INPUT);
 
-  Shell.registerCommand(new ShellCommand(readTemp, F("read temp")));
-  Shell.registerCommand(new ShellCommand(readSupplyVoltage, F("read vsys")));
-  Shell.registerCommand(new ShellCommand(readUSB, F("read usb")));
   Shell.registerCommand(new ShellCommand(getSpectrumData, F("read spectrum")));
+  Shell.registerCommand(new ShellCommand(readSettings, F("read settings")));
   Shell.registerCommand(new ShellCommand(deviceInfo, F("read info")));
   Shell.registerCommand(new ShellCommand(fsInfo, F("read fs")));
 
+  Shell.registerCommand(new ShellCommand(toggleTRNG, F("set trng -")));
   Shell.registerCommand(new ShellCommand(setDisplay, F("set display -")));
   Shell.registerCommand(new ShellCommand(toggleGeigerMode, F("set mode -")));
   Shell.registerCommand(new ShellCommand(serialInterruptMode, F("set int -")));
