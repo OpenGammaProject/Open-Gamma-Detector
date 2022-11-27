@@ -33,6 +33,7 @@ Here are some of the most important key facts:
 * Default Mode: Capable of at least around 60,000 cps while also measuring energy.
 * Geiger Mode: Capable of at least around 180,000 cps without energy measurement.
 * Additional broken-out power pins and I2C header for displays, etc.
+* True Random Number Generator
 
 ## Working Principle
 
@@ -99,13 +100,15 @@ All the STL files to print the two parts (main body and cover) can be found in [
 
 ## Software
 
-### Raspberry Pi Pico
+### Setup
+
+#### Raspberry Pi Pico
 
 Programming is done using the Arduino IDE. The so-called "sketch" (i.e. the programmed software) can be found in `/software/opengamma_pico/`.
 
 For convenience there is also a ready-to-use default firmware UF2 located in `/software/`, which is targeted at the standard Open Gamma Detector that you can build using the instructions or buy on the makerfabs store.
 
-#### Firmware File
+##### Firmware File
 
 This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector bought from the makerfabs store.
 
@@ -113,7 +116,7 @@ To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-
 
 If you want to update or re-flash the firmware, press and hold the `BOOTSEL` button on the Raspberry Pi Pico _while_ plugging it in the USB port of your computer. A file manager windows should once again pop up and you can let go of the button. Drag and drop the UF2 file just like above.
 
-#### Arduino IDE
+##### Arduino IDE
 
 To program the Pico you will need the following board configs in the latest release of the Arduino IDE:
 
@@ -131,17 +134,15 @@ Please have a look at the `USER SETTINGS` in the Arduino sketch. The most import
 
 Flash the Pico by choosing the `Raspberry Pi Pico` under `Tools/Board/Raspberry Pi RP2040 Boards` and then selecting `Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)`, leaving everything else at the default value. You can then press the big `Upload` button.
 
-#### Serial Interface
+### Serial Interface
 
 You can control your spectrometer using the serial interface. The following commands are available, a trailing `-` indicating an additional parameter is needed at the end of the command.
 
-Commands:
-- ``read temp`` reads the microcontroller temperature in °C.
-- ``read vsys`` reads the board's input voltage.
-- ``read usb`` true or false depending on a USB connection. Thus always true if you are using the serial-over-USB connection.
 - ``read spectrum`` reads the histogram data of all energy measurements since the last clear (start-up).
-- ``read info`` prints miscellaneous information about the firmware and the state of the device.
+- ``read settings`` prints the current settings file contents that are loaded on every boot and changed once you modify any settings.
+- ``read info`` prints miscellaneous information about the firmware and the state of the device (e.g., runtime, temperature, memory).
 - ``read fs`` prints miscellaneous information about the filesystem used for saving the config.
+- ``set trng -`` either `enable` or `disable` to enable the true random number generator output or disable (default) it. Prints random numbers from 0 - 255 to the Serial interface once they are ready.
 - ``set display -`` either `enable` or `disable` to enable (default) OLED support or force disable it.
 - ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a ~3x higher saturation limit.
 - ``set int -`` changes or disables the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `set int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
@@ -159,7 +160,13 @@ At the moment the software only draws the overall energy spectrum and the overal
 
 <img alt="OLED display" title="OLED display" src="docs/oled.jpg" style="width:50%">
 
-### PC
+### True Random Number Generator
+
+Radioactive decay is a great source of entropy for a random number generator of course. This device can output true random numbers meaning they are truly, per definition, random, instead of the pseudorandom numbers a PRNG (i.e., an algorithm) can produce. If you enable the TRNG via the serial command, it will periodically (once they are ready) output random numbers between 0 - 255. This could be further used to, for example, periodically re-seed a pseudorandom number generator to increase the overall amount of available numbers to use.
+
+Note that the TRNG uses the same Serial connection as the gamma spectroscopy output, so you have to disable one of them so that you don't mix the outputs. The numbers of both functions are formatted the same for ease of use, i.e. with a semicolon ";" as some kind of "end of data" delimiter.
+
+### Data Analysis
 
 To get the data from the detector the serial-over-USB port is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.xyz/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/Open-Gamma-Project/Gamma-MCA) to find more specific info about this project.
 
