@@ -100,15 +100,13 @@ All the STL files to print the two parts (main body and cover) can be found in [
 
 ## Software
 
-### Setup
-
-#### Raspberry Pi Pico
+### Setup Raspberry Pi Pico
 
 Programming is done using the Arduino IDE. The so-called "sketch" (i.e. the programmed software) can be found in `/software/opengamma_pico/`.
 
 For convenience there is also a ready-to-use default firmware UF2 located in `/software/`, which is targeted at the standard Open Gamma Detector that you can build using the instructions or buy on the makerfabs store.
 
-##### Firmware File
+#### Firmware File
 
 This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector bought from the makerfabs store.
 
@@ -116,7 +114,7 @@ To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-
 
 If you want to update or re-flash the firmware, press and hold the `BOOTSEL` button on the Raspberry Pi Pico _while_ plugging it in the USB port of your computer. A file manager windows should once again pop up and you can let go of the button. Drag and drop the UF2 file just like above.
 
-##### Arduino IDE
+#### Arduino IDE
 
 To program the Pico you will need the following board configs in the latest release of the Arduino IDE:
 
