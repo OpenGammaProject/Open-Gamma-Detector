@@ -164,6 +164,8 @@ Radioactive decay is a great source of entropy for a random number generator of 
 
 Note that the TRNG uses the same Serial connection as the gamma spectroscopy output, so you have to disable one of them so that you don't mix the outputs. The numbers of both functions are formatted the same for ease of use, i.e. with a semicolon ";" as some kind of "end of data" delimiter.
 
+**Do not use this TRNG for real-life applications or sensitive data. There is always some risk that the implementation is not truly random and some numbers correlate.**
+
 ### Data Analysis
 
 To get the data from the detector the serial-over-USB port is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.xyz/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/Open-Gamma-Project/Gamma-MCA) to find more specific info about this project.
