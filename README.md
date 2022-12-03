@@ -160,7 +160,7 @@ Commands:
 
 ### OLED Support
 
-The detector board features a standard I2C header where you can connect any standard SSD1306 OLED display that will be supported with minimal changes to the Arduino IDE sketch. **A 128 x 64 px OLED is supported as is and will be automatically used upon boot of the device in the current firmware version!** If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header.
+The detector board features a standard I2C header where you can connect any standard SSD1306 OLED display that will be supported with minimal changes to the Arduino IDE sketch. **A 128 x 64 px OLED is supported as is and ~will be automatically used upon boot~ [UPDATE: See https://github.com/Open-Gamma-Project/Open-Gamma-Detector/issues/19] of the device in the current firmware version!** If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header.
 
 At the moment the software only draws the overall energy spectrum and the overall mean cps value on the screen. This is sufficient in most (simple) cases and more features will be implemented over time.
 
