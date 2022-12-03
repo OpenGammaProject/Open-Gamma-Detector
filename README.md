@@ -134,21 +134,29 @@ Flash the Pico by choosing the `Raspberry Pi Pico` under `Tools/Board/Raspberry 
 
 ### Serial Interface
 
-You can control your spectrometer using the serial interface. The following commands are available, a trailing `-` indicating an additional parameter is needed at the end of the command.
+You can control your spectrometer using the serial interface. The following commands are available, type `help` to get a list of commands. Commands are case sensitive. Additional parameters needed for each command are surrounded by `< ... >`.
 
-- ``read spectrum`` reads the histogram data of all energy measurements since the last clear (start-up).
-- ``read settings`` prints the current settings file contents that are loaded on every boot and changed once you modify any settings.
-- ``read info`` prints miscellaneous information about the firmware and the state of the device (e.g., runtime, temperature, memory).
-- ``read fs`` prints miscellaneous information about the filesystem used for saving the config.
-- ``set trng -`` either `enable` or `disable` to enable the true random number generator output or disable (default) it. Prints random numbers from 0 - 255 to the Serial interface once they are ready.
-- ``set display -`` either `enable` or `disable` to enable (default) OLED support or force disable it.
-- ``set mode -`` use either `geiger` or `energy` mode to disable or enable energy measurements respectively. Geiger mode only measures counts per second, but has a ~3x higher saturation limit.
-- ``set int -`` changes or disables the event serial output. Takes `events`, `spectrum` or `disable` as parameter, e.g. `set int -disable` to disable event outputs. `spectrum` will regularly print the full ready-to-use gamma spectrum. `events` will print all the registered new events in chronological order.
-- ``set reset -`` changes or disables a periodic reset of the sample and hold circuit. This is enabled by default to help with mains interference to the capacitor when the detector is not shielded properly. Takes `enable` or `disable` as parameters. Adds an additional 4 ms dead time when enabled.
-- ``set averaging -`` changes the number of measurements that get averaged to represent each individual gamma pulse. Parameter needs to be an integer like this: `set averaging -2` sets averaging to 2. Minimum is 1.
-- ``clear spectrum`` clears the on-board spectrum and reverts all channels back to zero.
-- ``reset settings`` clears all the settings and reverts them back to their default values.
-- ``reboot`` reboots the device after one second.
+```
+> help
+Usage:
+	<command> [options]
+Commands:
+	read spectrum    : Read the spectrum histogram collected since the last reset.
+	read settings    : Read the current settings (file).
+	read info        : Read misc info about the firmware and state of the device.
+	read fs          : Read misc info about the used filesystem.
+	set trng         : <toggle> Either 'enable' or 'disable' to enable/disable the true random number generator output.
+	set display      : <toggle> Either 'enable' or 'disable' to enable or force disable OLED support.
+	set mode         : <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts cps, but has ~3x higher saturation.
+	set int          : <mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
+	set reset        : <toggle> Either 'enable' or 'disable' for periodic resets of the P&H circuit. Helps with mains interference to the cap, but adds ~4 ms dead time.
+	set averaging    : <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
+	set delay        : <number> Delay between trigger and ADC readout of pulses in µs. Set this to ~1/2 of the maximum pulse duration you are expecting. Minimum is 1.
+	clear spectrum   : Clear the on-board spectrum hist.
+	clear settings   : Clear all the settings and revert them back to default values.
+	reboot           : Reboot the device.
+>
+```
 
 ### OLED Support
 
