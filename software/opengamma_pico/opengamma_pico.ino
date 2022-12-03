@@ -18,6 +18,7 @@
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
    TODO: Add more OLED features?
+   TODO: Add average dead time to "read info"
 
 */
 
