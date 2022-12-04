@@ -272,8 +272,8 @@ void deviceInfo([[maybe_unused]] String *args) {
 
   Serial.println("Total dead time: " + String(deadtime_frac) + " %");
   Serial.println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
-  Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " KB");
-  Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " KB");
+  Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
+  Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " kB");
   Serial.println("Temperature: " + String(round(analogReadTempCorrect())) + " °C");
   Serial.println("USB Connection: " + String(bool(digitalRead(VBUS_MEAS))));
 
@@ -284,20 +284,15 @@ void deviceInfo([[maybe_unused]] String *args) {
 
 
 void fsInfo([[maybe_unused]] String *args) {
-  FSInfo64 fsinfo;
-  LittleFS.info64(fsinfo);
-  Serial.print("Total Bytes: ");
-  Serial.println(fsinfo.totalBytes);
-  Serial.print("Used Bytes: ");
-  Serial.println(fsinfo.usedBytes);
-  Serial.print("Block Size: ");
-  Serial.println(fsinfo.blockSize);
-  Serial.print("Page Size: ");
-  Serial.println(fsinfo.pageSize);
-  Serial.print("Max Open Files: ");
-  Serial.println(fsinfo.maxOpenFiles);
-  Serial.print("Max Path Length: ");
-  Serial.println(fsinfo.maxPathLength);
+  FSInfo fsinfo;
+  LittleFS.info(fsinfo);
+  Serial.println("Total Size: " + String(fsinfo.totalBytes/1000.0) + " kB");
+  Serial.print("Used Size: " + String(fsinfo.usedBytes/1000.0) + " kB");
+  Serial.println(" / " + String(float(fsinfo.usedBytes)/fsinfo.totalBytes * 100) + " %");
+  Serial.println("Block Size: " + String(fsinfo.blockSize/1000.0) + " kB");
+  Serial.println("Page Size: " + String(fsinfo.pageSize) + " B");
+  Serial.println("Max Open Files: " + String(fsinfo.maxOpenFiles));
+  Serial.println("Max Path Length: " + String(fsinfo.maxPathLength));
 }
 
 
