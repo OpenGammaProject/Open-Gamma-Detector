@@ -18,7 +18,6 @@
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
    TODO: Add more OLED features?
-   TODO: Add average dead time to "read info"
 
 */
 
@@ -29,7 +28,7 @@
 #include <LittleFS.h>              // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 
-const String FWVERS = "2.5.0";  // Firmware Version Code
+const String FWVERS = "2.5.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -81,6 +80,9 @@ volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a 
 volatile uint8_t bit_index = 0;            // Bit index for the generated number
 volatile uint32_t trng_nums[1000];         // TRNG number output array
 volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRNG array
+
+volatile float deadtime_avg = 0;   // Average detector dead time in µs
+volatile uint32_t dt_avg_num = 0;  // Number of dead time measurements
 
 volatile Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -242,7 +244,7 @@ float analogReadTempCorrect() {
 
   delay(1);  // Allow things to settle.  Without this, readings can be erratic
   adc_select_input(4);
-  uint16_t v = adc_read();
+  const uint16_t v = adc_read();
 
   //digitalWrite(PS_PIN, LOW); // Re-Enable Power Saving
   //resetSampleHold(); // ADDED: Reset S&H after the detached interrupt and re-enable interrupts
@@ -263,17 +265,21 @@ void deviceInfo([[maybe_unused]] String *args) {
   Serial.println("2022. https://github.com/Open-Gamma-Project");
   Serial.println("Firmware Version: " + FWVERS);
   Serial.println("=========================");
-  Serial.println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
   Serial.println("Runtime: " + String(millis() / 1000.0) + " s");
+  Serial.println("Avg. dead time: " + String(deadtime_avg) + " µs");
+
+  const float deadtime_frac = float(deadtime_avg * dt_avg_num) / 1000.0 / float(millis()) * 100.0;
+
+  Serial.println("Total dead time: " + String(deadtime_frac) + " %");
+  Serial.println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
+  Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " KB");
+  Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " KB");
   Serial.println("Temperature: " + String(round(analogReadTempCorrect())) + " °C");
   Serial.println("USB Connection: " + String(bool(digitalRead(VBUS_MEAS))));
 
-  float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
+  const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
 
   Serial.println("Supply Voltage: " + String(round(v * 10.0) / 10.0) + " V");
-  Serial.println("Free Heap Memory: " + String(rp2040.getFreeHeap()) + " B");
-  Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap()) + " B");
-  Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap()) + " B");
 }
 
 
@@ -479,8 +485,8 @@ void drawSpectrum() {
     return;
   }
 
-  float scale_factor = float(SCREEN_HEIGHT - 11) / float(max_num);
-  uint32_t time_delta = millis() - last_time;
+  const float scale_factor = float(SCREEN_HEIGHT - 11) / float(max_num);
+  const uint32_t time_delta = millis() - last_time;
 
   if (time_delta <= 0) {  // Catch divide by zero
     return;
@@ -492,7 +498,7 @@ void drawSpectrum() {
   display.print(total * 1000.0 / time_delta);
   display.print(" cps");
 
-  int16_t temp = round(analogReadTempCorrect());
+  const int16_t temp = round(analogReadTempCorrect());
 
   if (temp < 0) {
     display.setCursor(SCREEN_WIDTH - 30, 0);
@@ -502,7 +508,7 @@ void drawSpectrum() {
   display.print(temp);
   display.println(" C");
 
-  uint32_t seconds_running = round(time_delta / 1000.0);
+  const uint32_t seconds_running = round(time_delta / 1000.0);
 
   if (seconds_running < 10) {
     display.setCursor(SCREEN_WIDTH - 18, 8);
@@ -532,6 +538,8 @@ void drawSpectrum() {
 
 
 void eventInt() {
+  const uint32_t start = micros();
+
   digitalWrite(LED, HIGH);  // Activity LED
 
   uint16_t mean = 0;
@@ -631,6 +639,16 @@ void eventInt() {
   }
 
   digitalWrite(LED, LOW);
+
+  // Compute Detector Dead Time
+  const uint32_t dt = micros() - start;
+  dt_avg_num++;
+  deadtime_avg += float(dt - deadtime_avg) / float(dt_avg_num);
+
+  if (dt_avg_num >= pow(2, 32) - 2) {  // Catch dead time number overflow
+    dt_avg_num = 0;
+    deadtime_avg = 0;
+  }
 }
 
 /*
