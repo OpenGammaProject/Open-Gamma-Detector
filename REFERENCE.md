@@ -1,4 +1,4 @@
-# Troubleshooting and reference
+# Troubleshooting and Reference
 
 ## Settings Reference
 
