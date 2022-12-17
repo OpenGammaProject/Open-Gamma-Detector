@@ -18,6 +18,7 @@
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
    TODO: Add more OLED features?
+   TODO: Print spectrum only? (i.e. remove EVENT_BUFFER)
 
 */
 
@@ -46,13 +47,13 @@ const uint16_t EVT_RESET_C = 2000;  // Number of counts after which the OLED sta
     BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
-const float VREF_VOLTAGE = 3.3;       // ADC reference voltage, defaults 3.3, with reference 3.0
-const uint8_t ADC_RES = 12;           // Use 12-bit ADC resolution
-const uint32_t EVENT_BUFFER = 50000;  // Buffer this many events for Serial.print
-const uint8_t SCREEN_WIDTH = 128;     // OLED display width, in pixels
-const uint8_t SCREEN_HEIGHT = 64;     // OLED display height, in pixels
-const uint8_t SCREEN_ADDRESS = 0x3C;  // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-const uint8_t TRNG_BITS = 8;          // Number of bits for each random number, max 8
+const float VREF_VOLTAGE = 3.3;        // ADC reference voltage, defaults 3.3, with reference 3.0
+const uint8_t ADC_RES = 12;            // Use 12-bit ADC resolution
+const uint32_t EVENT_BUFFER = 100000;  // Buffer this many events for Serial.print
+const uint8_t SCREEN_WIDTH = 128;      // OLED display width, in pixels
+const uint8_t SCREEN_HEIGHT = 64;      // OLED display height, in pixels
+const uint8_t SCREEN_ADDRESS = 0x3C;   // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+const uint8_t TRNG_BITS = 8;           // Number of bits for each random number, max 8
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -286,10 +287,10 @@ void deviceInfo([[maybe_unused]] String *args) {
 void fsInfo([[maybe_unused]] String *args) {
   FSInfo fsinfo;
   LittleFS.info(fsinfo);
-  Serial.println("Total Size: " + String(fsinfo.totalBytes/1000.0) + " kB");
-  Serial.print("Used Size: " + String(fsinfo.usedBytes/1000.0) + " kB");
-  Serial.println(" / " + String(float(fsinfo.usedBytes)/fsinfo.totalBytes * 100) + " %");
-  Serial.println("Block Size: " + String(fsinfo.blockSize/1000.0) + " kB");
+  Serial.println("Total Size: " + String(fsinfo.totalBytes / 1000.0) + " kB");
+  Serial.print("Used Size: " + String(fsinfo.usedBytes / 1000.0) + " kB");
+  Serial.println(" / " + String(float(fsinfo.usedBytes) / fsinfo.totalBytes * 100) + " %");
+  Serial.println("Block Size: " + String(fsinfo.blockSize / 1000.0) + " kB");
   Serial.println("Page Size: " + String(fsinfo.pageSize) + " B");
   Serial.println("Max Open Files: " + String(fsinfo.maxOpenFiles));
   Serial.println("Max Path Length: " + String(fsinfo.maxPathLength));
