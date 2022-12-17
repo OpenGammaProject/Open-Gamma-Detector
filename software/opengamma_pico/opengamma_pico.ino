@@ -47,7 +47,7 @@ const uint16_t EVT_RESET_C = 2000;  // Number of counts after which the OLED sta
     BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
-const float VREF_VOLTAGE = 3.3;        // ADC reference voltage, defaults 3.3, with reference 3.0
+const float VREF_VOLTAGE = 3.0;        // ADC reference voltage, defaults 3.3, with reference 3.0
 const uint8_t ADC_RES = 12;            // Use 12-bit ADC resolution
 const uint32_t EVENT_BUFFER = 100000;  // Buffer this many events for Serial.print
 const uint8_t SCREEN_WIDTH = 128;      // OLED display width, in pixels
