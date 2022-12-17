@@ -2,15 +2,11 @@
 
 __This project is on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project logs, progress updates and other announcements.__
 
-Open hardware for a simple, yet powerful scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal and silicon photomultipliers (SiPMs). Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf platform. Uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
+Open hardware for a hackable scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal and silicon photomultipliers (SiPMs). Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf commercial platform. Uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
 
 Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the needed files for you to import the project as well as the schematic can be found in the `hardware` folder. There is also a Gerber file available for you to go directly to the PCB manufacturing step.
 
 The software aims to be as simple as possible to understand and maintain; to achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro-USB and is powerful (dual core, good ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
-
-**-->** For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). In addition, you'll also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR1) at a distributor of your choice.
-
-**-->** The fully assembled main detector board can also be purchased on the [Makerfabs webshop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner. For this kit you'll then only need to get a separate SiPM and scintillator, everything else is included and assembled :)
 
 <p align="center">
   <img alt="Photo of the detector board" title="Photo of the detector board" height="290px" src="docs/img1.jpg">
@@ -21,12 +17,12 @@ The software aims to be as simple as possible to understand and maintain; to ach
 
 Here are some of the most important key facts:
 
-* Compact design: Total size 120 x 50 mm. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount the scintillator.
+* Compact design: Total size 120 x 50 mm. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount a scintillator.
 * All-in-one detector: No external parts (e.g. sound card) required to record gamma spectra.
-* Easily programmable using the standard Arduino IDE or ready-to-use firmware files.
+* Easily programmable using the standard Arduino IDE or drag-and-drop firmware files.
 * Low-voltage device: No HV needed for a photomultiplier tube.
-* SiPM voltage range from 28 V to 33 V.
-* OLED support out of the box.
+* Can use SiPMs in the voltage range of 28 V to 33 V.
+* Simple OLED support out of the box.
 * Low power consumption: ~15 mA @ 5V in standard operation.
 * Adjustable preamp gain for the SiPM pulses (affects energy range & resolution).
 * Customizable energy range with 4096 ADC channels.
@@ -34,6 +30,12 @@ Here are some of the most important key facts:
 * Geiger Mode: Capable of at least around 180,000 cps without energy measurement.
 * Additional broken-out power pins and I2C header for displays, etc.
 * True Random Number Generator
+
+## How To Get One
+
+* For quick access and purchase of all the parts (PCB and BOM) you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). In addition, you'll also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR1) at a distributor of your choice.
+
+* The fully assembled main detector board can also be purchased on the [Makerfabs webshop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner. For this kit you'll then only need to get a separate SiPM and scintillator, everything else is included and assembled :)
 
 ## Working Principle
 
@@ -43,21 +45,21 @@ Here are some of the most important key facts:
 
 ## Hardware
 
-This project utilizes a silicon photomultiplier (short SiPM) which is way smaller and more robust than a traditional photomultiplier tube and does not need a high-voltage supply (traditionally ~1000 V). Here are some very helpful in-depth datasheets about the particular MicroFC SiPM used here:
+This project utilizes a silicon photomultiplier (short SiPM) which is way smaller and more robust than a traditional photomultiplier tube and does not need a high-voltage supply (traditionally ~1000 V). Here are some very helpful in-depth datasheets about the particular MicroFC SiPM recommended here:
 
 * [C-Series SiPM Sensors datasheet](https://www.onsemi.com/pdf/datasheet/microc-series-d.pdf)
 * [Linearity of the Silicon Photomultiplier](https://www.onsemi.com/pub/Collateral/AND9776-D.PDF)
 * [Introduction to the SiliconPhotomultiplier (SiPM)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF)
 * [Biasing and Readout of ON Semiconductor SiPM Sensors](https://www.onsemi.com/pub/Collateral/AND9782-D.PDF)
 
-The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board and soldering wires directly to the correct pads. Otherwise, you can use my [SiPM carrier board](https://github.com/Open-Gamma-Project/MicroFC-SiPM-Carrier-Board), which holds the SiPM and all the optimal decoupling.
+The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board and connecting wires directly to the correct pads. Otherwise, you can use my [SiPM carrier board](https://github.com/Open-Gamma-Project/MicroFC-SiPM-Carrier-Board), which holds the SiPM and all the optional decoupling.
 
 The heart of the detector board is the Raspberry Pi Pico which uses its ADC to measure the pulse amplitude (i.e. the energy) immediately after an event occurs starting with an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC, if you're interested:
 
 * [Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf)
 * [Characterizing the Raspberry Pi Pico ADC](https://pico-adc.markomo.me/)
 
-Here are some front and back side renders of the detector PCB. Size is about 12 x 5 cm. If you don't need the additional space to mechanically mount the SiPM/scintillator assembly to the rest of the detector board, you can just cut it off at the white line and you're left with a smaller detector.
+Here are some front and back side renders of the detector PCB. Size is about 12 x 5 cm. If you don't need the additional space to mechanically mount the SiPM/scintillator assembly to the rest of the detector board, you can just cut it off at the white line and you're left with an even smaller detector.
 
 <p align="center">
   <img alt="Front Side PCB" title="Front Side PCB" src="docs/pcb_front.png" style="width:49%">
@@ -66,27 +68,25 @@ Here are some front and back side renders of the detector PCB. Size is about 12 
 
 On the back side of the PCB there is place for two optional components:
 * a voltage reference for the ADC (LM4040AIM3-3.0+T recommended) to get rid of most power supply related noise and inaccuracy
-* and a 0 Ω link to connect the analog ground to the rest of the ground plane.
+* and a 0 Ω resistor link to connect the analog ground to the rest of the ground plane.
 
-These can be retrofitted easily and are quite affordable. Both are optional and should only be used if you know what you are doing. You can't really do anything wrong with using the voltage reference, though.
+These can be retrofitted easily and are quite affordable. The voltage reference is highly recommended, because the Pico DC/DC converter isn't the most accurate. Do not solder the 0 Ω resistor, though, except if you know what you're doing.
 
 There are also broken-out pins for the power supply and I2C connections. These can be used to modify the device, e.g. by adding a display or using a battery charger. You can have a look at the great [Raspberry Pi Pico datasheet](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf) for more info on this.
 
-The resistor R4 on the front side is optional as well. It will raise the input voltage of the preamp and therefore also the output so that even lower signals are above the inherent swing of the op amp at a given gain. This way you _might_ be able to read lower energies for a fixed gain up to the SiPM noise. But due to the preamp as well as SiPM gain being variable now and this voltage divider also introducing some noise into the signal I opted to leave this part out by default.
-
-**Here is a helpful image about the potentiometer settings for Rev. 2.0/b:**
+**Here is a helpful image about the potentiometer settings for Rev2.0:**
 
 ![Potentiometer Controls](docs/controls.jpg)
 
 ### Scintillator Assembly
 
-The finished [MicroFC-](https://github.com/Open-Gamma-Project/MicroFC-SiPM-Carrier-Board) and [AFBR-](https://github.com/Open-Gamma-Project/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board. There are holes on each side of the PCB for some cable ties.
+The finished [MicroFC-](https://github.com/Open-Gamma-Project/MicroFC-SiPM-Carrier-Board) and [AFBR-](https://github.com/Open-Gamma-Project/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board.
 
 I got all of my scintillators (used NaI(Tl), LYSO, ...) on eBay. Just search for some keywords or specific types, you'll probably find something! Otherwise you can obviously also buy brand-new scintillators, however, these are much more expensive (depends, but a factor of 10x is normal). Just be sure to look out for signs of wear and tear like scratches on the window or yellowing (!) in NaI crystals as these can deteriorate performance significantly.
 
 ### Shielding
 
-Due to the detector measuring small voltages, energy resolution being limited by noise and a tiny 220 pF capacitor being on board, it is generally pretty sensitive to EMI. In fact, without any shielding and periodically discharging the capacitor, mains electricity would slowly charge it until the device gets overwhelmed with noise. To mitigate this effect, the Arduino sketch is programmed to clear the cap every 500 µs by default, which is enough to mostly fix this issue. However, this adds an additional ~4 ms dead time total per second which could be roughly equivalent to 500 missed events in geiger mode.
+Due to the detector measuring small voltages, energy resolution being limited by noise and a tiny 220 pF capacitor being on board, it is generally pretty sensitive to EMI. In fact, without any shielding and periodically discharging the capacitor, mains interference would slowly charge it until the device gets overwhelmed with noise. To mitigate this effect, the Firmware is programmed to clear the cap every 500 µs by default, which is enough to mostly fix this issue. However, this adds an additional ~4 ms dead time total per second which could be roughly equivalent to 500 missed events in geiger mode (worst case).
 
 For the best performance, you will need to put your detector into a metal enclosure. It doesn't need to be a thick metal case, a tin can will most likely suffice.
 
@@ -108,7 +108,7 @@ For convenience there is also a ready-to-use default firmware UF2 located in `/s
 
 #### Firmware File
 
-This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector bought from the makerfabs store.
+This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector purchased from the makerfabs store.
 
 To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-USB connection. A file manager window should now pop up. Drag and drop the `opengamma_pico-XXX.uf2` file that you downloaded into this directory. The device will restart automatically once the transmission is completed and is ready to use!
 
@@ -211,6 +211,10 @@ Spectrum of a Na-22 test source, about ~2 µCi. You can see the 511 keV annihila
 2. It's very important to get the SiPM/scintillator assembly light-tight. Otherwise you'll either run into problems with lower energies where noise dominates or outright not measure anything at all, because the sensor is saturating.
 
 3. Due to the global parts shortage many chips are much harder to come by, if at all that is. This is most severe for high-quality op amps and other specialized parts such as the DC/DC converters and the tiny peak detector cap. This makes it much harder for me to choose from components and maybe even limiting the performance. Parts that are listed in the BOM should be available easily and with high reliability and stock so that they don't run out quickly. Notably, this also drives the cost of the detector up by a large factor, again mostly due to the op amps and also the SiPMs.
+
+## Troubleshooting and Reference
+
+Please have a look at [REFERENCE.md](REFERENCE.md).
 
 ## Some Ideas
 
