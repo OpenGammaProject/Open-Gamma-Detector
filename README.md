@@ -1,5 +1,7 @@
 # Open Gamma Detector
 
+<a href="https://certification.oshwa.org/at000003.html" title="Open Source Hardware Association Certificate"><img align="left" src="docs/oshw.svg" alt="Open Source Hardware Association Certificate"></a>
+
 __This project is on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project updates and other announcements!__
 
 Open hardware for a hackable scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal and silicon photomultipliers (SiPMs). Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf commercial platform. Uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
