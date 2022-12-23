@@ -7,6 +7,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: arduino/arduino-lint-action@v1.0.2
         with:
+          path: ./software/opengamma_pico/
           project-type: sketch # Only Check Arduino Sketches
           library-manager: update
           compliance: specification #strict
