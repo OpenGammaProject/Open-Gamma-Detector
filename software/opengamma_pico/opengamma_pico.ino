@@ -14,11 +14,11 @@
    ## Flash with default settings and
    ##   Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)
 
-   TODO: There are still some ADC issues?
    TODO: Coincidence measurements?
    TODO: Sleep modes instead of delays
-   TODO: Add more OLED features?
    TODO: Print spectrum only? (i.e. remove EVENT_BUFFER)
+   TODO: (!) P&H make auto-reset time customizable
+   TODO: Try threshold fully digital
 
 */
 
@@ -28,8 +28,9 @@
 #include <ArduinoJson.h>           // Load and save the settings file
 #include <LittleFS.h>              // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
+//#include <Statistical.h>
 
-const String FWVERS = "2.5.1";  // Firmware Version Code
+const String FWVERS = "2.5.2";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -54,6 +55,7 @@ const uint8_t SCREEN_WIDTH = 128;      // OLED display width, in pixels
 const uint8_t SCREEN_HEIGHT = 64;      // OLED display height, in pixels
 const uint8_t SCREEN_ADDRESS = 0x3C;   // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 const uint8_t TRNG_BITS = 8;           // Number of bits for each random number, max 8
+//const uint8_t BASELINE_NUM = 100;      // Number of measurements taken to determine the DC baseline
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -84,6 +86,10 @@ volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRN
 
 volatile float deadtime_avg = 0;   // Average detector dead time in µs
 volatile uint32_t dt_avg_num = 0;  // Number of dead time measurements
+
+//uint8_t baseline_index = 0;
+//uint16_t baselines[BASELINE_NUM];
+uint16_t current_baseline = 0;
 
 volatile Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -233,32 +239,6 @@ void delayTime(String *args) {
 }
 
 
-float analogReadTempCorrect() {
-  digitalWrite(RST_PIN, HIGH);  // ADDED: Disable peak&hold
-
-  // Copy from arduino-pico/cores/rp2040/wiring_analog.cpp
-  adc_init();  // Init ADC just to be sure
-  adc_set_temp_sensor_enabled(true);
-
-  //digitalWrite(PS_PIN, HIGH); // Disable Power Save For Better Noise
-  //detachInterrupt(digitalPinToInterrupt(INT_PIN)); // ADDED: Disable interrupts shortly
-
-  delay(1);  // Allow things to settle.  Without this, readings can be erratic
-  adc_select_input(4);
-  const uint16_t v = adc_read();
-
-  //digitalWrite(PS_PIN, LOW); // Re-Enable Power Saving
-  //resetSampleHold(); // ADDED: Reset S&H after the detached interrupt and re-enable interrupts
-  //attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, HIGH);
-
-  adc_set_temp_sensor_enabled(false);
-
-  digitalWrite(RST_PIN, LOW);  // ADDED: Enable peak&hold again
-
-  return 27.0 - ((v * VREF_VOLTAGE / (pow(2, ADC_RES) - 1)) - 0.706) / 0.001721;
-}
-
-
 void deviceInfo([[maybe_unused]] String *args) {
   Serial.println("=========================");
   Serial.println("-- Open Gamma Detector --");
@@ -275,7 +255,7 @@ void deviceInfo([[maybe_unused]] String *args) {
   Serial.println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
   Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
   Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " kB");
-  Serial.println("Temperature: " + String(round(analogReadTempCorrect())) + " °C");
+  Serial.println("Temperature: " + String(round(analogReadTemp(VREF_VOLTAGE))) + " °C");
   Serial.println("USB Connection: " + String(bool(digitalRead(VBUS_MEAS))));
 
   const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
@@ -494,7 +474,7 @@ void drawSpectrum() {
   display.print(total * 1000.0 / time_delta);
   display.print(" cps");
 
-  const int16_t temp = round(analogReadTempCorrect());
+  const int16_t temp = round(analogReadTemp(VREF_VOLTAGE));
 
   if (temp < 0) {
     display.setCursor(SCREEN_WIDTH - 30, 0);
@@ -569,7 +549,8 @@ void eventInt() {
       avg /= conf.meas_avg - invalid;
     }
 
-    mean = round(avg);  // float --> uint16_t ADC channel
+    // Subtract DC bias from pulse avg and then convert float --> uint16_t ADC channel
+    mean = round(avg - current_baseline);
     // Use median instead of average?
 
     /*
@@ -737,9 +718,24 @@ void loop() {
   // Interrupts run on this core
   //__wfi(); // Wait For Interrupt
 
-  if (conf.auto_reset) {
+  static uint32_t last_exec = 0;
+
+  if (conf.auto_reset && micros() - last_exec >= 500) {
     resetSampleHold();
+    last_exec = micros();
   }
+
+  // Compute the median DC baseline to subtract from each pulse
+  /*
+  baselines[baseline_index] = analogRead(AIN_PIN);
+  baseline_index++;
+  if (baseline_index >= BASELINE_NUM) {
+    Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
+    current_baseline = round(Data_Array.Quartile(2));
+    //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
+    baseline_index = 0;
+  }
+  */
 
   rp2040.wdt_reset();  // Reset watchdog, everything is fine
 
