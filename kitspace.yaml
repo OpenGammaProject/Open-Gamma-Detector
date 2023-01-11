@@ -22,12 +22,3 @@ bom: hardware/BOM.csv
   # Check out https://github.com/kitspace/1clickBOM#readme for more details
 
 gerbers: hardware/Gerber_PCB/ # A path to your folder of gerbers in case it isn't `gerbers/`.
-
-pcb-services: [aisler, pcbway, oshpark, jlcpcb]
-  # A list of the PCB services you would like to have included on your
-  # page. If left undefined all are included. Otherwise ust be a list of Kitspace
-  # sponsors, possible values are:
-  #      - aisler
-  #      - pcbway
-  #      - oshpark
-  #      - jlcpcb
