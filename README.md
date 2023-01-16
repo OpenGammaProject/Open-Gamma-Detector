@@ -35,7 +35,7 @@ Here are some of the most important key facts:
 
 ## How To Get One
 
-* For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/open-gamma-project/open-gamma-detector/). Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own.
+* For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/). Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own.
 
 * The fully assembled main detector board can also be purchased on my [Tindie store](https://www.tindie.com/products/nuclearphoenix/open-gamma-detector/) or directly from the [Makerfabs shop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner Makerfabs:
 
@@ -58,7 +58,7 @@ This project utilizes a silicon photomultiplier (short SiPM) which is way smalle
 * [Introduction to the SiliconPhotomultiplier (SiPM)](https://www.onsemi.com/pub/Collateral/AND9770-D.PDF)
 * [Biasing and Readout of ON Semiconductor SiPM Sensors](https://www.onsemi.com/pub/Collateral/AND9782-D.PDF)
 
-The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board and connecting wires directly to the correct pads. Otherwise, you can use my [SiPM carrier board](https://github.com/Open-Gamma-Project/MicroFC-SiPM-Carrier-Board), which holds the SiPM and all the optional decoupling.
+The hardware consists of the main detector (`hardware` folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board and connecting wires directly to the correct pads. Otherwise, you can use my [SiPM carrier board](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board), which holds the SiPM and all the optional decoupling.
 
 The heart of the detector board is the Raspberry Pi Pico which uses its ADC to measure the pulse amplitude (i.e. the energy) immediately after an event occurs starting with an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC, if you're interested:
 
@@ -86,7 +86,7 @@ There are also broken-out pins for the power supply and I2C connections. These c
 
 ### Scintillator Assembly
 
-The finished [MicroFC-](https://github.com/Open-Gamma-Project/MicroFC-SiPM-Carrier-Board) and [AFBR-](https://github.com/Open-Gamma-Project/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board.
+The finished [MicroFC-](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) and [AFBR-](https://github.com/OpenGammaProject/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board.
 
 I got all of my scintillators (used NaI(Tl), LYSO, ...) on eBay. Just search for some keywords or specific types, you'll probably find something! Otherwise you can obviously also buy brand-new scintillators, however, these are much more expensive (depends, but a factor of 10x is normal). Just be sure to look out for signs of wear and tear like scratches on the window or yellowing (!) in NaI crystals as these can deteriorate performance significantly.
 
@@ -168,7 +168,7 @@ Commands:
 
 ### OLED Support
 
-The detector board features a standard I2C header where you can connect any standard SSD1306 OLED display that will be supported with minimal changes to the Arduino IDE sketch. **A 128 x 64 px OLED is supported as is and ~will be automatically used upon boot~ [UPDATE: See https://github.com/Open-Gamma-Project/Open-Gamma-Detector/issues/19] of the device in the current firmware version!** If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header.
+The detector board features a standard I2C header where you can connect any standard SSD1306 OLED display that will be supported with minimal changes to the Arduino IDE sketch. **A 128 x 64 px OLED is supported as is and ~will be automatically used upon boot~ [UPDATE: See https://github.com/OpenGammaProject/Open-Gamma-Detector/issues/19] of the device in the current firmware version!** If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header.
 
 At the moment the software only draws the overall energy spectrum and the overall mean cps value on the screen. This is sufficient in most (simple) cases and more features will be implemented over time.
 
@@ -184,7 +184,7 @@ Note that the TRNG uses the same Serial connection as the gamma spectroscopy out
 
 ### Data Analysis
 
-To get the data from the detector the serial-over-USB port is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.xyz/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/Open-Gamma-Project/Gamma-MCA) to find more specific info about this project.
+To get the data from the detector the serial-over-USB port is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.xyz/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/OpenGammaProject/Gamma-MCA) to find more specific info about this project.
 
 ![Gamma MCA Screenshot](docs/gamma_mca.png)
 
