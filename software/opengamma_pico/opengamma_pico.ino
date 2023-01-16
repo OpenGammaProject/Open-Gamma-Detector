@@ -6,7 +6,7 @@
    Triggers on newly detected pulses and measures their energy.
 
    2022, NuclearPhoenix. Open Gamma Project.
-   https://github.com/Open-Gamma-Project/Open-Gamma-Detector
+   https://github.com/OpenGammaProject/Open-Gamma-Detector
 
    ## NOTE:
    ## Only change the highlighted USER SETTINGS
@@ -243,7 +243,7 @@ void deviceInfo([[maybe_unused]] String *args) {
   Serial.println("=========================");
   Serial.println("-- Open Gamma Detector --");
   Serial.println("By NuclearPhoenix, Open Gamma Project");
-  Serial.println("2022. https://github.com/Open-Gamma-Project");
+  Serial.println("2022. https://github.com/OpenGammaProject");
   Serial.println("Firmware Version: " + FWVERS);
   Serial.println("=========================");
   Serial.println("Runtime: " + String(millis() / 1000.0) + " s");
