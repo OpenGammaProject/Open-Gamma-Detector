@@ -14,11 +14,12 @@
    ## Flash with default settings and
    ##   Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)
 
-   TODO: Coincidence measurements?
+   TODO: (?) Coincidence measurements
+   TODO: (?) Print spectrum only (i.e. remove EVENT_BUFFER)
    TODO: Sleep modes instead of delays
-   TODO: Print spectrum only? (i.e. remove EVENT_BUFFER)
-   TODO: (!) P&H make auto-reset time customizable
    TODO: Try threshold fully digital
+   TODO: Power saving measures
+   TODO: (!) P&H make auto-reset time customizable
 
 */
 
