@@ -1,6 +1,6 @@
-# Open Gamma Detector
+<a href="https://certification.oshwa.org/at000003.html" title="Open Source Hardware Association Certificate"><img align="right" src="docs/oshw.svg" alt="Open Source Hardware Association Certificate"></a>
 
-<a href="https://certification.oshwa.org/at000003.html" title="Open Source Hardware Association Certificate"><img align="left" src="docs/oshw.svg" alt="Open Source Hardware Association Certificate"></a>
+# Open Gamma Detector
 
 __This project is on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project updates and other announcements!__
 
