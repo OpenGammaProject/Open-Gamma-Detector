@@ -89,7 +89,7 @@ volatile uint32_t dt_avg_num = 0;  // Number of dead time measurements
 //uint8_t baseline_index = 0;
 //uint16_t baselines[BASELINE_NUM];
 uint16_t current_baseline = 0;
-boolean measure_temp = false;
+bool measure_temp = false;
 
 volatile Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
