@@ -23,15 +23,13 @@
 
 */
 
-#include <hardware/adc.h>  // For corrected temp readings
-
 #include <SimpleShell_Enhanced.h>  // Serial Commands/Console
 #include <ArduinoJson.h>           // Load and save the settings file
 #include <LittleFS.h>              // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 //#include <Statistical.h>
 
-const String FWVERS = "2.5.2";  // Firmware Version Code
+const String FWVERS = "2.5.3";  // Firmware Version Code
 
 const uint8_t GND_PIN = A0;    // GND meas pin
 const uint8_t VCC_PIN = A2;    // VCC meas pin
@@ -91,6 +89,7 @@ volatile uint32_t dt_avg_num = 0;  // Number of dead time measurements
 //uint8_t baseline_index = 0;
 //uint16_t baselines[BASELINE_NUM];
 uint16_t current_baseline = 0;
+boolean measure_temp = false;
 
 volatile Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -256,7 +255,7 @@ void deviceInfo([[maybe_unused]] String *args) {
   Serial.println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
   Serial.println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
   Serial.println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " kB");
-  Serial.println("Temperature: " + String(round(analogReadTemp(VREF_VOLTAGE))) + " °C");
+  Serial.println("Temperature: " + String(round(readTemp())) + " °C");
   Serial.println("USB Connection: " + String(bool(digitalRead(VBUS_MEAS))));
 
   const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
@@ -427,6 +426,15 @@ void readSetting() {
 }
 
 
+float readTemp() {
+  measure_temp = true; // Flag this, so that nothing else uses the ADC in the mean time
+  delayMicroseconds(conf.meas_avg * 100); // Wait for an already-executing interrupt
+  const float temp = analogReadTemp(VREF_VOLTAGE);
+  measure_temp = false;
+  return temp;
+}
+
+
 void resetSampleHold() {  // Reset sample and hold circuit
   digitalWrite(RST_PIN, HIGH);
   delayMicroseconds(1);  // Discharge for 1 µs, actually takes 2 µs - enough for a discharge
@@ -435,7 +443,7 @@ void resetSampleHold() {  // Reset sample and hold circuit
 
 
 void drawSpectrum() {
-  const uint16_t BINSIZE = round(pow(2, ADC_RES) / SCREEN_WIDTH);
+  const uint16_t BINSIZE = floor(pow(2, ADC_RES) / SCREEN_WIDTH);
   uint32_t eventBins[SCREEN_WIDTH];
   uint16_t offset = 0;
   uint32_t max_num = 0;
@@ -458,14 +466,18 @@ void drawSpectrum() {
     total += totalValue;
   }
 
-  if (max_num <= 0) {  // No events accumulated, catch divide by zero
+  if (max_num == 0) {  // No events accumulated, catch divide by zero
     return;
   }
-
   const float scale_factor = float(SCREEN_HEIGHT - 11) / float(max_num);
+
+  if (millis() < last_time) { // Catch Millis() Rollover
+    last_time = millis();
+    return;
+  }
   const uint32_t time_delta = millis() - last_time;
 
-  if (time_delta <= 0) {  // Catch divide by zero
+  if (time_delta == 0) {  // Catch divide by zero
     return;
   }
 
@@ -475,7 +487,7 @@ void drawSpectrum() {
   display.print(total * 1000.0 / time_delta);
   display.print(" cps");
 
-  const int16_t temp = round(analogReadTemp(VREF_VOLTAGE));
+  const int16_t temp = round(readTemp());
 
   if (temp < 0) {
     display.setCursor(SCREEN_WIDTH - 30, 0);
@@ -500,7 +512,7 @@ void drawSpectrum() {
   display.println(" s");
 
   for (uint16_t i = 0; i < SCREEN_WIDTH; i++) {
-    uint16_t val = round(eventBins[i] * scale_factor);
+    uint32_t val = round(eventBins[i] * scale_factor);
     display.drawFastVLine(i, SCREEN_HEIGHT - val - 1, val, SSD1306_WHITE);
   }
   display.drawFastHLine(0, SCREEN_HEIGHT - 1, SCREEN_WIDTH, SSD1306_WHITE);
@@ -522,7 +534,7 @@ void eventInt() {
   uint16_t mean = 0;
   delayMicroseconds(conf.delay_time);  // Wait to allow the sample/hold circuit to stabilize
 
-  if (!conf.geiger_mode) {
+  if (!conf.geiger_mode && !measure_temp) {
     uint16_t meas[conf.meas_avg];
 
     //digitalWrite(PS_PIN, HIGH); // Disable Power-Saving
