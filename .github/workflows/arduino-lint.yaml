@@ -10,4 +10,4 @@ jobs:
           path: ./software/opengamma_pico/
           project-type: sketch # Only Check Arduino Sketches
           library-manager: update
-          compliance: strict #specification
+          compliance: specification #strict
