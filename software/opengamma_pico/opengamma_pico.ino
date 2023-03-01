@@ -223,7 +223,7 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
   println("Free Heap Memory: " + String(rp2040.getFreeHeap() / 1000.0) + " kB");
   println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " kB");
-  println("Temperature: " + String(round(analogReadTemp(VREF_VOLTAGE) * 10.0) / 10.0, 1) + " °C");
+  println("Temperature: " + String(round(readTemp()) * 10.0) / 10.0, 1) + " °C");
   println("USB Connection: " + String(digitalRead(VBUS_MEAS)));
 
   const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
@@ -471,7 +471,7 @@ void drawSpectrum() {
     display.setCursor(SCREEN_WIDTH - 24, 0);
   }
   display.print(temp);
-  display.println(" C");
+  display.println(" °C");
 
   const uint32_t seconds_running = round(time_delta / 1000.0);
   const uint8_t char_offset = floor(log10(seconds_running));
