@@ -12,14 +12,11 @@
   ## Only change the highlighted USER SETTINGS below
   ## except you know exactly what you are doing!
   ## Flash with default settings and
-  ##   Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)
+  ##   Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
   TODO: (?) Optimize for power usage
   TODO: (?) Ticker + PWM Audio
-  
-  TODO: (!!!) Check P&H auto-reset time
-
 */
 
 //#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
@@ -28,7 +25,7 @@
 #include <ArduinoJson.h>           // Load and save the settings file
 #include <LittleFS.h>              // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
-//#include <Statistical.h>
+#include <Statistical.h>
 
 const String FWVERS = "3.0.0";  // Firmware Version Code
 
@@ -50,25 +47,27 @@ const uint16_t EVT_RESET_C = 2000;  // Number of counts after which the OLED sta
 // These are the default settings that can only be changed by reflashing the Pico
 const float VREF_VOLTAGE = 3.0;        // ADC reference voltage, defaults 3.3, with reference 3.0
 const uint8_t ADC_RES = 12;            // Use 12-bit ADC resolution
+const uint16_t PH_RESET = 1000;        // Microseconds after which the P&H circuit will be reset once
 const uint32_t EVENT_BUFFER = 100000;  // Buffer this many events for Serial.print
 const uint8_t SCREEN_WIDTH = 128;      // OLED display width, in pixels
 const uint8_t SCREEN_HEIGHT = 64;      // OLED display height, in pixels
 const uint8_t SCREEN_ADDRESS = 0x3C;   // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 const uint8_t TRNG_BITS = 8;           // Number of bits for each random number, max 8
-//const uint8_t BASELINE_NUM = 100;      // Number of measurements taken to determine the DC baseline
+const uint8_t BASELINE_NUM = 100;      // Number of measurements taken to determine the DC baseline
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
-  bool ser_output = true;       // Wheter data should be Serial.println'ed
-  bool geiger_mode = false;     // Measure only cps, not energy
-  bool print_spectrum = false;  // Print the finishes spectrum, not just
-  size_t meas_avg = 5;          // Number of meas. averaged each event, higher=longer dead time
-  bool enable_display = false;  // Enable I2C Display, see settings above
-  bool trng_enabled = false;    // Enable the True Random Number Generator
+  bool ser_output = true;          // Wheter data should be Serial.println'ed
+  bool geiger_mode = false;        // Measure only cps, not energy
+  bool print_spectrum = false;     // Print the finishes spectrum, not just
+  size_t meas_avg = 5;             // Number of meas. averaged each event, higher=longer dead time
+  bool enable_display = false;     // Enable I2C Display, see settings above
+  bool trng_enabled = false;       // Enable the True Random Number Generator
+  bool subtract_baseline = false;  // Subtract the DC bias from each pulse
 
   // Do NOT modify this function:
   bool operator==(const Config &other) const {
-    return (ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled);
+    return (ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled && subtract_baseline == other.subtract_baseline);
   }
 };
 /*
@@ -90,33 +89,33 @@ volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRN
 volatile float deadtime_avg = 0;   // Average detector dead time in µs
 volatile uint32_t dt_avg_num = 0;  // Number of dead time measurements
 
-//uint8_t baseline_index = 0;
-//uint16_t baselines[BASELINE_NUM];
+uint8_t baseline_index = 0;
+uint16_t baselines[BASELINE_NUM];
 uint16_t current_baseline = 0;
-bool adc_lock = false;
+volatile bool adc_lock = false;
 
 Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 //ADCInput sipm(AMP_PIN);
 
 
-void serialInterruptMode(String *args) {
+void serialOutputMode(String *args) {
   String command = *args;
-  command.replace("set int", "");
+  command.replace("set out", "");
   command.trim();
 
   if (command == "spectrum") {
     conf.ser_output = true;
     conf.print_spectrum = true;
-    println("Set serial interrupt mode to full spectrum.");
+    println("Set serial output mode to spectrum histogram.");
   } else if (command == "events") {
     conf.ser_output = true;
     conf.print_spectrum = false;
-    println("Set serial interrupt mode to events.");
+    println("Set serial output mode to events.");
   } else if (command == "disable") {
     conf.ser_output = false;
     conf.print_spectrum = false;
-    println("Disabled serial interrupts.");
+    println("Disabled serial outputs.");
   } else {
     println("Invalid input '" + command + "'.", true);
     println("Must be 'spectrum', 'events' or 'disable'.", true);
@@ -179,6 +178,27 @@ void toggleTRNG(String *args) {
   } else if (command == "disable") {
     conf.trng_enabled = false;
     println("Disabled True Random Number Generator output.");
+  } else {
+    println("Invalid input '" + command + "'.", true);
+    println("Must be 'enable' or 'disable'.", true);
+    return;
+  }
+  saveSettings();
+}
+
+
+void toggleBaseline(String *args) {
+  String command = *args;
+  command.replace("set baseline", "");
+  command.trim();
+
+  if (command == "enable") {
+    conf.subtract_baseline = true;
+    println("Enabled automatic DC bias subtraction.");
+  } else if (command == "disable") {
+    conf.subtract_baseline = false;
+    current_baseline = 0;  // Reset baseline back to zero
+    println("Disabled automatic DC bias subtraction.");
   } else {
     println("Invalid input '" + command + "'.", true);
     println("Must be 'enable' or 'disable'.", true);
@@ -254,10 +274,10 @@ void getSpectrumData([[maybe_unused]] String *args) {
 
 
 void clearSpectrumData([[maybe_unused]] String *args) {
-  println("Clearing spectrum...");
+  println("Resetting spectrum...");
   clearSpectrum();
   last_time = millis();
-  println("Cleared!");
+  println("Successfully reset spectrum!");
 }
 
 
@@ -294,7 +314,7 @@ void readSettings([[maybe_unused]] String *args) {
 
 
 void resetSettings([[maybe_unused]] String *args) {
-  Config defaultConf;
+  Config defaultConf;  // New Config object with all default parameters
   conf = defaultConf;
   println("Applied default settings.");
   println("You might need to reboot for all changes to take effect.");
@@ -360,6 +380,7 @@ Config loadSettings(bool msg = true) {
   new_conf.meas_avg = doc["meas_avg"];
   new_conf.enable_display = doc["enable_display"];
   new_conf.trng_enabled = doc["trng_enabled"];
+  new_conf.subtract_baseline = doc["subtract_baseline"];
 
   if (msg) {
     println("Successfuly loaded settings from flash.");
@@ -391,6 +412,7 @@ bool saveSettings() {
   doc["meas_avg"] = conf.meas_avg;
   doc["enable_display"] = conf.enable_display;
   doc["trng_enabled"] = conf.trng_enabled;
+  doc["subtract_baseline"] = conf.subtract_baseline;
 
   serializeJson(doc, saveFile);
 
@@ -409,9 +431,9 @@ float readTemp() {
 }
 
 
-void resetSampleHold() {  // Reset sample and hold circuit
+void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
   digitalWrite(RST_PIN, HIGH);
-  delayMicroseconds(1);  // Discharge for 1 µs, actually takes 2 µs - enough for a discharge
+  delayMicroseconds(time);  // Discharge for (default) 2 µs -> ~99% discharge time for 1 kOhm and 470 pF
   digitalWrite(RST_PIN, LOW);
 }
 
@@ -533,21 +555,11 @@ void eventInt() {
     // Subtract DC bias from pulse avg and then convert float --> uint16_t ADC channel
     mean = round(avg - current_baseline);
     // Use median instead of average?
-
-    /*
-      float var = 0.0;
-      for (size_t i = 0; i < conf.meas_avg; i++) {
-      var += sq(meas[i] - mean);
-      }
-      var /= conf.meas_avg;
-    */
   }
 
   if (conf.ser_output || conf.enable_display) {
     events[event_position] = mean;
     spectrum[mean] += 1;
-    //cleanPrint(' ' + String(sqrt(var)) + ';');
-    //cleanPrintln(' ' + String(sqrt(var)/mean) + ';');
     if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
       event_position = 0;
     } else {
@@ -612,8 +624,6 @@ void eventInt() {
     SETUP FUNCTIONS
 */
 void setup() {
-  rp2040.wdt_begin(2000);  // Enable hardware watchdog to check every 2s
-
   pinMode(AMP_PIN, INPUT);
   pinMode(INT_PIN, INPUT);
   pinMode(RST_PIN, OUTPUT_12MA);
@@ -632,10 +642,12 @@ void setup() {
 
 
 void setup1() {
-  pinMode(PS_PIN, OUTPUT_4MA);
+  rp2040.wdt_begin(5000);  // Enable hardware watchdog to check every 5s
 
   // Disable "Power-Saving" power supply option.
-  // -> does not actually significantly save power, but output is much less noise this way!
+  // -> does not actually significantly save power, but output is much less noisy this way!
+  // -> Also with PS_PIN LOW I have experiences high-pitched (~ 15 kHz range) coil whine!
+  pinMode(PS_PIN, OUTPUT_4MA);
   digitalWrite(PS_PIN, HIGH);
 
   pinMode(GND_PIN, INPUT);
@@ -647,14 +659,15 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(deviceInfo, "read info", "Read misc info about the firmware and state of the device."));
   Shell.registerCommand(new ShellCommand(fsInfo, "read fs", "Read misc info about the used filesystem."));
 
+  Shell.registerCommand(new ShellCommand(toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal."));
   Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'enable' or 'disable' to enable/disable the true random number generator output."));
   Shell.registerCommand(new ShellCommand(setDisplay, "set display", "<toggle> Either 'enable' or 'disable' to enable or force disable OLED support."));
-  Shell.registerCommand(new ShellCommand(toggleGeigerMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts cps, but has ~3x higher saturation."));
-  Shell.registerCommand(new ShellCommand(serialInterruptMode, "set int", "<mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
+  Shell.registerCommand(new ShellCommand(toggleGeigerMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster."));
+  Shell.registerCommand(new ShellCommand(serialOutputMode, "set out", "<mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
   Shell.registerCommand(new ShellCommand(measAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
 
-  Shell.registerCommand(new ShellCommand(clearSpectrumData, "clear spectrum", "Clear the on-board spectrum hist."));
-  Shell.registerCommand(new ShellCommand(resetSettings, "clear settings", "Clear all the settings and revert them back to default values."));
+  Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
+  Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
   Shell.registerCommand(new ShellCommand(rebootNow, "reboot", "Reboot the device."));
 
   // Starts FileSystem, autoformats if no FS is detected
@@ -707,27 +720,31 @@ void setup1() {
 }
 
 /*
-   LOOP FUNCTIONS
+  LOOP FUNCTIONS
 */
 void loop() {
   static uint32_t last_exec = 0;
+  unsigned long time = micros();
 
-  if (micros() - last_exec >= 500) {
+  if (time - last_exec >= PH_RESET || time < last_exec) {
     resetSampleHold();
-    last_exec = micros();
+    last_exec = time;
   }
 
   // Compute the median DC baseline to subtract from each pulse
-  /*
-  baselines[baseline_index] = analogRead(AIN_PIN);
-  baseline_index++;
-  if (baseline_index >= BASELINE_NUM) {
-    Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
-    current_baseline = round(Data_Array.Quartile(2));
-    //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
-    baseline_index = 0;
+  if (!adc_lock && conf.subtract_baseline) {
+    adc_lock = true;
+    baselines[baseline_index] = analogRead(AIN_PIN);
+    adc_lock = false;
+
+    baseline_index++;
+    if (baseline_index >= BASELINE_NUM) {
+      Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
+      current_baseline = round(Data_Array.Quartile(2));
+      //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
+      baseline_index = 0;
+    }
   }
-  */
 
   /*
   if (sipm.available() > 0) {
@@ -738,13 +755,15 @@ void loop() {
   }
   */
 
-  rp2040.wdt_reset();  // Reset watchdog, everything is fine
-
   delayMicroseconds(500);
 }
 
 
 void loop1() {
+  const unsigned long start = millis();
+
+  rp2040.wdt_reset();  // Reset watchdog, everything is fine
+
   if (conf.ser_output) {
     if (Serial || Serial2) {
       if (conf.print_spectrum) {
@@ -779,12 +798,14 @@ void loop1() {
 
   /*
   if (BOOTSEL) {
-    // Do something when BOOTSEL button is pressed
+    // Do something here when BOOTSEL button is pressed
+    println("The BOOTSEL button has been pressed.");
     while (BOOTSEL) { // Wait for BOOTSEL to be released
       delay(1);
     }
   }
   */
 
-  delay(1000);  // Wait for 1 sec, better: sleep for power saving?!
+  const unsigned long processingDelay = millis() - start;
+  delay(1000 - processingDelay);  // Wait for 1 sec, better: sleep for power saving?!
 }

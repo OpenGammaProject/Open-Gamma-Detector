@@ -1,1 +1,3 @@
-## This directory contains all the external assets needed (images, ...)
+## Docs
+
+This folder includes all the files needed for the README and stuff.

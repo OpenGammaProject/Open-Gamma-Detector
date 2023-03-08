@@ -1,38 +1,22 @@
-# Troubleshooting and Reference
-
-## Settings Reference
-
-### SiPM Voltage
-
-todo
-
-### Preamp Gain
-
-todo
-
-### Discriminator Threshold
-
-todo
-
-### Input Resistor R4
-
-The resistor R4 on the front side is optional. It will raise the input voltage of the preamp and therefore also the output so that even lower signals are above the inherent swing of the op amp at a given gain.
-
-This way you _might_ be able to read lower energies for a fixed gain up to the noise level. If you cannot get any signal whatsoever, you can also try and solder this resistor, which might fix your problem.
-
-Due to the preamp as well as SiPM gain being variable now and this voltage divider also introducing some noise into the signal I opted to leave this part out by default.
-
----
+# Troubleshooting and FAQ
 
 ## Troubleshooting
 
-### My device freezes and/or is not recognized.
+### My device freezes or crashes periodically
 
-Re-flash the firmware, reset all the settings and reboot the device. If the problem persists, please feel free to open an issue on GitHub.
+Make sure that the threshold setting is not set too low! If that's the case you should see the ACTivity LED blinking heavily or even staying on solid. In this case, noise is probably overwhelming the detector and forcing it to reset.
 
-### todo
+If this is not the case for you, reflash the firmware, reset all the settings and reboot the device. If the problem persists, please feel free to open an issue on GitHub.
 
-todo
+### My device is not recognized by my computer
+
+Make sure you are using a micro-USB cable that can be used for data transmission. There are micro-USB cables for powering/charging devices only and they can be easily mistaken for a data cable.
+
+If this isn't the case for you and it doesn't get recognized at all (even while holding the `BOOTSEL` button), there might be a manufacturing defect or you might have made a mistakes when soldering the parts. Feel free to get in touch if that's the case.
+
+### Settings on the device are not saved
+
+If you flashed it via the Arduino IDE be sure to select `Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"`. Without these 64 KB of flash assigned to the file system, the Pico is unable to create and save a settings file.
 
 ---
 
@@ -44,16 +28,10 @@ Press and hold the "BOOTSEL" button on the Raspberry Pi Pico while plugging it i
 
 ### Can I use a plastic scintillator?
 
-No, these cannot be used for gamma spectroscopy except in some edge cases. Generally, they have much worse efficiency and performance than your typical inorganic scintillator, like NaI(Tl) or LYSO.
+No, these cannot be used for gamma spectroscopy except in some edge cases. Generally, they have much worse efficiency than your typical inorganic scintillator, like NaI(Tl) or CsI(Tl), and extremely poor energy resolution.
 
-### Can I use the non-voltage reference firmware and vice versa?
+### How do I calibrate the device?
 
-Yes, this doesn't affect the performance at all. The only readings that uses the reference voltage value is the temperature sensor and the supply voltage reading. These will be unusable if the setting is wrong, but are not used in any way for the spectroscopy functions.
+You have to get a material with at least two known gamma peaks and calibrate the detector using these two peaks. In the Gamma MCA calibration tab you select the two peak ADC channels and assign their gamma-ray energy.
 
-### How do I change the x-axis from the ADC channels to energy (keV)?
-
-You have to get a material with at least two known gamma peaks and calibrate the detector using these two peaks. Otherwise it is not possible.
-
-### todo
-
-todo
+Ideally you want to use three peaks distributed evenly over your whole energy range to use the best calibration.
