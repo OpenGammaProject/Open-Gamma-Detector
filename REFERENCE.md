@@ -10,7 +10,7 @@ If this is not the case for you, reflash the firmware, reset all the settings an
 
 ### My device is not recognized by my computer
 
-Make sure you are using a micro-USB cable that can be used for data transmission. There are micro-USB cables for powering/charging devices only and they can be easily mistaken for a data cable.
+Make sure you are using a micro-USB cable that can be used for data transmission! There are micro-USB cables for powering/charging devices only and they can be easily mistaken for a data cable.
 
 If this isn't the case for you and it doesn't get recognized at all (even while holding the `BOOTSEL` button), there might be a manufacturing defect or you might have made a mistakes when soldering the parts. Feel free to get in touch if that's the case.
 
@@ -30,8 +30,36 @@ Press and hold the "BOOTSEL" button on the Raspberry Pi Pico while plugging it i
 
 No, these cannot be used for gamma spectroscopy except in some edge cases. Generally, they have much worse efficiency than your typical inorganic scintillator, like NaI(Tl) or CsI(Tl), and extremely poor energy resolution.
 
+### How do I change the gain?
+
+Since hardware revision 3 the gain is fixed on all boards and cannot be changed without any hardware modifications. This makes it **much** easier to provide a device that has a high chance of working out of the box without much fiddling around with pot settings or additional components.
+
+A downside of this is that different scintillator sizes, while working most of the time now, provide slightly different energy ranges and therefore bin per energy resolutions. This shouldn't be a problem, though.
+
+If you want to change the gain for whatever reason, you can do so by changing resistor values on the board. These three resistors close to the preamp set the non-inverting gain of the board: R7, R11, R16.
+
+This formula sets the voltage gain G:
+
+$$G = 1 + \frac{R7 + R11}{R16}$$
+
+You will need 0603 size resistors with a tolerance of 1% or less if possible.
+
 ### How do I calibrate the device?
 
 You have to get a material with at least two known gamma peaks and calibrate the detector using these two peaks. In the Gamma MCA calibration tab you select the two peak ADC channels and assign their gamma-ray energy.
 
 Ideally you want to use three peaks distributed evenly over your whole energy range to use the best calibration.
+
+### I am seeing a very sharp peak at ADC channel 511
+
+That is right, this is due to the DNL issues with the RP2040 ADC as described in the [Known Limitations](README.md#known-limitations) section of the readme.
+
+This effect would have been much worse without some simple corrections in the firmware. Since there is currently no hardware fix, this is what we have to live with unfortunately.
+
+### There is always a peak at ADC channel 0
+
+That is intentional behavior of the device. For the same reason as above, four ADC channels are ignored for the energy measurement.
+
+Since this would potentially highly influence the count rate, giving lower values than there actually are, these counts are added back to the spectrum to ADC channel 0.
+
+This way, all the counts are registered, but since there is actually never a signal near channel 0, you can clearly distinguish between the "right" spectrum and the rest.
