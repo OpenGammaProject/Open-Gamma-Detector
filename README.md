@@ -4,7 +4,7 @@
 
 __This project is on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I also post project updates and other announcements!__
 
-Open hardware for a hackable scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal and silicon photomultipliers (SiPMs). Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf commercial platform. Uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
+Open hardware for a hackable scintillation counter and multichannel analyzer (MCA) all-in-one device using a popular NaI(Tl) scintillation crystal and silicon photomultipliers (SiPMs). Suitable for (DIY) gamma spectroscopy while being significantly cheaper than any off-the-shelf commercial platform with a total parts cost of less than $200. Uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
 
 Hardware design has been done with [EasyEDA](https://easyeda.com/) and all the needed files for you to import the project as well as the schematic can be found in the `hardware` folder. There is also a Gerber file available for you to go directly to the PCB manufacturing step.
 
@@ -15,7 +15,7 @@ The software aims to be as simple as possible to understand and maintain; to ach
   <img alt="Photo of the detector board with mounted SiPM and crystal" title="Photo of the detector board with mounted SiPM and crystal" height="290px" src="docs/img2.jpg">
 </p>
 
-## Specifications
+## Features
 
 Here are some of the most important key facts:
 
@@ -37,7 +37,7 @@ Here are some of the most important key facts:
 
 * For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/). Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own.
 
-* The fully assembled main detector board can also be purchased on my [Tindie store](https://www.tindie.com/products/nuclearphoenix/open-gamma-detector/) or directly from the [Makerfabs shop](https://www.makerfabs.com/open-gamma-detector.html), thanks to my cooperation partner Makerfabs:
+* The fully assembled main detector board can also be purchased on [Tindie](https://www.tindie.com/products/nuclearphoenix/open-gamma-detector/)! This also helps me fund all the research and testing equipment, parts, etc. that I need to do this.
 
 <a href="https://www.tindie.com/stores/nuclearphoenix/?ref=offsite_badges&utm_source=sellers_NuclearPhoenix&utm_medium=badges&utm_campaign=badge_small"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-smalls.png" alt="I sell on Tindie" width="200" height="55"></a>
 
