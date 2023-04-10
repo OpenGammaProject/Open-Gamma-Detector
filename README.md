@@ -132,7 +132,7 @@ The installation and additional documentation can be found in the respective Git
 
 * [SimpleShell Enhanced](https://github.com/Phoenix1747/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
 * [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
-* ~~[Arduino-Pico-Analog-Correction](https://github.com/Phoenix1747/Arduino-Pico-Analog-Correction) [![arduino-library-badge](https://www.ardu-badge.com/badge/PicoAnalogCorrection.svg?)](https://www.ardu-badge.com/PicoAnalogCorrection)~~
+* [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
 
 They can be installed by searching their names using the IDE's built-in library manager.
 
