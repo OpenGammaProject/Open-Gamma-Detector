@@ -16,7 +16,7 @@ All of the design work has been done by WEDBox, [box@wed.ch](mailto:box@wed.ch),
 
 ### USB Panel Mount
 
-Example: https://www.aliexpress.com/item/4000932328047.html or https://www.aliexpress.com/item/4001250794678.html
+Example: [https://www.aliexpress.com/item/4000932328047.html](https://www.aliexpress.com/item/4000932328047.html) or [https://www.aliexpress.com/item/4001250794678.html](https://www.aliexpress.com/item/4001250794678.html)
 
 Cable Length: 30 cm
 
@@ -30,7 +30,7 @@ Cable Length: 30 cm
 
 #### Handle Variant
 
-Example: https://www.aliexpress.com/item/4000012656240.html
+Example: [https://www.aliexpress.com/item/4000012656240.html](https://www.aliexpress.com/item/4000012656240.html)
 
 Distance between holes: 96 mm
 
