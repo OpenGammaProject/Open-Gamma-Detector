@@ -25,6 +25,7 @@ The installation and additional documentation can be found in the respective Git
 * [SimpleShell Enhanced](https://github.com/Phoenix1747/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
 * [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
 * [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
+* [Statistical](https://github.com/akkoyun/Statistical) [![arduino-library-badge](https://www.ardu-badge.com/badge/Statistical.svg?)](https://www.ardu-badge.com/Statistical)
 
 They can be installed by searching their names using the IDE's built-in library manager.
 
@@ -93,7 +94,7 @@ The detector board features a standard I2C header where you can connect any stan
 At the moment the software only draws the energy spectrum and the mean cps value on the screen. These stats are reset once a specific number of counts have been collected - this number can be changed in the Arduino sketch. This is sufficient in most (simple) cases and more features will be implemented over time.
 
 ![OLED display](../docs/oled.jpg)
-__(!!!TODO!!!)__ 
+**TODO: Image will follow soon :)** 
 
 ## SPI
 
