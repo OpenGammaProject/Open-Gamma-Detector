@@ -12,7 +12,6 @@ The detector uses a standard serial-over-USB connection so that it can be integr
   <img alt="Photo of the detector board" title="Photo of the detector board" height="290px" src="docs/img1.jpg">
   <img alt="Photo of the detector board with mounted SiPM and crystal" title="Photo of the detector board with mounted SiPM and crystal" height="290px" src="docs/img2.jpg">
 </p>
-__(!!!TODO!!!)__ 
 
 ## Features
 
@@ -24,10 +23,9 @@ Here are some of the most important specs:
 * Low-voltage device: No HV needed like with photomultiplier tubes.
 * Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
 * 4096 ADC channels with built-in 3 V voltage reference.
-* Energy resolution < 14 __(!!!FINAL VALUE!!!)__ % @ 662 keV for typical NaI(Tl), depends on your (type of) scintillator.
 * Default Mode: About 25 µs total dead time while measuring energy.
 * Geiger Mode: About 15 µs total dead time without energy measurements.
-* Low power consumption: ~15 mA @ 5 V __(!!!FINAL VALUE!!!)__ with default firmware.
+* Low power consumption: ~25 mA @ 5 V with default firmware.
 * Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
 * Built-in True Random Number Generator.
 * Simple OLED support out of the box.
@@ -66,24 +64,20 @@ Here is a small collection of example spectra I could make quickly without putti
 Two hour long background spectrum with no samples:
 
 ![Background spectrum](docs/bg.png)
-__(!!!TODO!!!)__ 
 
-Spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak (2h measurement):
+30 minute spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak (2h measurement). The 307 keV peak has less than 14% energy resolution:
 
 ![Lu-176 spectrum](docs/lu-176.png)
-__(!!!TODO!!!)__ 
 
-Spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µCi of Am-241. Gamma peaks at 26.34 and 59.54 keV:
+30 minute spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µCi of Am-241. Gamma peaks at 26.34 and 59.54 keV:
 
 ![Am-176 spectrum](docs/am-241.png)
-__(!!!TODO!!!)__ 
 
-Spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series:
+30 minute spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series:
 
 ![Uraninite Glaze](docs/glaze.png)
-__(!!!TODO!!!)__ 
 
-Spectrum of a Na-22 test source, about ~2 µCi. You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy):
+Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse energy resolution). You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy):
 
 ![Na-22](docs/na-22.png)
 
