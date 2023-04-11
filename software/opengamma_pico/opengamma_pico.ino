@@ -25,7 +25,7 @@
 #include <ArduinoJson.h>           // Load and save the settings file
 #include <LittleFS.h>              // Used for FS, stores the settings file
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
-#include <Statistical.h>
+#include <Statistical.h>           // Used to get the median for baseline subtraction
 
 const String FWVERS = "3.0.0";  // Firmware Version Code
 
@@ -39,7 +39,7 @@ const uint8_t AMP_PIN = A0;         // Preamp (baseline) meas pin
 const uint8_t INT_PIN = 16;         // Signal interrupt pin
 const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
 const uint8_t LED = 25;             // LED on GP25
-const uint16_t EVT_RESET_C = 2000;  // Number of counts after which the OLED stats will be reset
+const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
 
 /*
     BEGIN USER SETTINGS
@@ -354,6 +354,7 @@ Config loadSettings(bool msg = true) {
 
   if (!saveFile) {
     println("Could not open save file!", true);
+    println("You can change a setting and try again.", true);
     return new_conf;
   }
 
@@ -771,12 +772,13 @@ void loop1() {
           cleanPrint(String(spectrum[index]) + ";");
           //spectrum[index] = 0; // Uncomment for differential histogram
         }
+        cleanPrintln();
       } else if (event_position > 0 && event_position <= EVENT_BUFFER) {
         for (uint16_t index = 0; index < event_position; index++) {
           cleanPrint(String(events[index]) + ";");
         }
+        cleanPrintln();
       }
-      cleanPrintln();
     }
 
     event_position = 0;

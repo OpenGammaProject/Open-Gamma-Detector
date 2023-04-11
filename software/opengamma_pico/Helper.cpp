@@ -1,6 +1,6 @@
 /*
 
-  Misc helper functions used for the Open Gamma Detector sketch
+  Misc helper functions used for the Open Gamma Detector sketch.
 
   2023, NuclearPhoenix. Open Gamma Project.
   https://github.com/OpenGammaProject/Open-Gamma-Detector
