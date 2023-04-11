@@ -47,7 +47,6 @@ You can also put a little jumper from `VBUS` to `VSYS` if you **only** want to u
 Here is a helpful image about the potentiometer settings for revision 3.0, it's not complicated:
 
 ![Potentiometer Controls](../docs/controls.png)
-__(!!!TODO!!!)__ 
 
 As you can see it is pretty easy to set the required voltage and threshold. **As a general rule, turn any potentiometer clockwise to increase the parameters, turn anti-clockwise to decrease.**
 
@@ -96,6 +95,5 @@ You can get a 3D-printable case for the Open Gamma Detector with different style
 All the STL files to print the two parts (main body and cover) can be found in [/enclosure](../enclosure), as well as some more info on the necessary screws and the USB extension cable.
 
 ![Inside view of the box](../docs/inside_box.jpg)
-__(!!!TODO!!!)__ 
 
 (This is an old image from Revision 2.0, but the footprint is exactly the same.)
