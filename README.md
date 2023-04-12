@@ -66,7 +66,7 @@ Two hour long background spectrum with no samples:
 
 ![Background spectrum](docs/bg.png)
 
-30 minute spectrum of a tiny (~5 g) LYSO scintillator inside some lead shielding showing all three distinct gamma peaks (88.34, 201.83, 306.78 keV) with an additional ~55 keV X-ray peak (2h measurement). The 307 keV peak has less than 14% energy resolution:
+30 minute spectrum of two tiny (~5 g) LYSO scintillator showing two distinct gamma peaks (201.83, 306.78 keV) with an additional ~55 keV X-ray peak. The 307 keV peak has ~13.5% energy resolution in this case:
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
@@ -74,7 +74,7 @@ Two hour long background spectrum with no samples:
 
 ![Am-176 spectrum](docs/am-241.png)
 
-30 minute spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series:
+30 minute spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV:
 
 ![Uraninite Glaze](docs/glaze.png)
 
