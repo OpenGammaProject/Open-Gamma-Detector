@@ -94,7 +94,6 @@ The detector board features a standard I2C header where you can connect any stan
 At the moment the software only draws the energy spectrum and the mean cps value on the screen. These stats are reset once a specific number of counts have been collected - this number can be changed in the Arduino sketch. This is sufficient in most (simple) cases and more features will be implemented over time.
 
 ![OLED display](../docs/oled.jpg)
-**TODO: Image will follow soon :)**
 
 ## SPI
 
