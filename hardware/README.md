@@ -62,7 +62,7 @@ I got all of my scintillators (used NaI(Tl), LYSO, ...) on eBay. Just search for
 
 You can obviously also buy brand-new scintillators, however, these can be much more expensive. It really depends on the manufacturer there. You can get some cheap 1" x 1" NaI(Tl) scintillator from China for < $100.
 
-**Since this is a fixed gain device, I can only highly recommend you to get a scintillator that fits on the PCB and is of a comparable volume as my scintillators. I am using a 18 x 30 mm crystal, but 1 x 1 inch works fine too, for example.** Just be sure the volume/size is not orders of magnitue larger or smaller.
+**Since this is a fixed-gain device, I can only highly recommend you to get a scintillator that fits on the PCB and is of a comparable volume as the scintillators I tested. I am using an 18 x 30 mm crystal for most of the spectra that you can see here and it works great. Also, due to the small size of the SiPM in comparison to the scintillator opening, try to use narrower crystals than wider ones if you can.** That way, there aren't many light losses to the SiPM. In general, just be sure the volume/size is not orders of magnitue larger or smaller.
 
 If the scintillator is too small, the output voltage too will be very low and you might get restricted by the ADC resolution. In this case the energy range will also be much higher than you would ever need (can easily get up to 10 MeV).
 
