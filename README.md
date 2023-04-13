@@ -36,7 +36,7 @@ Here are some of the most important specs:
 
 * For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/). Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own.
 
-* The fully assembled main detector board can be purchased on my [Tindie store](https://www.tindie.com/products/nuclearphoenix/open-gamma-detector/). With your purchase your are also supporting me in my efforts to maintain and improve this project, thanks!
+* The fully assembled main detector board can be purchased on my [Tindie store](https://www.tindie.com/products/28827/). With your purchase your are also supporting me in my efforts to maintain and improve this project, thanks!
 
 <a href="https://www.tindie.com/stores/nuclearphoenix/?ref=offsite_badges&utm_source=sellers_NuclearPhoenix&utm_medium=badges&utm_campaign=badge_large"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-larges.png" alt="I sell on Tindie" width="200" height="104"></a>
 
