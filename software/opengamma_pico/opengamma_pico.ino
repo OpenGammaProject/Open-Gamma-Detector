@@ -646,7 +646,7 @@ void setup1() {
   rp2040.wdt_begin(5000);  // Enable hardware watchdog to check every 5s
 
   // Disable "Power-Saving" power supply option.
-  // -> does not actually significantly save power, but output is much less noisy this way!
+  // -> does not actually significantly save power, but output is much less noisy in HIGH!
   // -> Also with PS_PIN LOW I have experiences high-pitched (~ 15 kHz range) coil whine!
   pinMode(PS_PIN, OUTPUT_4MA);
   digitalWrite(PS_PIN, HIGH);
@@ -741,7 +741,7 @@ void loop() {
     baseline_index++;
     if (baseline_index >= BASELINE_NUM) {
       Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
-      current_baseline = round(Data_Array.Quartile(2));
+      current_baseline = round(Data_Array.Quartile(2));  // Take the median value
       //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
       baseline_index = 0;
     }
