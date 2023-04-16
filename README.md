@@ -11,8 +11,9 @@ Open hardware for a hackable scintillation counter and multichannel analyzer (MC
 The detector uses a standard serial-over-USB connection so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc.
 
 <p align="center">
-  <img alt="Photo of the detector board" title="Photo of the detector board" height="290px" src="docs/img1.jpg">
-  <img alt="Photo of the detector board with mounted SiPM and crystal" title="Photo of the detector board with mounted SiPM and crystal" height="290px" src="docs/img2.jpg">
+  <img alt="Photo of the detector board with mounted SiPM, crystal and OLED" title="Photo of the detector board with mounted SiPM, crystal and OLED" width="500px" src="docs/oled.jpg">
+  <br>
+  <img alt="Photo of the detector board" title="Photo of the detector board" width="500px" src="docs/img1.jpg">
 </p>
 
 ## Features
