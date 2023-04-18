@@ -27,7 +27,7 @@
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 #include <Statistical.h>           // Used to get the median for baseline subtraction
 
-const String FWVERS = "3.0.0";  // Firmware Version Code
+const String FWVERS = "3.0.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -77,22 +77,25 @@ struct Config {
 volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the spectrum histogram written to flash
 volatile uint16_t events[EVENT_BUFFER];                 // Buffer array for single events
 volatile uint16_t event_position = 0;                   // Target index in events array
-uint32_t last_time = 0;                                 // Last timestamp for OLED refresh
+volatile uint32_t start_time = 0;                       // Time in ms when the spectrum collection has started
+volatile uint32_t last_time = 0;
+volatile uint32_t last_total = 0;
 
 volatile uint32_t trng_stamps[3];          // Timestamps for True Random Number Generator
-volatile uint8_t trng_index = 0;           // Timestamp index for True Random Number Generator
 volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a byte together
 volatile uint8_t bit_index = 0;            // Bit index for the generated number
 volatile uint32_t trng_nums[1000];         // TRNG number output array
 volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRNG array
+volatile float deadtime_avg = 0;           // Average detector dead time in µs
+volatile uint32_t dt_avg_num = 0;          // Number of dead time measurements
 
-volatile float deadtime_avg = 0;   // Average detector dead time in µs
-volatile uint32_t dt_avg_num = 0;  // Number of dead time measurements
+uint16_t baselines[BASELINE_NUM];  // Array of a number of baseline (DC bias) measurements at the SiPM input
+uint16_t current_baseline = 0;     // Median value of the
 
-uint8_t baseline_index = 0;
-uint16_t baselines[BASELINE_NUM];
-uint16_t current_baseline = 0;
-volatile bool adc_lock = false;
+volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
+
+// Stores x (5) seconds worth of "current" cps to calculate an average cps value in a ring buffer config
+float counts_buffer[] = { 0, 0, 0, 0, 0 };
 
 Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -276,7 +279,6 @@ void getSpectrumData([[maybe_unused]] String *args) {
 void clearSpectrumData([[maybe_unused]] String *args) {
   println("Resetting spectrum...");
   clearSpectrum();
-  last_time = millis();
   println("Successfully reset spectrum!");
 }
 
@@ -335,6 +337,9 @@ void clearSpectrum() {
   for (size_t i = 0; i < pow(2, ADC_RES); i++) {
     spectrum[i] = 0;
   }
+  start_time = millis();  // Spectrum pulse collection has started
+  last_time = millis();
+  last_total = 0;
 }
 
 
@@ -469,12 +474,16 @@ void drawSpectrum() {
     scale_factor = float(SCREEN_HEIGHT - 11) / float(max_num);
   }
 
+  uint32_t new_total = total - last_total;
+  last_total = total;
+
   if (millis() < last_time) {  // Catch Millis() Rollover
     last_time = millis();
     return;
   }
 
   uint32_t time_delta = millis() - last_time;
+  last_time = millis();
 
   if (time_delta == 0) {  // Catch divide by zero
     time_delta = 1000;
@@ -483,7 +492,23 @@ void drawSpectrum() {
   display.clearDisplay();
   display.setCursor(0, 0);
 
-  display.print(total * 1000.0 / time_delta);
+  static uint8_t buffer_index = 0;
+  const uint8_t BUFFER_SIZE = sizeof(counts_buffer) / sizeof(counts_buffer[0]);
+  counts_buffer[buffer_index] = new_total * 1000.0 / time_delta;
+
+  if (buffer_index + 1 >= BUFFER_SIZE) {
+    buffer_index = 0;
+  } else {
+    buffer_index++;
+  }
+
+  float avg_cps = 0;
+  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
+    avg_cps += counts_buffer[i];
+  }
+  avg_cps /= BUFFER_SIZE;
+
+  display.print(avg_cps);
   display.print(" cps");
 
   const int16_t temp = round(readTemp());
@@ -498,7 +523,7 @@ void drawSpectrum() {
   display.print((char)247);
   display.println("C");
 
-  const uint32_t seconds_running = round(time_delta / 1000.0);
+  const uint32_t seconds_running = round((millis() - start_time) / 1000.0);
   const uint8_t char_offset = floor(log10(seconds_running));
 
   display.setCursor(SCREEN_WIDTH - 18 - char_offset * 6, 8);
@@ -514,7 +539,6 @@ void drawSpectrum() {
   display.display();
 
   if (total > EVT_RESET_C) {
-    last_time = millis();
     clearSpectrum();
   }
 }
@@ -569,6 +593,8 @@ void eventInt() {
   }
 
   resetSampleHold();
+
+  static uint8_t trng_index = 0;  // Timestamp index for True Random Number Generator
 
   if (conf.trng_enabled) {
     // Calculations for the TRNG
@@ -639,6 +665,8 @@ void setup() {
   //sipm.begin(1000000);
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, FALLING);
+
+  start_time = millis();  // Spectrum pulse collection has started
 }
 
 
@@ -731,6 +759,8 @@ void loop() {
     resetSampleHold();
     last_exec = time;
   }
+
+  static uint8_t baseline_index = 0;
 
   // Compute the median DC baseline to subtract from each pulse
   if (!adc_lock && conf.subtract_baseline) {
