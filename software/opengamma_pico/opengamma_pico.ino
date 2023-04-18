@@ -90,7 +90,7 @@ volatile float deadtime_avg = 0;           // Average detector dead time in µs
 volatile uint32_t dt_avg_num = 0;          // Number of dead time measurements
 
 uint16_t baselines[BASELINE_NUM];  // Array of a number of baseline (DC bias) measurements at the SiPM input
-uint16_t current_baseline = 0;     // Median value of the
+uint16_t current_baseline = 0;     // Median value of the input baseline voltage
 
 volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 
