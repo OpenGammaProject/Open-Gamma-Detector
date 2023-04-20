@@ -1,3 +1,5 @@
+**For a reference 3D model, you can have a look at the `3D` folder. It contains some `mtl` and `obj` files if you want to design your own enclosure.**
+
 # Parts List
 
 Here are all the parts you need to build all the different 3D printed enclosures. These are all compatible with the Open Gamma Detector Rev. 2 and 3.
