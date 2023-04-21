@@ -7,7 +7,7 @@ This project utilizes a silicon photomultiplier (short SiPM) which is way smalle
 The following 6 mm SiPMs are recommended for this project:
 
 * **MICROFC-60035-SMT-TR**
-* MICROFC-60035-SMT-TR1 (the exact same as above, but much more expensive for whatever reason)
+* MICROFC-60035-SMT-TR1 (the exact same as above, however will be more expensive to purchase as sold in smaller batches to suppliers)
 * AFBR-S4N66C013 (a good replacement if the above are unavailable)
 
 Here are some very helpful in-depth datasheets about the particular MicroFC SiPM recommended here:
@@ -52,11 +52,11 @@ As you can see it is pretty easy to set the required voltage and threshold. **As
 
 ## Scintillator (Assembly)
 
-The finished [MicroFC-](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) and [AFBR-](https://github.com/OpenGammaProject/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible. You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There are also special materials for this use case but you can also use standard silicone grease - works great for me. After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board.
+The finished [MicroFC-](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) and [AFBR-](https://github.com/OpenGammaProject/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible.
 
-It's very important to get the SiPM/scintillator assembly light-tight. Otherwise you'll either run into problems with lower energies where noise dominates or outright not measure anything at all, because the sensor is saturating.
+### Scintillator Cyrstals
 
-**==> More assembly instructions can be found on the [Hackaday.io project page](https://hackaday.io/project/185211/instructions)!**
+<!--- I'll look at adding some reliable sources down the track for new ones - Sebyon --->
 
 I got all of my scintillators (used NaI(Tl), LYSO, ...) on eBay. Just search for some keywords or specific types, you'll probably find something. Just be sure to look out for signs of wear and tear like scratches on the window or yellowing (!) in NaI crystals as these can deteriorate performance significantly.
 
@@ -69,6 +69,27 @@ If the scintillator is too small, the output voltage too will be very low and yo
 If the scintillator is too large, the output voltages will be very high and thus decrease your energy range dramatically. The device is limited by the 3.0 V reference voltage in this case!
 
 **As a general rule of thumb, try to use as much of the space available on the PCB as possible to mount the scintillator and you will (in most cases) be absolutely fine.**
+
+### Index-Matching Material
+
+You should apply some optical coupling compound between the SiPM and the crystal window to reduce reflections as good as possible (this way the best photon detection efficiency is achieved). There a multitude of options for optical couplants, and depending on your region some may be easier to aquire than others. As a general rule of thumb, silicone oil/grease can be used. If it contains polydimethylsiloxane, you're on the right track. Some options:
+
+<!---This is a good source https://www.logwell.com/tech/servtips/optical_coupling_grease.html - Sebyon --->
+
+| Description            | Brand  | Reflective Index | Viscosity (cPs)| Cost (USD) | Comment |
+|------------------------|--------|------------------|----------------|------------|---------|
+|[Index Matching Gel, 3 cc](https://www.thorlabs.com/thorproduct.cfm?partnumber=G608N3)|Thorlabs| 1.43 | 1,060,000 | $47.46 | High viscosity, works welll for fibre optic coupling. |
+|[Index-Matching Fluid](https://www.newport.com/f/index-matching-fluid) | Newport | 1.52 | 100 | $45.60 | Low viscosity may made setting the SiPM and crystal window difficult. However, the RI is the closer to the window properties. Use if you're experienced with assembly. |
+|XIAMETER™ PMX-200 Silicone Fluid | Dow Corning | 1.40 | 60,000 - 100,000 | Depends on source | Low cost and [used in research](https://pubs.acs.org/doi/10.1021/acs.cgd.0c00256) due to performance / price. PMX-200 can come in various viscosities, try to get close to 100,000 cPs. |
+|Molykote Industrial 4 Electrical Insulating Compound | Dow Corning | N/A | Grease | ~$20 | Used by Ludlum for their survey meter scintillation detectors. |
+
+<!--- I might add some more options for achieving a hermatic seal with tape here once I start putting one together - Sebyon --->
+
+After you applied some, you press both parts together and wrap everything with light-tight tape, again, I'm just using some black electrical tape here. That's essentially it, now you can solder some wires to the pads on the board to connect them together and secure it in place in the free space on the board.
+
+It's very important to get the SiPM/scintillator assembly light-tight. Otherwise you'll either run into problems with lower energies where noise dominates or outright not measure anything at all, because the sensor is saturating.
+
+**==> More assembly instructions can be found on the [Hackaday.io project page](https://hackaday.io/project/185211/instructions)!**
 
 ## Raspberry Pi Pico W
 
@@ -83,6 +104,8 @@ I'll happily accept PRs if you make something like that, though, so let me know!
 ## Shielding
 
 Due to the detector measuring small voltages, energy resolution being limited by noise and a small 470 pF capacitor being on board, it is generally pretty sensitive to EMI. For the best performance possible, you should put your detector into some kind of metal enclosure. It doesn't need to be a thick metal case, a tin can will most likely suffice.
+
+<!--- Once I start assembly I'll look at proving some shielding ideas - Sebyon --->
 
 The four screw holes on the PCB's actual detector part are connected to the circuit GND.
 
