@@ -50,7 +50,7 @@ You have to get a material with at least two known gamma peaks and calibrate the
 
 Ideally you want to use three peaks distributed evenly over your whole energy range to use the best calibration.
 
-### I am seeing a very sharp peak at ADC channel 511
+### I am seeing a sharp peak immediately around ADC channel 511
 
 That is right, this is due to the DNL issues with the RP2040 ADC as described in the [Known Limitations](README.md#known-limitations) section of the readme.
 
@@ -63,3 +63,5 @@ That is intentional behavior of the device. For the same reason as above, four A
 Since this would potentially highly influence the count rate, giving lower values than there actually are, these counts are added back to the spectrum to ADC channel 0.
 
 This way, all the counts are registered, but since there is actually never a signal near channel 0, you can clearly distinguish between the "right" spectrum and the rest.
+
+If you want to disable this behavior, you can do so by using the  `set correction` command over the serial interface. This will still omit the ADC channel readings, but won't create another peak at 0. In geiger mode, there will always only be a channel `0` since this is how the current cps is calculated.

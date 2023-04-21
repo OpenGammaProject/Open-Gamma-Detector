@@ -49,11 +49,12 @@ Commands:
 	read info		: Read misc info about the firmware and state of the device.
 	read fs			: Read misc info about the used filesystem.
 	set baseline	: <toggle> Automatically subtract the DC bias (baseline) from each signal.
-	set trng		: <toggle> Either 'enable' or 'disable' to enable/disable the true random number generator output.
+	set trng		: <toggle> Either 'enable' or 'disable' to toggle the true random number generator output.
 	set display		: <toggle> Either 'enable' or 'disable' to enable or force disable OLED support.
 	set mode		: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster.
 	set out			: <mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
 	set averaging	: <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
+	set correction	: <toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels.
 	reset spectrum	: Reset the on-board spectrum histogram.
 	reset settings	: Reset all the settings/revert them back to default values.
 	reboot			: Reboot the device.

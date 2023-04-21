@@ -27,7 +27,7 @@
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 #include <Statistical.h>           // Used to get the median for baseline subtraction
 
-const String FWVERS = "3.0.1";  // Firmware Version Code
+const String FWVERS = "3.1.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -45,15 +45,16 @@ const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED sta
     BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
-const float VREF_VOLTAGE = 3.0;        // ADC reference voltage, defaults 3.3, with reference 3.0
-const uint8_t ADC_RES = 12;            // Use 12-bit ADC resolution
-const uint16_t PH_RESET = 1000;        // Microseconds after which the P&H circuit will be reset once
-const uint32_t EVENT_BUFFER = 100000;  // Buffer this many events for Serial.print
-const uint8_t SCREEN_WIDTH = 128;      // OLED display width, in pixels
-const uint8_t SCREEN_HEIGHT = 64;      // OLED display height, in pixels
-const uint8_t SCREEN_ADDRESS = 0x3C;   // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-const uint8_t TRNG_BITS = 8;           // Number of bits for each random number, max 8
-const uint8_t BASELINE_NUM = 100;      // Number of measurements taken to determine the DC baseline
+const float VREF_VOLTAGE = 3.0;             // ADC reference voltage, defaults 3.3, with reference 3.0
+const uint8_t ADC_RES = 12;                 // Use 12-bit ADC resolution
+const uint16_t PH_RESET = 1000;             // Microseconds after which the P&H circuit will be reset once
+const uint32_t EVENT_BUFFER = 100000;       // Buffer this many events for Serial.print
+const uint8_t SCREEN_WIDTH = 128;           // OLED display width, in pixels
+const uint8_t SCREEN_HEIGHT = 64;           // OLED display height, in pixels
+const uint8_t SCREEN_ADDRESS = 0x3C;        // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+const uint8_t TRNG_BITS = 8;                // Number of bits for each random number, max 8
+const uint8_t BASELINE_NUM = 100;           // Number of measurements taken to determine the DC baseline
+const String CONFIG_FILE = "/config.json";  // File to store the settings
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -64,10 +65,11 @@ struct Config {
   bool enable_display = false;     // Enable I2C Display, see settings above
   bool trng_enabled = false;       // Enable the True Random Number Generator
   bool subtract_baseline = false;  // Subtract the DC bias from each pulse
+  bool cps_correction = true;      // Correct the cps for the DNL compensation
 
   // Do NOT modify this function:
   bool operator==(const Config &other) const {
-    return (ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled && subtract_baseline == other.subtract_baseline);
+    return (cps_correction == other.cps_correction && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled && subtract_baseline == other.subtract_baseline);
   }
 };
 /*
@@ -211,6 +213,26 @@ void toggleBaseline(String *args) {
 }
 
 
+void toggleCPSCorrection(String *args) {
+  String command = *args;
+  command.replace("set correction", "");
+  command.trim();
+
+  if (command == "enable") {
+    conf.cps_correction = true;
+    println("Enabled CPS correction.");
+  } else if (command == "disable") {
+    conf.cps_correction = false;
+    println("Disabled CPS correction.");
+  } else {
+    println("Invalid input '" + command + "'.", true);
+    println("Must be 'enable' or 'disable'.", true);
+    return;
+  }
+  saveSettings();
+}
+
+
 void measAveraging(String *args) {
   String command = *args;
   command.replace("set averaging", "");
@@ -284,7 +306,7 @@ void clearSpectrumData([[maybe_unused]] String *args) {
 
 
 void readSettings([[maybe_unused]] String *args) {
-  File saveFile = LittleFS.open("/config.json", "r");
+  File saveFile = LittleFS.open(CONFIG_FILE, "r");
 
   if (!saveFile) {
     println("Could not open save file!", true);
@@ -355,11 +377,13 @@ void serialEvent2() {
 
 Config loadSettings(bool msg = true) {
   Config new_conf;
-  File saveFile = LittleFS.open("/config.json", "r");
+  File saveFile = LittleFS.open(CONFIG_FILE, "r");
 
   if (!saveFile) {
-    println("Could not open save file!", true);
-    println("You can change a setting and try again.", true);
+    println("Could not open save file! Creating a fresh file...", true);
+
+    writeSettingsFile();  // Force creation of a new file
+
     return new_conf;
   }
 
@@ -380,13 +404,30 @@ Config loadSettings(bool msg = true) {
     return new_conf;
   }
 
-  new_conf.ser_output = doc["ser_output"];
-  new_conf.geiger_mode = doc["geiger_mode"];
-  new_conf.print_spectrum = doc["print_spectrum"];
-  new_conf.meas_avg = doc["meas_avg"];
-  new_conf.enable_display = doc["enable_display"];
-  new_conf.trng_enabled = doc["trng_enabled"];
-  new_conf.subtract_baseline = doc["subtract_baseline"];
+  if (doc.containsKey("ser_output")) {
+    new_conf.ser_output = doc["ser_output"];
+  }
+  if (doc.containsKey("geiger_mode")) {
+    new_conf.geiger_mode = doc["geiger_mode"];
+  }
+  if (doc.containsKey("print_spectrum")) {
+    new_conf.print_spectrum = doc["print_spectrum"];
+  }
+  if (doc.containsKey("meas_avg")) {
+    new_conf.meas_avg = doc["meas_avg"];
+  }
+  if (doc.containsKey("enable_display")) {
+    new_conf.enable_display = doc["enable_display"];
+  }
+  if (doc.containsKey("trng_enabled")) {
+    new_conf.trng_enabled = doc["trng_enabled"];
+  }
+  if (doc.containsKey("subtract_baseline")) {
+    new_conf.subtract_baseline = doc["subtract_baseline"];
+  }
+  if (doc.containsKey("cps_correction")) {
+    new_conf.cps_correction = doc["cps_correction"];
+  }
 
   if (msg) {
     println("Successfuly loaded settings from flash.");
@@ -395,15 +436,8 @@ Config loadSettings(bool msg = true) {
 }
 
 
-bool saveSettings() {
-  Config read_conf = loadSettings(false);
-
-  if (read_conf == conf) {
-    //println("Settings did not change... not writing to flash.");
-    return false;
-  }
-
-  File saveFile = LittleFS.open("/config.json", "w");
+bool writeSettingsFile() {
+  File saveFile = LittleFS.open(CONFIG_FILE, "w");
 
   if (!saveFile) {
     println("Could not open save file!", true);
@@ -419,12 +453,26 @@ bool saveSettings() {
   doc["enable_display"] = conf.enable_display;
   doc["trng_enabled"] = conf.trng_enabled;
   doc["subtract_baseline"] = conf.subtract_baseline;
+  doc["cps_correction"] = conf.cps_correction;
 
   serializeJson(doc, saveFile);
 
   saveFile.close();
-  //println("Successfuly written config to flash.");
+
   return true;
+}
+
+
+bool saveSettings() {
+  Config read_conf = loadSettings(false);
+
+  if (read_conf == conf) {
+    //println("Settings did not change... not writing to flash.");
+    return false;
+  }
+
+  //println("Successfuly written config to flash.");
+  return writeSettingsFile();
 }
 
 
@@ -577,18 +625,23 @@ void eventInt() {
       avg /= conf.meas_avg - invalid;
     }
 
-    // Subtract DC bias from pulse avg and then convert float --> uint16_t ADC channel
-    mean = round(avg - current_baseline);
+    if (current_baseline <= avg) {  // Catch negative numbers
+      // Subtract DC bias from pulse avg and then convert float --> uint16_t ADC channel
+      mean = round(avg - current_baseline);
+    }
+
     // Use median instead of average?
   }
 
   if (conf.ser_output || conf.enable_display) {
-    events[event_position] = mean;
-    spectrum[mean] += 1;
-    if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
-      event_position = 0;
-    } else {
-      event_position++;
+    if (conf.cps_correction || mean != 0 || conf.geiger_mode) {
+      events[event_position] = mean;
+      spectrum[mean] += 1;
+      if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
+        event_position = 0;
+      } else {
+        event_position++;
+      }
     }
   }
 
@@ -689,11 +742,12 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(fsInfo, "read fs", "Read misc info about the used filesystem."));
 
   Shell.registerCommand(new ShellCommand(toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal."));
-  Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'enable' or 'disable' to enable/disable the true random number generator output."));
+  Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'enable' or 'disable' to toggle the true random number generator output."));
   Shell.registerCommand(new ShellCommand(setDisplay, "set display", "<toggle> Either 'enable' or 'disable' to enable or force disable OLED support."));
   Shell.registerCommand(new ShellCommand(toggleGeigerMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster."));
   Shell.registerCommand(new ShellCommand(serialOutputMode, "set out", "<mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
   Shell.registerCommand(new ShellCommand(measAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
+  Shell.registerCommand(new ShellCommand(toggleCPSCorrection, "set correction", "<toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels."));
 
   Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
   Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
@@ -702,6 +756,8 @@ void setup1() {
   // Starts FileSystem, autoformats if no FS is detected
   LittleFS.begin();
   conf = loadSettings();  // Read all the detector settings from flash
+
+  saveSettings();  // Create settings file if none is present
 
   // Set the correct SPI pins
   SPI.setRX(4);
