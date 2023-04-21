@@ -16,6 +16,8 @@ The detector uses a standard serial-over-USB connection so that it can be integr
   <img alt="Photo of the detector board" title="Photo of the detector board" width="500px" src="docs/img1.jpg">
 </p>
 
+If you want a barebone version of the Open Gamma Detector to count pulses or something like that, you can have a look at the [Mini SiPM Driver](https://github.com/OpenGammaProject/Mini-SiD) board.
+
 ## Features
 
 Here are some of the most important specs:
