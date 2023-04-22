@@ -56,11 +56,16 @@ The finished [MicroFC-](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier
 
 ### Scintillator Cyrstals
 
-<!--- I'll look at adding some reliable sources down the track for new ones - Sebyon --->
-
 I got all of my scintillators (used NaI(Tl), LYSO, ...) on eBay. Just search for some keywords or specific types, you'll probably find something. Just be sure to look out for signs of wear and tear like scratches on the window or yellowing (!) in NaI crystals as these can deteriorate performance significantly.
 
 You can obviously also buy brand-new scintillators, however, these can be much more expensive. It really depends on the manufacturer there. You can get some cheap 1" x 1" NaI(Tl) scintillator from China for < $100.
+
+Two sources of new NaI(Tl) scintillators are:
+
+| Brand | Location | Comment |
+|-------|----------|---------|
+|[OST - Photonics](https://www.ost-photonics.com/products/scintillation-crystal/encapsulated-scintillator/standard-type-naitl-scintillator/)| China | Can purchase directly from website |
+| [Epic-Crystal](https://www.epic-crystal.com/) | China | Also sold by [GammaSpectacular](https://www.gammaspectacular.com/)
 
 **Since this is a fixed-gain device, I can only highly recommend you to get a scintillator that fits on the PCB and is of a comparable volume as the scintillators I tested. I am using an 18 x 30 mm crystal for most of the spectra that you can see here and it works great. Also, due to the small size of the SiPM in comparison to the scintillator opening, try to use narrower crystals than wider ones if you can.** That way, there aren't many light losses to the SiPM. In general, just be sure the volume/size is not orders of magnitue larger or smaller.
 
@@ -78,8 +83,8 @@ You should apply some optical coupling compound between the SiPM and the crystal
 
 | Description            | Brand  | Reflective Index | Viscosity (cPs)| Cost (USD) | Comment |
 |------------------------|--------|------------------|----------------|------------|---------|
-|[Index Matching Gel, 3 cc](https://www.thorlabs.com/thorproduct.cfm?partnumber=G608N3)|Thorlabs| 1.43 | 1,060,000 | $47.46 | High viscosity, works welll for fibre optic coupling. |
-|[Index-Matching Fluid](https://www.newport.com/f/index-matching-fluid) | Newport | 1.52 | 100 | $45.60 | Low viscosity may made setting the SiPM and crystal window difficult. However, the RI is the closer to the window properties. Use if you're experienced with assembly. |
+|[Index Matching Gel, 3 cc](https://www.thorlabs.com/thorproduct.cfm?partnumber=G608N3)|Thorlabs| 1.43 | 1,060,000 | $47.46 | High viscosity, works well for fibre optic coupling. |
+|[Index-Matching Fluid](https://www.newport.com/f/index-matching-fluid) | Newport | 1.52 | 100 | $45.60 | Low viscosity may make setting the SiPM and crystal window difficult. However, the RI is the closer to the window properties. Use if you're experienced with assembly. |
 |XIAMETER™ PMX-200 Silicone Fluid | Dow Corning | 1.40 | 60,000 - 100,000 | Depends on source | Low cost and [used in research](https://pubs.acs.org/doi/10.1021/acs.cgd.0c00256) due to performance / price. PMX-200 can come in various viscosities, try to get close to 100,000 cPs. |
 |Molykote Industrial 4 Electrical Insulating Compound | Dow Corning | N/A | Grease | ~$20 | Used by Ludlum for their survey meter scintillation detectors. |
 
