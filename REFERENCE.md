@@ -18,6 +18,22 @@ If this isn't the case for you and it doesn't get recognized at all (even while 
 
 If you flashed it via the Arduino IDE be sure to select `Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"`. Without these 64 KB of flash assigned to the file system, the Pico is unable to create and save a settings file.
 
+### I am seeing a sharp peak immediately around ADC channel 511
+
+That is right, this is due to the DNL issues with the RP2040 ADC as described in the [Known Limitations](README.md#known-limitations) section of the readme.
+
+This effect would have been much worse without some simple corrections in the firmware. Since there is currently no hardware fix, this is what we have to live with unfortunately.
+
+### There is always a peak at ADC channel 0
+
+That is intentional behavior of the device. For the same reason as above, four ADC channels are ignored for the energy measurement.
+
+Since this would potentially highly influence the count rate, giving lower values than there actually are, these counts are added back to the spectrum to ADC channel 0.
+
+This way, all the counts are registered, but since there is actually never a signal near channel 0, you can clearly distinguish between the "right" spectrum and the rest.
+
+If you want to disable this behavior, you can do so by using the  `set correction` command over the serial interface. This will still omit the ADC channel readings, but won't create another peak at 0. In geiger mode, there will always only be a channel `0` since this is how the current cps is calculated.
+
 ---
 
 ## FAQ
@@ -50,18 +66,12 @@ You have to get a material with at least two known gamma peaks and calibrate the
 
 Ideally you want to use three peaks distributed evenly over your whole energy range to use the best calibration.
 
-### I am seeing a sharp peak immediately around ADC channel 511
+### Why don't you use a TIA or CSP or change X or Y?
 
-That is right, this is due to the DNL issues with the RP2040 ADC as described in the [Known Limitations](README.md#known-limitations) section of the readme.
+This device is made to be as simple and cheap as possible, while still yielding as great results as possible. In effect it is a compromise to get the best price-performance ratio.
 
-This effect would have been much worse without some simple corrections in the firmware. Since there is currently no hardware fix, this is what we have to live with unfortunately.
+Of course, you could use transimpedance or charge-sensitive preamplifiers, however this would significantly increase complexity as you'd need additional parts for the correct power supplies and so on. Using more expensive amplifiers would surely also be an option.
 
-### There is always a peak at ADC channel 0
+If you wanted to go the maximum-performance route, you'd also need to use a different microcontroller with a much better ADC, and maybe even consider using 4-layer boards with additional ground and power planes. Essentially, you'd have to re-design the whole board at this point.
 
-That is intentional behavior of the device. For the same reason as above, four ADC channels are ignored for the energy measurement.
-
-Since this would potentially highly influence the count rate, giving lower values than there actually are, these counts are added back to the spectrum to ADC channel 0.
-
-This way, all the counts are registered, but since there is actually never a signal near channel 0, you can clearly distinguish between the "right" spectrum and the rest.
-
-If you want to disable this behavior, you can do so by using the  `set correction` command over the serial interface. This will still omit the ADC channel readings, but won't create another peak at 0. In geiger mode, there will always only be a channel `0` since this is how the current cps is calculated.
+Instead of something like 9% or 10% energy resolution @ 662 keV, you'd then maybe get as much as 6% if you're lucky, which is the limit for most NaI or CsI scintillators anyways. That would come at a much higher cost, though. In my opinion, you get to a point of diminishing returns quickly, especially when designing an entry-level device such as this.
