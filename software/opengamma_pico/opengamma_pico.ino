@@ -595,6 +595,70 @@ void drawSpectrum() {
 }
 
 
+void drawGeigerCounts() {
+  uint32_t total = 0;
+
+  for (uint16_t i = 0; i < pow(2, ADC_RES); i++) {
+    total += spectrum[i];
+  }
+
+  uint32_t new_total = total - last_total;
+  last_total = total;
+
+  if (millis() < last_time) {  // Catch Millis() Rollover
+    last_time = millis();
+    return;
+  }
+
+  uint32_t time_delta = millis() - last_time;
+  last_time = millis();
+
+  if (time_delta == 0) {  // Catch divide by zero
+    time_delta = 1000;
+  }
+
+  static uint8_t buffer_index = 0;
+  const uint8_t BUFFER_SIZE = sizeof(counts_buffer) / sizeof(counts_buffer[0]);
+  counts_buffer[buffer_index] = new_total * 1000.0 / time_delta;
+
+  if (buffer_index + 1 >= BUFFER_SIZE) {
+    buffer_index = 0;
+  } else {
+    buffer_index++;
+  }
+
+  float avg_cps = 0;
+  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
+    avg_cps += counts_buffer[i];
+  }
+  avg_cps /= BUFFER_SIZE;
+
+  display.clearDisplay();
+
+  const int16_t temp = round(readTemp());
+
+  if (temp < 0) {
+    display.setCursor(SCREEN_WIDTH - 36, 0);
+  } else {
+    display.setCursor(SCREEN_WIDTH - 30, 0);
+  }
+  display.print(temp);
+  display.print(" ");
+  display.print((char)247);
+  display.println("C");
+
+  display.setCursor(0, 0);
+  display.setTextSize(2);
+
+  display.println();
+  display.print(avg_cps);
+  display.print(" cps");
+
+  display.setTextSize(1);
+  display.display();
+}
+
+
 void eventInt() {
   // Disable interrupt generation for this pin ASAP.
   // Directly uses Core0 IRQ Ctrl (core1 does not set the interrupt).
@@ -895,7 +959,11 @@ void loop1() {
   }
 
   if (conf.enable_display) {
-    drawSpectrum();
+    if (conf.geiger_mode) {
+      drawGeigerCounts();
+    } else {
+      drawSpectrum();
+    }
   }
 
   const unsigned long processingDelay = millis() - start;
@@ -904,6 +972,7 @@ void loop1() {
     // Switch between Geiger and Energy modes.
     conf.geiger_mode = !conf.geiger_mode;
     event_position = 0;
+    clearSpectrum();
 
     if (conf.geiger_mode) {
       println("Switched to geiger mode.");
