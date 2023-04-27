@@ -18,7 +18,6 @@
   TODO: (?) Optimize for power usage
 
   TODO: Ticker + PWM Audio
-  TODO: BOOTSEL button switch from Geiger to Energy Mode
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
   TODO: Check wrong DNL peaks and their correction
 */
@@ -899,16 +898,26 @@ void loop1() {
     drawSpectrum();
   }
 
-  /*
+  const unsigned long processingDelay = millis() - start;
+
   if (BOOTSEL) {
-    // Do something here when BOOTSEL button is pressed
-    println("The BOOTSEL button has been pressed.");
-    while (BOOTSEL) { // Wait for BOOTSEL to be released
+    // Switch between Geiger and Energy modes.
+    conf.geiger_mode = !conf.geiger_mode;
+    event_position = 0;
+
+    if (conf.geiger_mode) {
+      println("Switched to geiger mode.");
+    } else {
+      println("Switched to energy measuring mode.");
+    }
+
+    saveSettings();  // Saved updated settings
+
+    while (BOOTSEL) {      // Wait for BOOTSEL to be released
+      rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
       delay(1);
     }
   }
-  */
 
-  const unsigned long processingDelay = millis() - start;
   delay(1000 - processingDelay);  // Wait for 1 sec, better: sleep for power saving?!
 }
