@@ -16,7 +16,11 @@
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
   TODO: (?) Optimize for power usage
-  TODO: (?) Ticker + PWM Audio
+
+  TODO: Ticker + PWM Audio
+  TODO: BOOTSEL button switch from Geiger to Energy Mode
+  TODO: cps bar graph while in Geiger Mode instead of empty spectrum
+  TODO: Check wrong DNL peaks and their correction
 */
 
 //#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
@@ -593,6 +597,14 @@ void drawSpectrum() {
 
 
 void eventInt() {
+  // Disable interrupt generation for this pin ASAP.
+  // Directly uses Core0 IRQ Ctrl (core1 does not set the interrupt).
+  // Thanks a lot to all the replies at
+  // https://github.com/earlephilhower/arduino-pico/discussions/1397!
+  static io_rw_32 *addr = &(iobank0_hw->proc0_irq_ctrl.inte[INT_PIN / 8]);
+  static uint32_t mask1 = 0b1111 << (INT_PIN % 8) * 4u;
+  hw_clear_bits(addr, mask1);
+
   const uint32_t start = micros();
 
   digitalWrite(LED, HIGH);  // Activity LED
@@ -609,17 +621,18 @@ void eventInt() {
     float avg = 0.0;
     uint8_t invalid = 0;
     for (size_t i = 0; i < conf.meas_avg; i++) {
+      const uint16_t m = meas[i];
       // Pico-ADC DNL issues, see https://pico-adc.markomo.me/INL-DNL/#dnl
       // Discard channels 512, 1536, 2560, and 3584. For now.
       // See RP2040 datasheet Appendix B: Errata
-      if (meas[i] == 511 || meas[i] == 1535 || meas[i] == 2559 || meas[i] == 3583) {
+      if (m == 511 || m == 1535 || m == 2559 || m == 3583) {
         invalid++;
         continue;  // Discard
       }
-      avg += meas[i];
+      avg += m;
     }
 
-    if (conf.meas_avg - invalid <= 0) {  // Catch divide by zero crash
+    if (conf.meas_avg <= invalid) {  // Catch divide by zero crash
       avg = 0.0;
     } else {
       avg /= conf.meas_avg - invalid;
@@ -633,15 +646,13 @@ void eventInt() {
     // Use median instead of average?
   }
 
-  if (conf.ser_output || conf.enable_display) {
-    if (conf.cps_correction || mean != 0 || conf.geiger_mode) {
-      events[event_position] = mean;
-      spectrum[mean] += 1;
-      if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
-        event_position = 0;
-      } else {
-        event_position++;
-      }
+  if ((conf.ser_output || conf.enable_display) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
+    events[event_position] = mean;
+    spectrum[mean] += 1;
+    if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
+      event_position = 0;
+    } else {
+      event_position++;
     }
   }
 
@@ -692,12 +703,16 @@ void eventInt() {
   // Compute Detector Dead Time
   const uint32_t dt = micros() - start;
   dt_avg_num++;
-  deadtime_avg += float(dt - deadtime_avg) / float(dt_avg_num);
+  deadtime_avg += (dt - deadtime_avg) / dt_avg_num;
 
-  if (dt_avg_num >= pow(2, 32) - 2) {  // Catch dead time number overflow
+  if (dt_avg_num >= 4294967294) {  // Catch dead time number overflow 2^32 - 2
     dt_avg_num = 0;
     deadtime_avg = 0;
   }
+
+  // Re-enable interrupts
+  static uint32_t mask2 = 0b0100 << (INT_PIN % 8) * 4u;
+  hw_set_bits(addr, mask2);
 }
 
 /*
