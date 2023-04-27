@@ -74,4 +74,4 @@ Of course, you could use transimpedance or charge-sensitive preamplifiers, howev
 
 If you wanted to go the maximum-performance route, you'd also need to use a different microcontroller with a much better ADC, and maybe even consider using 4-layer boards with additional ground and power planes. Essentially, you'd have to re-design the whole board at this point.
 
-Instead of something like 9% or 10% energy resolution @ 662 keV, you'd then maybe get as much as 6% if you're lucky, which is the limit for most NaI or CsI scintillators anyways. That would come at a much higher cost, though. In my opinion, you get to a point of diminishing returns quickly, especially when designing an entry-level device such as this.
+Instead of something like 8-10% energy resolution @ 662 keV (highly dependent on your SiPM/scintillator assembly), you'd then maybe get as much as 6% if you're lucky, which is the limit for most NaI or CsI scintillators anyways. That would come at a much higher cost, though. In my opinion, you get to a point of diminishing returns quickly, especially when designing an entry-level device such as this.
