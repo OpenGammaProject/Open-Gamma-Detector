@@ -29,8 +29,8 @@ Here are some of the most important specs:
 * Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
 * 4096 ADC channels with built-in 3 V voltage reference.
 * Energy resolution of ~8% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
-* Default (Energy) Mode: About 25 µs total dead time while measuring energy.
-* Geiger Mode: About 15 µs total dead time without energy measurements.
+* Default (Energy) Mode: About 15 µs total dead time while measuring energy.
+* Geiger Mode: About 5 µs total dead time without energy measurements.
 * Low power consumption: ~25 mA @ 5 V with default firmware.
 * Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
 * Built-in True Random Number Generator.

@@ -30,7 +30,7 @@
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 #include <Statistical.h>           // Used to get the median for baseline subtraction
 
-const String FWVERS = "3.1.0";  // Firmware Version Code
+const String FWVERS = "3.2.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -43,6 +43,7 @@ const uint8_t INT_PIN = 16;         // Signal interrupt pin
 const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
 const uint8_t LED = 25;             // LED on GP25
 const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
+const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
 
 /*
     BEGIN USER SETTINGS
@@ -58,6 +59,7 @@ const uint8_t SCREEN_ADDRESS = 0x3C;        // See datasheet for Address; 0x3D f
 const uint8_t TRNG_BITS = 8;                // Number of bits for each random number, max 8
 const uint8_t BASELINE_NUM = 100;           // Number of measurements taken to determine the DC baseline
 const String CONFIG_FILE = "/config.json";  // File to store the settings
+const uint16_t DISPLAY_REFRESH = 1000;      // Milliseconds between display refreshs
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -91,20 +93,27 @@ volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a 
 volatile uint8_t bit_index = 0;            // Bit index for the generated number
 volatile uint32_t trng_nums[1000];         // TRNG number output array
 volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRNG array
-volatile float deadtime_avg = 0;           // Average detector dead time in µs
-volatile uint32_t dt_avg_num = 0;          // Number of dead time measurements
+volatile uint32_t dt_sum = 0;              // Total detector dead time in µs
+volatile uint32_t dt_sum_num = 0;          // Number of dead time measurements
 
 uint16_t baselines[BASELINE_NUM];  // Array of a number of baseline (DC bias) measurements at the SiPM input
 uint16_t current_baseline = 0;     // Median value of the input baseline voltage
 
 volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 
-// Stores x (5) seconds worth of "current" cps to calculate an average cps value in a ring buffer config
+// Stores 5 * DISPLAY_REFRESH worth of "current" cps to calculate an average cps value in a ring buffer config
 float counts_buffer[] = { 0, 0, 0, 0, 0 };
 
 Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 //ADCInput sipm(AMP_PIN);
+
+
+void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
+  digitalWriteFast(RST_PIN, HIGH);
+  delayMicroseconds(time);  // Discharge for (default) 2 µs -> ~99% discharge time for 1 kOhm and 470 pF
+  digitalWriteFast(RST_PIN, LOW);
+}
 
 
 void serialOutputMode(String *args) {
@@ -171,6 +180,7 @@ void toggleGeigerMode(String *args) {
     println("Must be 'geiger' or 'energy'.", true);
     return;
   }
+  resetSampleHold();
   saveSettings();
 }
 
@@ -262,11 +272,20 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Firmware Version: " + FWVERS);
   println("=========================");
   println("Runtime: " + String(millis() / 1000.0) + " s");
-  println("Avg. Dead Time: " + String(deadtime_avg) + " µs");
+  print("Average Dead Time: ");
 
-  const float deadtime_frac = float(deadtime_avg * dt_avg_num) / 1000.0 / float(millis()) * 100.0;
+  if (dt_sum_num == 0) {
+    cleanPrint("no impulses");
+  } else {
+    cleanPrint(String(round(float(dt_sum) / float(dt_sum_num)), 0));
+  }
+
+  cleanPrintln(" µs");
+
+  const float deadtime_frac = float(dt_sum) / 1000.0 / float(millis()) * 100.0;
 
   println("Total Dead Time: " + String(deadtime_frac) + " %");
+  println("Total Number Of Impulses: " + String(dt_sum_num));
   println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
   println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
   println("Free Heap Memory: " + String(rp2040.getFreeHeap() / 1000.0) + " kB");
@@ -488,13 +507,6 @@ float readTemp() {
 }
 
 
-void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
-  digitalWrite(RST_PIN, HIGH);
-  delayMicroseconds(time);  // Discharge for (default) 2 µs -> ~99% discharge time for 1 kOhm and 470 pF
-  digitalWrite(RST_PIN, LOW);
-}
-
-
 void drawSpectrum() {
   const uint16_t BINSIZE = floor(pow(2, ADC_RES) / SCREEN_WIDTH);
   uint32_t eventBins[SCREEN_WIDTH];
@@ -559,7 +571,7 @@ void drawSpectrum() {
   }
   avg_cps /= BUFFER_SIZE;
 
-  display.print(avg_cps);
+  display.print(avg_cps, 1);
   display.print(" cps");
 
   const int16_t temp = round(readTemp());
@@ -633,7 +645,27 @@ void drawGeigerCounts() {
   }
   avg_cps /= BUFFER_SIZE;
 
+  static float max_cps = -1;
+  static float min_cps = -1;
+  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
+    const float cps = counts_buffer[i];
+
+    if (max_cps == -1 || cps > max_cps) {
+      max_cps = cps;
+    }
+    if (min_cps <= 0 || cps < min_cps) {
+      min_cps = cps;
+    }
+  }
+
   display.clearDisplay();
+  display.setCursor(0, 0);
+
+  display.print("Min: ");
+  display.println(min_cps, 1);
+
+  display.print("Max: ");
+  display.println(max_cps, 1);
 
   const int16_t temp = round(readTemp());
 
@@ -650,9 +682,11 @@ void drawGeigerCounts() {
   display.setCursor(0, 0);
   display.setTextSize(2);
 
-  display.println();
-  display.print(avg_cps);
-  display.print(" cps");
+  display.drawFastHLine(0, 18, SCREEN_WIDTH, SSD1306_WHITE);
+
+  display.setCursor(0, 22);
+  display.print(avg_cps, 1);
+  display.println(" cps");
 
   display.setTextSize(1);
   display.display();
@@ -670,35 +704,31 @@ void eventInt() {
 
   const uint32_t start = micros();
 
-  digitalWrite(LED, HIGH);  // Activity LED
+  digitalWriteFast(LED, HIGH);  // Enable activity LED
 
   uint16_t mean = 0;
 
   if (!conf.geiger_mode && !adc_lock) {
-    uint16_t meas[conf.meas_avg];
+    uint16_t sum = 0;
+    uint8_t num = 0;
 
     for (size_t i = 0; i < conf.meas_avg; i++) {
-      meas[i] = analogRead(AIN_PIN);
-    }
-
-    float avg = 0.0;
-    uint8_t invalid = 0;
-    for (size_t i = 0; i < conf.meas_avg; i++) {
-      const uint16_t m = meas[i];
+      const uint16_t m = analogRead(AIN_PIN);
       // Pico-ADC DNL issues, see https://pico-adc.markomo.me/INL-DNL/#dnl
       // Discard channels 512, 1536, 2560, and 3584. For now.
       // See RP2040 datasheet Appendix B: Errata
       if (m == 511 || m == 1535 || m == 2559 || m == 3583) {
-        invalid++;
-        continue;  // Discard
+        //continue;  // Discard
+        break;
       }
-      avg += m;
+      sum += m;
+      num++;
     }
 
-    if (conf.meas_avg <= invalid) {  // Catch divide by zero crash
-      avg = 0.0;
-    } else {
-      avg /= conf.meas_avg - invalid;
+    float avg = 0.0;  // Use median instead of average?
+
+    if (num > 0) {
+      avg = sum / num;
     }
 
     if (current_baseline <= avg) {  // Catch negative numbers
@@ -706,7 +736,7 @@ void eventInt() {
       mean = round(avg - current_baseline);
     }
 
-    // Use median instead of average?
+    resetSampleHold();
   }
 
   if ((conf.ser_output || conf.enable_display) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
@@ -719,8 +749,6 @@ void eventInt() {
     }
   }
 
-  resetSampleHold();
-
   static uint8_t trng_index = 0;  // Timestamp index for True Random Number Generator
 
   if (conf.trng_enabled) {
@@ -732,8 +760,8 @@ void eventInt() {
     } else {
       // Catch micros() overflow
       if (trng_stamps[1] > trng_stamps[0] && trng_stamps[2] > trng_stamps[1]) {
-        uint32_t delta0 = trng_stamps[1] - trng_stamps[0];
-        uint32_t delta1 = trng_stamps[2] - trng_stamps[1];
+        const uint32_t delta0 = trng_stamps[1] - trng_stamps[0];
+        const uint32_t delta1 = trng_stamps[2] - trng_stamps[1];
 
         if (delta0 < delta1) {
           bitWrite(random_num, bit_index, 0);
@@ -761,21 +789,23 @@ void eventInt() {
     }
   }
 
-  digitalWrite(LED, LOW);
+  digitalWriteFast(LED, LOW);  // Disable activity LED
 
   // Compute Detector Dead Time
-  const uint32_t dt = micros() - start;
-  dt_avg_num++;
-  deadtime_avg += (dt - deadtime_avg) / dt_avg_num;
+  dt_sum += micros() - start;
+  dt_sum_num++;
 
-  if (dt_avg_num >= 4294967294) {  // Catch dead time number overflow 2^32 - 2
-    dt_avg_num = 0;
-    deadtime_avg = 0;
+  if (dt_sum_num >= 4294967294) {  // Catch dead time number overflow 2^32 - 2
+    dt_sum_num = 0;
+    dt_sum = 0;
   }
 
   // Re-enable interrupts
   static uint32_t mask2 = 0b0100 << (INT_PIN % 8) * 4u;
   hw_set_bits(addr, mask2);
+
+  // Clear all interrupts on the executing core
+  irq_clear(15);  // IRQ 15 = SIO_IRQ_PROC0
 }
 
 /*
@@ -790,7 +820,7 @@ void setup() {
 
   analogReadResolution(ADC_RES);
 
-  resetSampleHold();  // Reset before enabling the interrupts to avoid jamming
+  resetSampleHold(5);  // Reset before enabling the interrupts to avoid jamming
 
   //sipm.setBuffers(4, 64);
   //sipm.begin(1000000);
@@ -887,11 +917,15 @@ void setup1() {
 */
 void loop() {
   static uint32_t last_exec = 0;
-  unsigned long time = micros();
+  const uint32_t time = micros();
 
   if (time - last_exec >= PH_RESET || time < last_exec) {
-    resetSampleHold();
-    last_exec = time;
+    if (!adc_lock) {
+      adc_lock = true;    // Disable ADC measurements while resetting
+      resetSampleHold();  // Periodically reset the S&H/P&H circuit
+      adc_lock = false;
+      last_exec = time;
+    }
   }
 
   static uint8_t baseline_index = 0;
@@ -925,54 +959,64 @@ void loop() {
 
 
 void loop1() {
-  const unsigned long start = millis();
+  static uint32_t last_serial_time = 0;
+  static uint32_t last_display_time = 0;
+  const uint32_t time = millis();
 
-  rp2040.wdt_reset();  // Reset watchdog, everything is fine
+  if (time < last_serial_time || time < last_display_time) {  // Catch millis() overflow
+    last_serial_time = time;
+    last_display_time = time;
+  }
 
-  if (conf.ser_output) {
-    if (Serial || Serial2) {
-      if (conf.print_spectrum) {
-        for (uint16_t index = 0; index < uint16_t(pow(2, ADC_RES)); index++) {
-          cleanPrint(String(spectrum[index]) + ";");
-          //spectrum[index] = 0; // Uncomment for differential histogram
+  if (time - last_serial_time >= OUT_REFRESH) {  // Serial output every OUT_REFRESH ms
+    if (conf.ser_output) {
+      if (Serial || Serial2) {
+        if (conf.print_spectrum) {
+          for (uint16_t index = 0; index < uint16_t(pow(2, ADC_RES)); index++) {
+            cleanPrint(String(spectrum[index]) + ";");
+            //spectrum[index] = 0; // Uncomment for differential histogram
+          }
+          cleanPrintln();
+        } else if (event_position > 0 && event_position <= EVENT_BUFFER) {
+          for (uint16_t index = 0; index < event_position; index++) {
+            cleanPrint(String(events[index]) + ";");
+          }
+          cleanPrintln();
         }
-        cleanPrintln();
-      } else if (event_position > 0 && event_position <= EVENT_BUFFER) {
-        for (uint16_t index = 0; index < event_position; index++) {
-          cleanPrint(String(events[index]) + ";");
+      }
+
+      event_position = 0;
+    }
+
+    if (conf.trng_enabled) {
+      if (Serial || Serial2) {
+        for (size_t i = 0; i < number_index; i++) {
+          cleanPrint(trng_nums[i], DEC);
+          cleanPrintln(";");
         }
-        cleanPrintln();
+        number_index = 0;
       }
     }
-
-    event_position = 0;
+    last_serial_time = time;
   }
 
-  if (conf.trng_enabled) {
-    if (Serial || Serial2) {
-      for (size_t i = 0; i < number_index; i++) {
-        cleanPrint(trng_nums[i], DEC);
-        cleanPrintln(";");
+  if (time - last_display_time >= DISPLAY_REFRESH) {  // Update display every DISPLAY_REFRESH ms
+    if (conf.enable_display) {
+      if (conf.geiger_mode) {
+        drawGeigerCounts();
+      } else {
+        drawSpectrum();
       }
-      number_index = 0;
     }
+    last_display_time = time;
   }
-
-  if (conf.enable_display) {
-    if (conf.geiger_mode) {
-      drawGeigerCounts();
-    } else {
-      drawSpectrum();
-    }
-  }
-
-  const unsigned long processingDelay = millis() - start;
 
   if (BOOTSEL) {
-    // Switch between Geiger and Energy modes.
+    // Switch between Geiger and Energy modes
     conf.geiger_mode = !conf.geiger_mode;
     event_position = 0;
     clearSpectrum();
+    resetSampleHold();
 
     if (conf.geiger_mode) {
       println("Switched to geiger mode.");
@@ -988,5 +1032,7 @@ void loop1() {
     }
   }
 
-  delay(1000 - processingDelay);  // Wait for 1 sec, better: sleep for power saving?!
+  rp2040.wdt_reset();  // Reset watchdog, everything is fine
+
+  delay(1);  // Wait for 1 ms, better: sleep for power saving?!
 }
