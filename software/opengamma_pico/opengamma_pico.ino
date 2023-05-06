@@ -19,7 +19,7 @@
 
   TODO: Ticker + PWM Audio
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
-  TODO: Check wrong DNL peaks and their correction
+  TODO: Total hours on + startups
 */
 
 //#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
@@ -30,7 +30,7 @@
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 #include <Statistical.h>           // Used to get the median for baseline subtraction
 
-const String FWVERS = "3.2.0";  // Firmware Version Code
+const String FWVERS = "3.2.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -81,19 +81,21 @@ struct Config {
    END USER SETTINGS
 */
 
-volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the spectrum histogram written to flash
-volatile uint16_t events[EVENT_BUFFER];                 // Buffer array for single events
-volatile uint16_t event_position = 0;                   // Target index in events array
-volatile uint32_t start_time = 0;                       // Time in ms when the spectrum collection has started
-volatile uint32_t last_time = 0;
-volatile uint32_t last_total = 0;
+volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];          // Holds the output histogram (spectrum)
+volatile uint32_t display_spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the display histogram (spectrum)
 
-volatile uint32_t trng_stamps[3];          // Timestamps for True Random Number Generator
+volatile uint16_t events[EVENT_BUFFER];  // Buffer array for single events
+volatile uint32_t event_position = 0;    // Target index in events array
+volatile unsigned long start_time = 0;   // Time in ms when the spectrum collection has started
+volatile unsigned long last_time = 0;    // Last time the display has been refreshed
+volatile uint32_t last_total = 0;        // Last total pulse count for display
+
+volatile unsigned long trng_stamps[3];     // Timestamps for True Random Number Generator
 volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a byte together
 volatile uint8_t bit_index = 0;            // Bit index for the generated number
 volatile uint32_t trng_nums[1000];         // TRNG number output array
 volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRNG array
-volatile uint32_t dt_sum = 0;              // Total detector dead time in µs
+volatile unsigned long dt_sum = 0;         // Total detector dead time in µs
 volatile uint32_t dt_sum_num = 0;          // Number of dead time measurements
 
 uint16_t baselines[BASELINE_NUM];  // Array of a number of baseline (DC bias) measurements at the SiPM input
@@ -102,7 +104,7 @@ uint16_t current_baseline = 0;     // Median value of the input baseline voltage
 volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 
 // Stores 5 * DISPLAY_REFRESH worth of "current" cps to calculate an average cps value in a ring buffer config
-float counts_buffer[] = { 0, 0, 0, 0, 0 };
+float counts_buffer[5] = {};
 
 Config conf;  // Configuration object
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -323,6 +325,7 @@ void getSpectrumData([[maybe_unused]] String *args) {
 void clearSpectrumData([[maybe_unused]] String *args) {
   println("Resetting spectrum...");
   clearSpectrum();
+  //clearSpectrumDisplay();
   println("Successfully reset spectrum!");
 }
 
@@ -381,9 +384,16 @@ void clearSpectrum() {
   for (size_t i = 0; i < pow(2, ADC_RES); i++) {
     spectrum[i] = 0;
   }
+}
+
+
+void clearSpectrumDisplay() {
+  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
+    display_spectrum[i] = 0;
+  }
   start_time = millis();  // Spectrum pulse collection has started
   last_time = millis();
-  last_total = 0;
+  last_total = 0;  // Remove old values
 }
 
 
@@ -518,7 +528,7 @@ void drawSpectrum() {
     uint32_t totalValue = 0;
 
     for (uint16_t j = offset; j < offset + BINSIZE; j++) {
-      totalValue += spectrum[j];
+      totalValue += display_spectrum[j];
     }
 
     offset += BINSIZE;
@@ -545,7 +555,7 @@ void drawSpectrum() {
     return;
   }
 
-  uint32_t time_delta = millis() - last_time;
+  unsigned long time_delta = millis() - last_time;
   last_time = millis();
 
   if (time_delta == 0) {  // Catch divide by zero
@@ -574,7 +584,11 @@ void drawSpectrum() {
   display.print(avg_cps, 1);
   display.print(" cps");
 
-  const int16_t temp = round(readTemp());
+  static int16_t temp = round(readTemp());
+
+  if (!adc_lock) {  // Only update if ADC is free atm
+    temp = round(readTemp());
+  }
 
   if (temp < 0) {
     display.setCursor(SCREEN_WIDTH - 36, 0);
@@ -586,7 +600,7 @@ void drawSpectrum() {
   display.print((char)247);
   display.println("C");
 
-  const uint32_t seconds_running = round((millis() - start_time) / 1000.0);
+  const unsigned long seconds_running = round((millis() - start_time) / 1000.0);
   const uint8_t char_offset = floor(log10(seconds_running));
 
   display.setCursor(SCREEN_WIDTH - 18 - char_offset * 6, 8);
@@ -602,7 +616,7 @@ void drawSpectrum() {
   display.display();
 
   if (total > EVT_RESET_C) {
-    clearSpectrum();
+    clearSpectrumDisplay();
   }
 }
 
@@ -611,7 +625,7 @@ void drawGeigerCounts() {
   uint32_t total = 0;
 
   for (uint16_t i = 0; i < pow(2, ADC_RES); i++) {
-    total += spectrum[i];
+    total += display_spectrum[i];
   }
 
   uint32_t new_total = total - last_total;
@@ -622,7 +636,7 @@ void drawGeigerCounts() {
     return;
   }
 
-  uint32_t time_delta = millis() - last_time;
+  unsigned long time_delta = millis() - last_time;
   last_time = millis();
 
   if (time_delta == 0) {  // Catch divide by zero
@@ -667,7 +681,11 @@ void drawGeigerCounts() {
   display.print("Max: ");
   display.println(max_cps, 1);
 
-  const int16_t temp = round(readTemp());
+  static int16_t temp = round(readTemp());
+
+  if (!adc_lock) {  // Only update if ADC is free atm
+    temp = round(readTemp());
+  }
 
   if (temp < 0) {
     display.setCursor(SCREEN_WIDTH - 36, 0);
@@ -702,14 +720,14 @@ void eventInt() {
   static uint32_t mask1 = 0b1111 << (INT_PIN % 8) * 4u;
   hw_clear_bits(addr, mask1);
 
-  const uint32_t start = micros();
+  const unsigned long start = micros();
 
   digitalWriteFast(LED, HIGH);  // Enable activity LED
 
   uint16_t mean = 0;
 
   if (!conf.geiger_mode && !adc_lock) {
-    uint16_t sum = 0;
+    uint32_t sum = 0;
     uint8_t num = 0;
 
     for (size_t i = 0; i < conf.meas_avg; i++) {
@@ -728,7 +746,7 @@ void eventInt() {
     float avg = 0.0;  // Use median instead of average?
 
     if (num > 0) {
-      avg = sum / num;
+      avg = float(sum) / float(num);
     }
 
     if (current_baseline <= avg) {  // Catch negative numbers
@@ -742,6 +760,7 @@ void eventInt() {
   if ((conf.ser_output || conf.enable_display) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
     events[event_position] = mean;
     spectrum[mean] += 1;
+    display_spectrum[mean] += 1;
     if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
       event_position = 0;
     } else {
@@ -749,9 +768,9 @@ void eventInt() {
     }
   }
 
-  static uint8_t trng_index = 0;  // Timestamp index for True Random Number Generator
-
   if (conf.trng_enabled) {
+    static uint8_t trng_index = 0;  // Timestamp index for True Random Number Generator
+
     // Calculations for the TRNG
     trng_stamps[trng_index] = micros();
 
@@ -791,13 +810,17 @@ void eventInt() {
 
   digitalWriteFast(LED, LOW);  // Disable activity LED
 
-  // Compute Detector Dead Time
-  dt_sum += micros() - start;
-  dt_sum_num++;
+  const unsigned long end = micros();
 
-  if (dt_sum_num >= 4294967294) {  // Catch dead time number overflow 2^32 - 2
-    dt_sum_num = 0;
-    dt_sum = 0;
+  if (end >= start) {  // Catch micros() overflow
+    // Compute Detector Dead Time
+    dt_sum += end - start;
+    dt_sum_num++;
+
+    if (dt_sum_num >= 4294967294) {  // Catch dead time number overflow 2^32 - 2
+      dt_sum_num = 0;
+      dt_sum = 0;
+    }
   }
 
   // Re-enable interrupts
@@ -916,14 +939,15 @@ void setup1() {
   LOOP FUNCTIONS
 */
 void loop() {
-  static uint32_t last_exec = 0;
-  const uint32_t time = micros();
+  static unsigned long last_exec = 0;
+  const unsigned long time = micros();
 
-  if (time - last_exec >= PH_RESET || time < last_exec) {
+  if (time < last_exec || time - last_exec >= PH_RESET) {
     if (!adc_lock) {
-      adc_lock = true;    // Disable ADC measurements while resetting
+      adc_lock = true;    // Disable interrupt ADC measurements while resetting
       resetSampleHold();  // Periodically reset the S&H/P&H circuit
       adc_lock = false;
+
       last_exec = time;
     }
   }
@@ -931,17 +955,21 @@ void loop() {
   static uint8_t baseline_index = 0;
 
   // Compute the median DC baseline to subtract from each pulse
-  if (!adc_lock && conf.subtract_baseline) {
-    adc_lock = true;
-    baselines[baseline_index] = analogRead(AIN_PIN);
-    adc_lock = false;
+  if (conf.subtract_baseline) {
+    if (!adc_lock) {
+      adc_lock = true;  // Disable interrupt ADC measurements while resetting
+      baselines[baseline_index] = analogRead(AIN_PIN);
+      adc_lock = false;
 
-    baseline_index++;
-    if (baseline_index >= BASELINE_NUM) {
-      Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
-      current_baseline = round(Data_Array.Quartile(2));  // Take the median value
-      //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
-      baseline_index = 0;
+      baseline_index++;
+
+      if (baseline_index >= BASELINE_NUM) {
+        Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
+        current_baseline = round(Data_Array.Quartile(2));  // Take the median value
+        //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
+
+        baseline_index = 0;
+      }
     }
   }
 
@@ -959,9 +987,9 @@ void loop() {
 
 
 void loop1() {
-  static uint32_t last_serial_time = 0;
-  static uint32_t last_display_time = 0;
-  const uint32_t time = millis();
+  static unsigned long last_serial_time = 0;
+  static unsigned long last_display_time = 0;
+  const unsigned long time = millis();
 
   if (time < last_serial_time || time < last_display_time) {  // Catch millis() overflow
     last_serial_time = time;
@@ -997,6 +1025,7 @@ void loop1() {
         number_index = 0;
       }
     }
+
     last_serial_time = time;
   }
 
@@ -1008,6 +1037,7 @@ void loop1() {
         drawSpectrum();
       }
     }
+
     last_display_time = time;
   }
 
@@ -1016,6 +1046,7 @@ void loop1() {
     conf.geiger_mode = !conf.geiger_mode;
     event_position = 0;
     clearSpectrum();
+    clearSpectrumDisplay();
     resetSampleHold();
 
     if (conf.geiger_mode) {
@@ -1034,5 +1065,5 @@ void loop1() {
 
   rp2040.wdt_reset();  // Reset watchdog, everything is fine
 
-  delay(1);  // Wait for 1 ms, better: sleep for power saving?!
+  delay(10);  // Wait for 10 ms, better: sleep for power saving?!
 }
