@@ -46,6 +46,8 @@ Press and hold the "BOOTSEL" button on the Raspberry Pi Pico while plugging it i
 
 No, these cannot be used for gamma spectroscopy except in some edge cases. Generally, they have much worse efficiency than your typical inorganic scintillator, like NaI(Tl) or CsI(Tl), and extremely poor energy resolution.
 
+If you want to *just* count pulses (i.e. **not** measure pulse energy), plastic scintillators can be a better fit, because of their really low cost. If you want to count pulses only, though, it's probably better to use the simpler and much cheaper [Mini SiD](https://github.com/OpenGammaProject/Mini-SiD) board instead of the Open Gamma Detector. With plastic scintillators you can also detect high-energy particles such as beta radiation or muons, which NaI(Tl) generally cannot.
+
 ### How do I change the gain?
 
 Since hardware revision 3 the gain is fixed on all boards and cannot be changed without any hardware modifications. This makes it **much** easier to provide a device that has a high chance of working out of the box without much fiddling around with pot settings or additional components.
