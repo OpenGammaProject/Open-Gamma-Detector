@@ -18,14 +18,14 @@ If you want to update or re-flash the firmware, press and hold the `BOOTSEL` but
 
 To program the Pico you will need the following board configs in the latest release of the Arduino IDE:
 
-* [Arduino-Pico](https://github.com/earlephilhower/arduino-pico)
+- [Arduino-Pico](https://github.com/earlephilhower/arduino-pico)
 
 The installation and additional documentation can be found in the respective GitHub repo, it's not complicated at all and you only need to do it once. You will also need the following additional libraries:
 
-* [SimpleShell Enhanced](https://github.com/Phoenix1747/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
-* [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
-* [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
-* [Statistical](https://github.com/akkoyun/Statistical) [![arduino-library-badge](https://www.ardu-badge.com/badge/Statistical.svg?)](https://www.ardu-badge.com/Statistical)
+- [SimpleShell Enhanced](https://github.com/Phoenix1747/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
+- [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
+- [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
+- [Statistical](https://github.com/akkoyun/Statistical) [![arduino-library-badge](https://www.ardu-badge.com/badge/Statistical.svg?)](https://www.ardu-badge.com/Statistical)
 
 They can be installed by searching their names using the IDE's built-in library manager.
 
@@ -51,10 +51,11 @@ Commands:
 	set baseline	: <toggle> Automatically subtract the DC bias (baseline) from each signal.
 	set trng		: <toggle> Either 'enable' or 'disable' to toggle the true random number generator output.
 	set display		: <toggle> Either 'enable' or 'disable' to enable or force disable OLED support.
+	set correction	: <toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels.
 	set mode		: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster.
 	set out			: <mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
 	set averaging	: <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
-	set correction	: <toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels.
+	set ticker		: <number> Number of milliseconds the buzzer ticker will be on for a single pulse. '0' is off.
 	reset spectrum	: Reset the on-board spectrum histogram.
 	reset settings	: Reset all the settings/revert them back to default values.
 	reboot			: Reboot the device.
@@ -66,7 +67,7 @@ All of these commands should be pretty straightforward with their respective des
 
 The output data format that can be controlled with the `set out <mode>` command can be switched between two modes:
 
-* **Events:** This will print out all the ADC channels (bins) for newly acquired pulses in a chronological order. This data needs to be processed further to generate a pulse height histogram. Each pulse bin is delimited with a semicolon `;`.
+- **Events:** This will print out all the ADC channels (bins) for newly acquired pulses in a chronological order. This data needs to be processed further to generate a pulse height histogram. Each pulse bin is delimited with a semicolon `;`.
 
 Example (4096 channels):
 
@@ -77,7 +78,7 @@ Example (4096 channels):
 315;642;549;4095;588;774;361;329;1375;499;346;615;794;361;406;4095;457;1028;468;311;321;285;435;514;585;633;670;
 ```
 
-* **Spectrum:** This is a histogram of all the ADC channels (bins) and the respective number of counts per channel. Each channel is delimited with a semicolon `;` and each spectrum is printed on its own line.
+- **Spectrum:** This is a histogram of all the ADC channels (bins) and the respective number of counts per channel. Each channel is delimited with a semicolon `;` and each spectrum is printed on its own line.
 
 Example (4096 channels):
 
@@ -95,6 +96,16 @@ The detector board features a standard I2C header where you can connect any stan
 At the moment the software only draws the energy spectrum and the mean cps value on the screen. These stats are reset once a specific number of counts have been collected - this number can be changed in the Arduino sketch. This is sufficient in most (simple) cases and more features will be implemented over time.
 
 ![OLED display](../docs/oled.jpg)
+
+## Ticker
+
+By connecting a buzzer to the digital pin defined in `BUZZER_PIN` (default is 9: the `RX` pin on the board) and a ground pin, you are set to use the built-in ticker feature. Enable the ticker by calling `set ticker <number>` with a number greater than 0, which will be the on-time of the buzzer for each ticker pulse. Zero will disable the ticker again.
+
+You can also change the PWM frequency for your buzzer by changing the `BUZZER_FREQ` variable. This can only be done within the Arduino IDE, there is no serial command.
+
+Since this reuses the `RX` pin on the board by default, you will not be able to use the hardware UART output with these pins while using the ticker.
+
+Unfortunately, it also adds about 10 microseconds of dead time to the detector!
 
 ## SPI
 

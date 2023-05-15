@@ -17,7 +17,6 @@
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
   TODO: (?) Optimize for power usage
 
-  TODO: Ticker + PWM Audio
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
   TODO: Total hours on + startups
 */
@@ -30,7 +29,7 @@
 #include <Adafruit_SSD1306.h>      // Used for OLEDs
 #include <Statistical.h>           // Used to get the median for baseline subtraction
 
-const String FWVERS = "3.2.1";  // Firmware Version Code
+const String FWVERS = "3.3.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -59,7 +58,10 @@ const uint8_t SCREEN_ADDRESS = 0x3C;        // See datasheet for Address; 0x3D f
 const uint8_t TRNG_BITS = 8;                // Number of bits for each random number, max 8
 const uint8_t BASELINE_NUM = 100;           // Number of measurements taken to determine the DC baseline
 const String CONFIG_FILE = "/config.json";  // File to store the settings
+const String DEBUG_FILE = "/debug.json";    // File to store some misc debug info
 const uint16_t DISPLAY_REFRESH = 1000;      // Milliseconds between display refreshs
+const uint8_t BUZZER_PIN = 9;               // Digital PWM pin the buzzer is connected to
+const uint16_t BUZZER_FREQ = 3000;          // Frequency used for the buzzer  PWM
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
@@ -71,10 +73,11 @@ struct Config {
   bool trng_enabled = false;       // Enable the True Random Number Generator
   bool subtract_baseline = false;  // Subtract the DC bias from each pulse
   bool cps_correction = true;      // Correct the cps for the DNL compensation
+  uint8_t buzzer_tick = 0;         // Ticker on-time for one pulse in ms
 
   // Do NOT modify this function:
   bool operator==(const Config &other) const {
-    return (cps_correction == other.cps_correction && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled && subtract_baseline == other.subtract_baseline);
+    return (buzzer_tick == other.buzzer_tick && cps_correction == other.cps_correction && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled && subtract_baseline == other.subtract_baseline);
   }
 };
 /*
@@ -118,7 +121,7 @@ void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
 }
 
 
-void serialOutputMode(String *args) {
+void setSerialOutMode(String *args) {
   String command = *args;
   command.replace("set out", "");
   command.trim();
@@ -144,17 +147,17 @@ void serialOutputMode(String *args) {
 }
 
 
-void setDisplay(String *args) {
+void toggleDisplay(String *args) {
   String command = *args;
   command.replace("set display", "");
   command.trim();
 
   if (command == "enable") {
     conf.enable_display = true;
-    println("Enabled display output. You might need to reset the device.");
+    println("Enabled display output. You might need to reboot the device.");
   } else if (command == "disable") {
     conf.enable_display = false;
-    println("Disabled display output. You might need to reset the device.");
+    println("Disabled display output. You might need to reboot the device.");
   } else {
     println("Invalid input '" + command + "'.", true);
     println("Must be 'enable' or 'disable'.", true);
@@ -164,7 +167,27 @@ void setDisplay(String *args) {
 }
 
 
-void toggleGeigerMode(String *args) {
+void setTickerTime(String *args) {
+  String command = *args;
+  command.replace("set ticker", "");
+  command.trim();
+
+  const long number = command.toInt();
+
+  if (number >= 0) {
+    conf.buzzer_tick = number;
+    println("Set ticker output to " + String(number) + ".");
+    println("You might need to reboot the device.");
+  } else {
+    println("Invalid input '" + command + "'.", true);
+    println("Parameter must be a number >= 0.", true);
+    return;
+  }
+  saveSettings();
+}
+
+
+void setMode(String *args) {
   String command = *args;
   command.replace("set mode", "");
   command.trim();
@@ -248,7 +271,7 @@ void toggleCPSCorrection(String *args) {
 }
 
 
-void measAveraging(String *args) {
+void setMeasAveraging(String *args) {
   String command = *args;
   command.replace("set averaging", "");
   command.trim();
@@ -259,7 +282,7 @@ void measAveraging(String *args) {
     println("Set measurement averaging to " + String(number) + ".");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Parameter must be a number >= 0.", true);
+    println("Parameter must be a number > 0.", true);
     return;
   }
   saveSettings();
@@ -267,6 +290,23 @@ void measAveraging(String *args) {
 
 
 void deviceInfo([[maybe_unused]] String *args) {
+  File debugFile = LittleFS.open(DEBUG_FILE, "r");
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, debugFile);
+
+  uint32_t power_cycle, power_on;
+
+  if (!debugFile || error) {
+    power_cycle = 0;
+    power_on = 0;
+  } else {
+    power_cycle = doc["power_cycle_count"];
+    power_on = doc["power_on_hours"];
+  }
+
+  debugFile.close();
+
   println("=========================");
   println("-- Open Gamma Detector --");
   println("By NuclearPhoenix, Open Gamma Project");
@@ -298,6 +338,20 @@ void deviceInfo([[maybe_unused]] String *args) {
   const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
 
   println("Supply Voltage: " + String(round(v * 10.0) / 10.0, 1) + " V");
+
+  print("Power Cycle Count: ");
+  if (power_cycle == 0) {
+    cleanPrintln("n/a");
+  } else {
+    cleanPrintln(power_cycle);
+  }
+
+  print("Power-on hours: ");
+  if (power_on == 0) {
+    cleanPrintln("n/a");
+  } else {
+    cleanPrintln(power_on);
+  }
 }
 
 
@@ -338,16 +392,10 @@ void readSettings([[maybe_unused]] String *args) {
     return;
   }
 
-  String file = "";
-
-  while (saveFile.available()) {
-    file += saveFile.readString();
-  }
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, saveFile);
 
   saveFile.close();
-
-  DynamicJsonDocument doc(1024);
-  DeserializationError error = deserializeJson(doc, file);
 
   if (error) {
     print("Could not load config from json file: ", true);
@@ -397,13 +445,68 @@ void clearSpectrumDisplay() {
 }
 
 
-void serialEvent() {
-  Shell.handleEvent();  // Handle the serial input for the USB Serial
+void readDebugFile() {
+  File debugFile = LittleFS.open(DEBUG_FILE, "r");
+
+  if (!debugFile) {
+    println("Could not open debug file!", true);
+    return;
+  }
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, debugFile);
+
+  debugFile.close();
+
+  if (error) {
+    print("Could not load debug info from json file: ", true);
+    cleanPrintln(error.f_str());
+    return;
+  }
+
+  serializeJsonPretty(doc, Serial);
+
+  cleanPrintln();
+  println("Read debug file successfully.");
 }
 
 
-void serialEvent2() {
-  Shell.handleEvent();  // Handle the serial input for the Hardware Serial
+void writeDebugFile(bool new_start = false, bool increment = true) {
+  File debugFile = LittleFS.open(DEBUG_FILE, "r");  // Open read and write
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, debugFile);
+
+  if (!debugFile || error) {
+    //println("Could not open debug file!", true);
+    print("Could not load debug info from json file: ", true);
+    cleanPrintln(error.f_str());
+
+    doc["power_cycle_count"] = 0;
+    doc["power_on_hours"] = 0;
+  }
+
+  debugFile.close();
+
+  if (new_start) {
+    uint32_t temp = 0;
+    if (doc.containsKey("power_cycle_count")) {
+      temp = doc["power_cycle_count"];
+    }
+    doc["power_cycle_count"] = ++temp;
+  }
+
+  if (increment) {
+    uint32_t temp = 0;
+    if (doc.containsKey("power_on_hours")) {
+      temp = doc["power_on_hours"];
+    }
+    doc["power_on_hours"] = ++temp;
+  }
+
+  debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
+  serializeJson(doc, debugFile);
+  debugFile.close();
 }
 
 
@@ -419,16 +522,10 @@ Config loadSettings(bool msg = true) {
     return new_conf;
   }
 
-  String json = "";
-
-  while (saveFile.available()) {
-    json += saveFile.readString();
-  }
+  DynamicJsonDocument doc(1024);
+  DeserializationError error = deserializeJson(doc, saveFile);
 
   saveFile.close();
-
-  DynamicJsonDocument doc(1024);
-  DeserializationError error = deserializeJson(doc, json);
 
   if (error) {
     print("Could not load config from json file: ", true);
@@ -460,6 +557,9 @@ Config loadSettings(bool msg = true) {
   if (doc.containsKey("cps_correction")) {
     new_conf.cps_correction = doc["cps_correction"];
   }
+  if (doc.containsKey("buzzer_tick")) {
+    new_conf.buzzer_tick = doc["buzzer_tick"];
+  }
 
   if (msg) {
     println("Successfuly loaded settings from flash.");
@@ -486,6 +586,7 @@ bool writeSettingsFile() {
   doc["trng_enabled"] = conf.trng_enabled;
   doc["subtract_baseline"] = conf.subtract_baseline;
   doc["cps_correction"] = conf.cps_correction;
+  doc["buzzer_tick"] = conf.buzzer_tick;
 
   serializeJson(doc, saveFile);
 
@@ -505,6 +606,16 @@ bool saveSettings() {
 
   //println("Successfuly written config to flash.");
   return writeSettingsFile();
+}
+
+
+void serialEvent() {
+  Shell.handleEvent();  // Handle the serial input for the USB Serial
+}
+
+
+void serialEvent2() {
+  Shell.handleEvent();  // Handle the serial input for the Hardware Serial
 }
 
 
@@ -724,6 +835,15 @@ void eventInt() {
 
   digitalWriteFast(LED, HIGH);  // Enable activity LED
 
+  const unsigned long start_millis = millis();
+  static unsigned long last_tick = start_millis;  // Last buzzer tick in ms, not needed with tone()
+
+  // Check if ticker is enabled, currently not "ticking" and also catch the millis() overflow
+  if (conf.buzzer_tick > 0 && (start_millis - last_tick > conf.buzzer_tick || start_millis < last_tick)) {
+    tone(BUZZER_PIN, BUZZER_FREQ, conf.buzzer_tick);  // Worse at higher cps
+    last_tick = start_millis;
+  }
+
   uint16_t mean = 0;
 
   if (!conf.geiger_mode && !adc_lock) {
@@ -874,11 +994,13 @@ void setup1() {
 
   Shell.registerCommand(new ShellCommand(toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal."));
   Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'enable' or 'disable' to toggle the true random number generator output."));
-  Shell.registerCommand(new ShellCommand(setDisplay, "set display", "<toggle> Either 'enable' or 'disable' to enable or force disable OLED support."));
-  Shell.registerCommand(new ShellCommand(toggleGeigerMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster."));
-  Shell.registerCommand(new ShellCommand(serialOutputMode, "set out", "<mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
-  Shell.registerCommand(new ShellCommand(measAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
+  Shell.registerCommand(new ShellCommand(toggleDisplay, "set display", "<toggle> Either 'enable' or 'disable' to enable or force disable OLED support."));
   Shell.registerCommand(new ShellCommand(toggleCPSCorrection, "set correction", "<toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels."));
+
+  Shell.registerCommand(new ShellCommand(setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster."));
+  Shell.registerCommand(new ShellCommand(setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
+  Shell.registerCommand(new ShellCommand(setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
+  Shell.registerCommand(new ShellCommand(setTickerTime, "set ticker", "<number> Number of milliseconds the buzzer ticker will be on for a single pulse. '0' is off."));
 
   Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
   Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
@@ -888,7 +1010,8 @@ void setup1() {
   LittleFS.begin();
   conf = loadSettings();  // Read all the detector settings from flash
 
-  saveSettings();  // Create settings file if none is present
+  saveSettings();               // Create settings file if none is present
+  writeDebugFile(true, false);  // Update power cycle count
 
   // Set the correct SPI pins
   SPI.setRX(4);
@@ -901,6 +1024,11 @@ void setup1() {
   // Set the correct UART pins
   Serial2.setRX(9);
   Serial2.setTX(8);
+
+  if (conf.buzzer_tick > 0) {  // Set up buzzer if enabled
+    pinMode(BUZZER_PIN, OUTPUT_12MA);
+    digitalWrite(BUZZER_PIN, LOW);
+  }
 
   Shell.begin(2000000);
   Serial2.begin(2000000);
@@ -927,12 +1055,6 @@ void setup1() {
       delay(2000);
     }
   }
-
-  /*
-  analogWriteFreq(1000);
-  analogWriteRange(300);
-  analogWrite(5, 150);
-  */
 }
 
 /*
@@ -987,13 +1109,16 @@ void loop() {
 
 
 void loop1() {
+  const unsigned long time = millis();
   static unsigned long last_serial_time = 0;
   static unsigned long last_display_time = 0;
-  const unsigned long time = millis();
+  static unsigned long last_debug_time = 0;
 
-  if (time < last_serial_time || time < last_display_time) {  // Catch millis() overflow
+  // Catch millis() overflow
+  if (time < last_serial_time || time < last_display_time || time < last_debug_time) {
     last_serial_time = time;
     last_display_time = time;
+    last_debug_time = time;
   }
 
   if (time - last_serial_time >= OUT_REFRESH) {  // Serial output every OUT_REFRESH ms
@@ -1039,6 +1164,11 @@ void loop1() {
     }
 
     last_display_time = time;
+  }
+
+  if (time - last_debug_time >= 3600000) {  // 3_600_000 ms is equal to 1 h
+    writeDebugFile();                       // Increment power-on hours
+    last_debug_time = time;
   }
 
   if (BOOTSEL) {

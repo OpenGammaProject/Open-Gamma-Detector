@@ -35,6 +35,7 @@ Here are some of the most important specs:
 * Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
 * Built-in True Random Number Generator.
 * Simple OLED support out of the box.
+* Built-in customizable ticker support.
 
 ## How To Get One
 
