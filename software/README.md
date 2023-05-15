@@ -99,7 +99,7 @@ At the moment the software only draws the energy spectrum and the mean cps value
 
 ## Ticker
 
-By connecting a buzzer to the digital pin defined in `BUZZER_PIN` (default is 9: the `RX` pin on the board) and a ground pin, you are set to use the built-in ticker feature. Enable the ticker by calling `set ticker <number>` with a number greater than 0, which will be the on-time of the buzzer for each ticker pulse. Zero will disable the ticker again.
+By connecting a buzzer to the digital pin defined in `BUZZER_PIN` (default is 9: the `RX` pin on the board) and a ground pin, you are set to use the built-in ticker feature. Enable the ticker by calling `set ticker <number>` with a number greater than 0, which will be the on-time of the buzzer for each ticker pulse. Zero will disable the ticker again. A good setting will be somewhere around 1 - 5 milliseconds, e.g. `set ticker 1`.
 
 You can also change the PWM frequency for your buzzer by changing the `BUZZER_FREQ` variable. This can only be done within the Arduino IDE, there is no serial command.
 
