@@ -30,7 +30,7 @@
     BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
-#define SCREEN_TYPE SCREEN_SH1106   // Display type: Either SCREEN_SSD1306 or SCREEN_SH1106
+#define SCREEN_TYPE SCREEN_SSD1306  // Display type: Either SCREEN_SSD1306 or SCREEN_SH1106
 #define SCREEN_WIDTH 128            // OLED display width, in pixels
 #define SCREEN_HEIGHT 64            // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C         // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
