@@ -9,6 +9,10 @@
 
 #include "Arduino.h"
 
+// Display Types
+#define SCREEN_SH1106 0
+#define SCREEN_SSD1306 1
+
 void cleanPrintln(const String &text = String(""));
 void cleanPrint(const String &text = String(""));
 void cleanPrintln(unsigned int number, int base = DEC);

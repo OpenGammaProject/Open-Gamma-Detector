@@ -15,59 +15,41 @@
   ##   Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
-  TODO: (?) Optimize for power usage
-
+  TODO: Optimize for power usage (How?)
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
-  TODO: Total hours on + startups
 */
 
 //#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
 #include "Helper.h"                // Misc helper functions
 #include <SimpleShell_Enhanced.h>  // Serial Commands/Console
 #include <ArduinoJson.h>           // Load and save the settings file
-#include <LittleFS.h>              // Used for FS, stores the settings file
-#include <Adafruit_SSD1306.h>      // Used for OLEDs
+#include <LittleFS.h>              // Used for FS, stores the settings and debug files
 #include <Statistical.h>           // Used to get the median for baseline subtraction
-
-const String FWVERS = "3.3.0";  // Firmware Version Code
-
-const uint8_t GND_PIN = A2;    // GND meas pin
-const uint8_t VSYS_MEAS = A3;  // VSYS/3
-const uint8_t VBUS_MEAS = 24;  // VBUS Sense Pin
-const uint8_t PS_PIN = 23;     // SMPS power save pin
-
-const uint8_t AIN_PIN = A1;         // Analog input pin
-const uint8_t AMP_PIN = A0;         // Preamp (baseline) meas pin
-const uint8_t INT_PIN = 16;         // Signal interrupt pin
-const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
-const uint8_t LED = 25;             // LED on GP25
-const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
-const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
 
 /*
     BEGIN USER SETTINGS
 */
 // These are the default settings that can only be changed by reflashing the Pico
-const float VREF_VOLTAGE = 3.0;             // ADC reference voltage, defaults 3.3, with reference 3.0
-const uint8_t ADC_RES = 12;                 // Use 12-bit ADC resolution
-const uint16_t PH_RESET = 1000;             // Microseconds after which the P&H circuit will be reset once
-const uint32_t EVENT_BUFFER = 100000;       // Buffer this many events for Serial.print
-const uint8_t SCREEN_WIDTH = 128;           // OLED display width, in pixels
-const uint8_t SCREEN_HEIGHT = 64;           // OLED display height, in pixels
-const uint8_t SCREEN_ADDRESS = 0x3C;        // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-const uint8_t TRNG_BITS = 8;                // Number of bits for each random number, max 8
-const uint8_t BASELINE_NUM = 100;           // Number of measurements taken to determine the DC baseline
-const String CONFIG_FILE = "/config.json";  // File to store the settings
-const String DEBUG_FILE = "/debug.json";    // File to store some misc debug info
-const uint16_t DISPLAY_REFRESH = 1000;      // Milliseconds between display refreshs
-const uint8_t BUZZER_PIN = 9;               // Digital PWM pin the buzzer is connected to
-const uint16_t BUZZER_FREQ = 3000;          // Frequency used for the buzzer  PWM
+#define SCREEN_TYPE SCREEN_SH1106   // Display type: Either SCREEN_SSD1306 or SCREEN_SH1106
+#define SCREEN_WIDTH 128            // OLED display width, in pixels
+#define SCREEN_HEIGHT 64            // OLED display height, in pixels
+#define SCREEN_ADDRESS 0x3C         // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+#define PH_RESET 1000               // Microseconds after which the P&H circuit will be reset once
+#define EVENT_BUFFER 100000         // Buffer this many events for Serial.print
+#define TRNG_BITS 8                 // Number of bits for each random number, max 8
+#define BASELINE_NUM 100            // Number of measurements taken to determine the DC baseline
+#define CONFIG_FILE "/config.json"  // File to store the settings
+#define DEBUG_FILE "/debug.json"    // File to store some misc debug info
+#define DISPLAY_REFRESH 1000        // Milliseconds between display refreshs
+#define BUZZER_PIN 9                // Digital PWM pin the buzzer is connected to
+#define BUZZER_FREQ 3000            // Frequency used for the buzzer  PWM
+#define TICK_RATE 10                // Buzzer clicks once every TICK_RATE counts
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
   bool ser_output = true;          // Wheter data should be Serial.println'ed
   bool geiger_mode = false;        // Measure only cps, not energy
-  bool print_spectrum = false;     // Print the finishes spectrum, not just
+  bool print_spectrum = false;     // Print the finishes spectrum, not just chronological events
   size_t meas_avg = 5;             // Number of meas. averaged each event, higher=longer dead time
   bool enable_display = false;     // Enable I2C Display, see settings above
   bool trng_enabled = false;       // Enable the True Random Number Generator
@@ -83,6 +65,24 @@ struct Config {
 /*
    END USER SETTINGS
 */
+
+const String FWVERS = "3.4.0";  // Firmware Version Code
+
+const uint8_t GND_PIN = A2;    // GND meas pin
+const uint8_t VSYS_MEAS = A3;  // VSYS/3
+const uint8_t VBUS_MEAS = 24;  // VBUS Sense Pin
+const uint8_t PS_PIN = 23;     // SMPS power save pin
+
+const uint8_t AIN_PIN = A1;         // Analog input pin
+const uint8_t AMP_PIN = A0;         // Preamp (baseline) meas pin
+const uint8_t INT_PIN = 16;         // Signal interrupt pin
+const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
+const uint8_t LED = 25;             // LED on GP25
+const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
+const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
+
+const float VREF_VOLTAGE = 3.0;  // ADC reference voltage, defaults 3.3, with reference 3.0
+const uint8_t ADC_RES = 12;      // Use 12-bit ADC resolution
 
 volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];          // Holds the output histogram (spectrum)
 volatile uint32_t display_spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the display histogram (spectrum)
@@ -110,8 +110,18 @@ volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 float counts_buffer[5] = {};
 
 Config conf;  // Configuration object
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 //ADCInput sipm(AMP_PIN);
+
+// Check for the right display type
+#if (SCREEN_TYPE == SCREEN_SH1106)
+#include <Adafruit_SH110X.h>
+#define DISPLAY_WHITE SH110X_WHITE
+Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+#elif (SCREEN_TYPE == SCREEN_SSD1306)
+#include <Adafruit_SSD1306.h>
+#define DISPLAY_WHITE SSD1306_WHITE
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+#endif
 
 
 void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
@@ -720,9 +730,9 @@ void drawSpectrum() {
 
   for (uint16_t i = 0; i < SCREEN_WIDTH; i++) {
     uint32_t val = round(eventBins[i] * scale_factor);
-    display.drawFastVLine(i, SCREEN_HEIGHT - val - 1, val, SSD1306_WHITE);
+    display.drawFastVLine(i, SCREEN_HEIGHT - val - 1, val, DISPLAY_WHITE);
   }
-  display.drawFastHLine(0, SCREEN_HEIGHT - 1, SCREEN_WIDTH, SSD1306_WHITE);
+  display.drawFastHLine(0, SCREEN_HEIGHT - 1, SCREEN_WIDTH, DISPLAY_WHITE);
 
   display.display();
 
@@ -811,7 +821,7 @@ void drawGeigerCounts() {
   display.setCursor(0, 0);
   display.setTextSize(2);
 
-  display.drawFastHLine(0, 18, SCREEN_WIDTH, SSD1306_WHITE);
+  display.drawFastHLine(0, 18, SCREEN_WIDTH, DISPLAY_WHITE);
 
   display.setCursor(0, 22);
   display.print(avg_cps, 1);
@@ -837,11 +847,17 @@ void eventInt() {
 
   const unsigned long start_millis = millis();
   static unsigned long last_tick = start_millis;  // Last buzzer tick in ms, not needed with tone()
+  static uint8_t count = 0;
 
   // Check if ticker is enabled, currently not "ticking" and also catch the millis() overflow
   if (conf.buzzer_tick > 0 && (start_millis - last_tick > conf.buzzer_tick || start_millis < last_tick)) {
-    tone(BUZZER_PIN, BUZZER_FREQ, conf.buzzer_tick);  // Worse at higher cps
-    last_tick = start_millis;
+    if (count >= TICK_RATE - 1) {                       // Only click at every 10th count
+      tone(BUZZER_PIN, BUZZER_FREQ, conf.buzzer_tick);  // Worse at higher cps
+      last_tick = start_millis;
+      count = 0;
+    } else {
+      count++;
+    }
   }
 
   uint16_t mean = 0;
@@ -1037,13 +1053,21 @@ void setup1() {
   println("Firmware Version " + FWVERS);
 
   if (conf.enable_display) {
-    if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    bool begin = false;
+
+#if (SCREEN_TYPE == SCREEN_SSD1306)
+    begin = display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+#elif (SCREEN_TYPE == SCREEN_SH1106)
+    begin = display.begin(SCREEN_ADDRESS, true);
+#endif
+
+    if (!begin) {
       println("Failed communication with the display. Maybe the I2C address is incorrect?", true);
       conf.enable_display = false;
     } else {
       display.setRotation(2);
       display.setTextSize(2);  // Draw 2X-scale text
-      display.setTextColor(SSD1306_WHITE);
+      display.setTextColor(DISPLAY_WHITE);
 
       display.clearDisplay();
       display.println("Open Gamma Detector");
