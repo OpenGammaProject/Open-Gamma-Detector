@@ -35,7 +35,7 @@
 #define SCREEN_HEIGHT 64            // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C         // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define PH_RESET 1000               // Microseconds after which the P&H circuit will be reset once
-#define EVENT_BUFFER 100000         // Buffer this many events for Serial.print
+#define EVENT_BUFFER 50000          // Buffer this many events for Serial.print
 #define TRNG_BITS 8                 // Number of bits for each random number, max 8
 #define BASELINE_NUM 100            // Number of measurements taken to determine the DC baseline
 #define CONFIG_FILE "/config.json"  // File to store the settings
