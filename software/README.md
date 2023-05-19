@@ -25,6 +25,7 @@ The installation and additional documentation can be found in the respective Git
 - [SimpleShell Enhanced](https://github.com/Phoenix1747/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
 - [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
+- [Adafruit_SH110x](https://github.com/adafruit/Adafruit_SH110X) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SH110X.svg?)](https://www.ardu-badge.com/Adafruit%20SH110X)
 - [Statistical](https://github.com/akkoyun/Statistical) [![arduino-library-badge](https://www.ardu-badge.com/badge/Statistical.svg?)](https://www.ardu-badge.com/Statistical)
 
 They can be installed by searching their names using the IDE's built-in library manager.
@@ -91,11 +92,17 @@ Example (4096 channels):
 
 ## I2C and OLED Support
 
-The detector board features a standard I2C header where you can connect any standard SSD1306 OLED display that will be supported with minimal changes to the Arduino IDE sketch. **A 128 x 64 px OLED is supported as is and ~~will be automatically used upon boot~~ [UPDATE: See https://github.com/OpenGammaProject/Open-Gamma-Detector/issues/19].** If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header, if you choose to do so for whatever weird reason.
+The detector board features an I2C header where you can connect any standard SSD1306 or SH1106 OLED display that will be supported with minimal changes to the Arduino IDE sketch. If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header, if you choose to do so for whatever weird reason.
 
-At the moment the software only draws the energy spectrum and the mean cps value on the screen. These stats are reset once a specific number of counts have been collected - this number can be changed in the Arduino sketch. This is sufficient in most (simple) cases and more features will be implemented over time.
+The default firmware uses a 128 x 64 px SSD1306 OLED. If you want to change the display resolution or switch to SH1106-based screens, you will have to recompile and upload the Arduino sketch to your device.
+
+At the moment the software only draws the energy spectrum and the current cps value to the screen in energy mode. These stats are reset once a specific number of counts have been collected - this number can be changed in the Arduino sketch. This is sufficient in most (simple) cases and more features will be implemented over time.
+
+In Geiger mode the min/max cps as well as the average cps will be displayed on the screen.
 
 ![OLED display](../docs/oled.jpg)
+
+Of course the I2C header can also be used for any other I2C devices, not only displays! But you will have to write the software on your own.
 
 ## Ticker
 

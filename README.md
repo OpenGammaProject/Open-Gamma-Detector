@@ -34,7 +34,7 @@ Here are some of the most important specs:
 * Low power consumption: ~25 mA @ 5 V with default firmware.
 * Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
 * Built-in True Random Number Generator.
-* Simple OLED support out of the box.
+* Simple OLED support out of the box (SSD1306 and SH110x).
 * Built-in customizable ticker support.
 
 ## How To Get One
