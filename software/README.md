@@ -136,6 +136,8 @@ I highly advise you not to use this implementation as an entropy generator for r
 
 To get the data from the detector, a serial connection (either the serial-over-USB port or hardware UART) is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.xyz/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files and communicate over a serial console. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/OpenGammaProject/Gamma-MCA) to find more specific info about this project.
 
+**TL;DR:** [Youtube Teaser](https://www.youtube.com/watch?v=dkMhoUwDla0)
+
 ![Gamma MCA Screenshot](../docs/gamma_mca.png)
 
 You can of course use any other serial monitor or gamma-spectroscopy software that's compatible with serial connections. To my knowledge there isn't much, though, that's why I made one myself.
