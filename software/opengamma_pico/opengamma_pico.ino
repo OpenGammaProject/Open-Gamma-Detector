@@ -15,8 +15,14 @@
   ##   Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
-  TODO: Optimize for power usage (How?)
+
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
+  TODO: dead time correction for cps
+
+  TODO: Use TaskScheduler for better task handling
+  TODO: (!) Optimize for power usage by adjusting core voltage (vreg_set_voltage)
+  TODO: (!) General optimizations (e.g. gpio_set_slew_rate)
+
 */
 
 //#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
