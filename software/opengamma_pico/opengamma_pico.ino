@@ -18,29 +18,34 @@
 
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
   TODO: dead time correction for cps
-
-  TODO: Use TaskScheduler for better task handling
-  TODO: (!) Optimize for power usage by adjusting core voltage (vreg_set_voltage)
-  TODO: (!) General optimizations (e.g. gpio_set_slew_rate)
-
+  
 */
 
+#define _TASK_SCHEDULING_OPTIONS
+#define _TASK_TIMECRITICAL       // Enable monitoring scheduling overruns
+#define _TASK_SLEEP_ON_IDLE_RUN  // Enable 1 ms SLEEP_IDLE powerdowns between tasks if no callback methods were invoked during the pass
+#include <TaskScheduler.h>       // Periodically executes tasks
+
 //#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
-#include "Helper.h"                // Misc helper functions
+#include "hardware/vreg.h"  // Used for vreg_set_voltage
+#include "Helper.h"         // Misc helper functions
+
 #include <SimpleShell_Enhanced.h>  // Serial Commands/Console
 #include <ArduinoJson.h>           // Load and save the settings file
 #include <LittleFS.h>              // Used for FS, stores the settings and debug files
 #include <Statistical.h>           // Used to get the median for baseline subtraction
 
 /*
+    ===================
     BEGIN USER SETTINGS
+    ===================
 */
 // These are the default settings that can only be changed by reflashing the Pico
 #define SCREEN_TYPE SCREEN_SSD1306  // Display type: Either SCREEN_SSD1306 or SCREEN_SH1106
 #define SCREEN_WIDTH 128            // OLED display width, in pixels
 #define SCREEN_HEIGHT 64            // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C         // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-#define PH_RESET 1000               // Microseconds after which the P&H circuit will be reset once
+#define PH_RESET 1                  // Milliseconds after which the P&H circuit will be reset once
 #define EVENT_BUFFER 50000          // Buffer this many events for Serial.print
 #define TRNG_BITS 8                 // Number of bits for each random number, max 8
 #define BASELINE_NUM 100            // Number of measurements taken to determine the DC baseline
@@ -69,10 +74,12 @@ struct Config {
   }
 };
 /*
-   END USER SETTINGS
+    =================
+    END USER SETTINGS
+    =================
 */
 
-const String FWVERS = "3.4.0";  // Firmware Version Code
+const String FWVERS = "3.5.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -129,11 +136,138 @@ Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 #endif
 
+// Forward declaration of callbacks
+void writeDebugFileTime();
+void queryButton();
+void updateDisplay();
+void dataOutput();
+void updateBaseline();
+void resetPHCircuit();
+
+// Tasks
+Task writeDebugFileTimeTask(60 * 60 * 1000, TASK_FOREVER, &writeDebugFileTime);
+Task queryButtonTask(100, TASK_FOREVER, &queryButton);
+Task updateDisplayTask(DISPLAY_REFRESH, TASK_FOREVER, &updateDisplay);
+Task dataOutputTask(OUT_REFRESH, TASK_FOREVER, &dataOutput);
+Task updateBaselineTask(1, TASK_FOREVER, &updateBaseline);
+Task resetPHCircuitTask(PH_RESET, TASK_FOREVER, &resetPHCircuit);
+
+// Scheduler
+Scheduler schedule;
+
 
 void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
   digitalWriteFast(RST_PIN, HIGH);
   delayMicroseconds(time);  // Discharge for (default) 2 µs -> ~99% discharge time for 1 kOhm and 470 pF
   digitalWriteFast(RST_PIN, LOW);
+}
+
+
+void queryButton() {
+  if (BOOTSEL) {
+    // Switch between Geiger and Energy modes
+    conf.geiger_mode = !conf.geiger_mode;
+    event_position = 0;
+    clearSpectrum();
+    clearSpectrumDisplay();
+    resetSampleHold();
+
+    if (conf.geiger_mode) {
+      println("Switched to geiger mode.");
+    } else {
+      println("Switched to energy measuring mode.");
+    }
+
+    saveSettings();  // Saved updated settings
+
+    while (BOOTSEL) {      // Wait for BOOTSEL to be released
+      rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
+      delay(1);
+    }
+  }
+
+  rp2040.wdt_reset();  // Reset watchdog, everything is fine
+}
+
+
+void updateDisplay() {
+  // Update display every DISPLAY_REFRESH ms
+  // MAYBE ONLY START TASK IF DISPLAY IS ENABLED?
+  if (conf.enable_display) {
+    if (conf.geiger_mode) {
+      drawGeigerCounts();
+    } else {
+      drawSpectrum();
+    }
+  }
+}
+
+
+void dataOutput() {
+  // MAYBE ONLY START TASK IF OUTPUT IS ENABLED?
+  if (conf.ser_output) {
+    if (Serial || Serial2) {
+      if (conf.print_spectrum) {
+        for (uint16_t index = 0; index < uint16_t(pow(2, ADC_RES)); index++) {
+          cleanPrint(String(spectrum[index]) + ";");
+          //spectrum[index] = 0; // Uncomment for differential histogram
+        }
+        cleanPrintln();
+      } else if (event_position > 0 && event_position <= EVENT_BUFFER) {
+        for (uint16_t index = 0; index < event_position; index++) {
+          cleanPrint(String(events[index]) + ";");
+        }
+        cleanPrintln();
+      }
+    }
+
+    event_position = 0;
+  }
+
+  // MAYBE SEPARATE TRNG AND SERIAL OUTPUT TASKS?
+  if (conf.trng_enabled) {
+    if (Serial || Serial2) {
+      for (size_t i = 0; i < number_index; i++) {
+        cleanPrint(trng_nums[i], DEC);
+        cleanPrintln(";");
+      }
+      number_index = 0;
+    }
+  }
+}
+
+
+void updateBaseline() {
+  static uint8_t baseline_index = 0;
+
+  // Compute the median DC baseline to subtract from each pulse
+  if (conf.subtract_baseline) {
+    if (!adc_lock) {
+      adc_lock = true;  // Disable interrupt ADC measurements while resetting
+      baselines[baseline_index] = analogRead(AIN_PIN);
+      adc_lock = false;
+
+      baseline_index++;
+
+      if (baseline_index >= BASELINE_NUM) {
+        Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
+        current_baseline = round(Data_Array.Quartile(2));  // Take the median value
+        //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
+
+        baseline_index = 0;
+      }
+    }
+  }
+}
+
+
+void resetPHCircuit() {
+  if (!adc_lock) {
+    adc_lock = true;    // Disable interrupt ADC measurements while resetting
+    resetSampleHold();  // Periodically reset the S&H/P&H circuit
+    adc_lock = false;
+  }
+  // TODO: Check if adc was locked and decrease interval to compensate
 }
 
 
@@ -487,7 +621,8 @@ void readDebugFile() {
 }
 
 
-void writeDebugFile(bool new_start = false, bool increment = true) {
+void writeDebugFileTime() {
+  // ALMOST THE SAME AS THE BOOT DEBUG FILE WRITE!
   File debugFile = LittleFS.open(DEBUG_FILE, "r");  // Open read and write
 
   DynamicJsonDocument doc(512);
@@ -504,21 +639,41 @@ void writeDebugFile(bool new_start = false, bool increment = true) {
 
   debugFile.close();
 
-  if (new_start) {
-    uint32_t temp = 0;
-    if (doc.containsKey("power_cycle_count")) {
-      temp = doc["power_cycle_count"];
-    }
-    doc["power_cycle_count"] = ++temp;
+  uint32_t temp = 0;
+  if (doc.containsKey("power_on_hours")) {
+    temp = doc["power_on_hours"];
+  }
+  doc["power_on_hours"] = ++temp;
+
+  debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
+  serializeJson(doc, debugFile);
+  debugFile.close();
+}
+
+
+void writeDebugFileBoot() {
+  // ALMOST THE SAME AS THE TIME DEBUG FILE WRITE!
+  File debugFile = LittleFS.open(DEBUG_FILE, "r");  // Open read and write
+
+  DynamicJsonDocument doc(512);
+  DeserializationError error = deserializeJson(doc, debugFile);
+
+  if (!debugFile || error) {
+    //println("Could not open debug file!", true);
+    print("Could not load debug info from json file: ", true);
+    cleanPrintln(error.f_str());
+
+    doc["power_cycle_count"] = 0;
+    doc["power_on_hours"] = 0;
   }
 
-  if (increment) {
-    uint32_t temp = 0;
-    if (doc.containsKey("power_on_hours")) {
-      temp = doc["power_on_hours"];
-    }
-    doc["power_on_hours"] = ++temp;
+  debugFile.close();
+
+  uint32_t temp = 0;
+  if (doc.containsKey("power_cycle_count")) {
+    temp = doc["power_cycle_count"];
   }
+  doc["power_cycle_count"] = ++temp;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
   serializeJson(doc, debugFile);
@@ -636,8 +791,8 @@ void serialEvent2() {
 
 
 float readTemp() {
-  adc_lock = true;                         // Flag this, so that nothing else uses the ADC in the mean time
-  delayMicroseconds(conf.meas_avg * 100);  // Wait for an already-executing interrupt
+  adc_lock = true;                        // Flag this, so that nothing else uses the ADC in the mean time
+  delayMicroseconds(conf.meas_avg * 20);  // Wait for an already-executing interrupt
   const float temp = analogReadTemp(VREF_VOLTAGE);
   adc_lock = false;
   return temp;
@@ -830,8 +985,14 @@ void drawGeigerCounts() {
   display.drawFastHLine(0, 18, SCREEN_WIDTH, DISPLAY_WHITE);
 
   display.setCursor(0, 22);
-  display.print(avg_cps, 1);
-  display.println(" cps");
+
+  if (avg_cps > 1000) {
+    display.print(avg_cps / 1000.0, 2);
+    display.println(" kcps");
+  } else {
+    display.print(avg_cps, 1);
+    display.println(" cps");
+  }
 
   display.setTextSize(1);
   display.display();
@@ -979,9 +1140,12 @@ void eventInt() {
 void setup() {
   pinMode(AMP_PIN, INPUT);
   pinMode(INT_PIN, INPUT);
-  pinMode(RST_PIN, OUTPUT_12MA);
   pinMode(AIN_PIN, INPUT);
+  pinMode(RST_PIN, OUTPUT_12MA);
   pinMode(LED, OUTPUT);
+
+  //gpio_set_slew_rate(RST_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
+  gpio_set_slew_rate(LED, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
 
   analogReadResolution(ADC_RES);
 
@@ -999,10 +1163,14 @@ void setup() {
 void setup1() {
   rp2040.wdt_begin(5000);  // Enable hardware watchdog to check every 5s
 
+  // Undervolt a bit to save power, pretty conservative value could be even lower probably
+  vreg_set_voltage(VREG_VOLTAGE_1_00);
+
   // Disable "Power-Saving" power supply option.
   // -> does not actually significantly save power, but output is much less noisy in HIGH!
   // -> Also with PS_PIN LOW I have experiences high-pitched (~ 15 kHz range) coil whine!
   pinMode(PS_PIN, OUTPUT_4MA);
+  gpio_set_slew_rate(PS_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
   digitalWrite(PS_PIN, HIGH);
 
   pinMode(GND_PIN, INPUT);
@@ -1032,8 +1200,8 @@ void setup1() {
   LittleFS.begin();
   conf = loadSettings();  // Read all the detector settings from flash
 
-  saveSettings();               // Create settings file if none is present
-  writeDebugFile(true, false);  // Update power cycle count
+  saveSettings();        // Create settings file if none is present
+  writeDebugFileBoot();  // Update power cycle count
 
   // Set the correct SPI pins
   SPI.setRX(4);
@@ -1049,6 +1217,7 @@ void setup1() {
 
   if (conf.buzzer_tick > 0) {  // Set up buzzer if enabled
     pinMode(BUZZER_PIN, OUTPUT_12MA);
+    gpio_set_slew_rate(BUZZER_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
     digitalWrite(BUZZER_PIN, LOW);
   }
 
@@ -1082,49 +1251,40 @@ void setup1() {
       display.print("FW ");
       display.println(FWVERS);
       display.display();
-      delay(2000);
+      //delay(2000);
     }
   }
+
+  // Set up task scheduler and enable tasks
+  updateDisplayTask.setSchedulingOption(TASK_INTERVAL);  // TASK_SCHEDULE, TASK_SCHEDULE_NC, TASK_INTERVAL
+  dataOutputTask.setSchedulingOption(TASK_INTERVAL);
+  //resetPHCircuitTask.setSchedulingOption(TASK_INTERVAL);
+  //updateBaselineTask.setSchedulingOption(TASK_INTERVAL);
+
+  schedule.init();
+  schedule.allowSleep(true);
+
+  schedule.addTask(writeDebugFileTimeTask);
+  schedule.addTask(queryButtonTask);
+  schedule.addTask(updateDisplayTask);
+  schedule.addTask(dataOutputTask);
+  schedule.addTask(updateBaselineTask);
+  schedule.addTask(resetPHCircuitTask);
+
+  writeDebugFileTimeTask.enable();
+  queryButtonTask.enable();
+  dataOutputTask.enable();
+  resetPHCircuitTask.enable();
+  updateBaselineTask.enable();
+  updateDisplayTask.enableDelayed(2000);
 }
+
 
 /*
   LOOP FUNCTIONS
 */
 void loop() {
-  static unsigned long last_exec = 0;
-  const unsigned long time = micros();
-
-  if (time < last_exec || time - last_exec >= PH_RESET) {
-    if (!adc_lock) {
-      adc_lock = true;    // Disable interrupt ADC measurements while resetting
-      resetSampleHold();  // Periodically reset the S&H/P&H circuit
-      adc_lock = false;
-
-      last_exec = time;
-    }
-  }
-
-  static uint8_t baseline_index = 0;
-
-  // Compute the median DC baseline to subtract from each pulse
-  if (conf.subtract_baseline) {
-    if (!adc_lock) {
-      adc_lock = true;  // Disable interrupt ADC measurements while resetting
-      baselines[baseline_index] = analogRead(AIN_PIN);
-      adc_lock = false;
-
-      baseline_index++;
-
-      if (baseline_index >= BASELINE_NUM) {
-        Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
-        current_baseline = round(Data_Array.Quartile(2));  // Take the median value
-        //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
-
-        baseline_index = 0;
-      }
-    }
-  }
-
+  // Do nothing here
   /*
   if (sipm.available() > 0) {
     const uint16_t data = sipm.read();
@@ -1134,96 +1294,12 @@ void loop() {
   }
   */
 
-  delayMicroseconds(500);
+  __wfi();  // Wait for interrupt
 }
 
 
 void loop1() {
-  const unsigned long time = millis();
-  static unsigned long last_serial_time = 0;
-  static unsigned long last_display_time = 0;
-  static unsigned long last_debug_time = 0;
+  schedule.execute();
 
-  // Catch millis() overflow
-  if (time < last_serial_time || time < last_display_time || time < last_debug_time) {
-    last_serial_time = time;
-    last_display_time = time;
-    last_debug_time = time;
-  }
-
-  if (time - last_serial_time >= OUT_REFRESH) {  // Serial output every OUT_REFRESH ms
-    if (conf.ser_output) {
-      if (Serial || Serial2) {
-        if (conf.print_spectrum) {
-          for (uint16_t index = 0; index < uint16_t(pow(2, ADC_RES)); index++) {
-            cleanPrint(String(spectrum[index]) + ";");
-            //spectrum[index] = 0; // Uncomment for differential histogram
-          }
-          cleanPrintln();
-        } else if (event_position > 0 && event_position <= EVENT_BUFFER) {
-          for (uint16_t index = 0; index < event_position; index++) {
-            cleanPrint(String(events[index]) + ";");
-          }
-          cleanPrintln();
-        }
-      }
-
-      event_position = 0;
-    }
-
-    if (conf.trng_enabled) {
-      if (Serial || Serial2) {
-        for (size_t i = 0; i < number_index; i++) {
-          cleanPrint(trng_nums[i], DEC);
-          cleanPrintln(";");
-        }
-        number_index = 0;
-      }
-    }
-
-    last_serial_time = time;
-  }
-
-  if (time - last_display_time >= DISPLAY_REFRESH) {  // Update display every DISPLAY_REFRESH ms
-    if (conf.enable_display) {
-      if (conf.geiger_mode) {
-        drawGeigerCounts();
-      } else {
-        drawSpectrum();
-      }
-    }
-
-    last_display_time = time;
-  }
-
-  if (time - last_debug_time >= 3600000) {  // 3_600_000 ms is equal to 1 h
-    writeDebugFile();                       // Increment power-on hours
-    last_debug_time = time;
-  }
-
-  if (BOOTSEL) {
-    // Switch between Geiger and Energy modes
-    conf.geiger_mode = !conf.geiger_mode;
-    event_position = 0;
-    clearSpectrum();
-    clearSpectrumDisplay();
-    resetSampleHold();
-
-    if (conf.geiger_mode) {
-      println("Switched to geiger mode.");
-    } else {
-      println("Switched to energy measuring mode.");
-    }
-
-    saveSettings();  // Saved updated settings
-
-    while (BOOTSEL) {      // Wait for BOOTSEL to be released
-      rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
-      delay(1);
-    }
-  }
-
-  rp2040.wdt_reset();  // Reset watchdog, everything is fine
-
-  delay(10);  // Wait for 10 ms, better: sleep for power saving?!
+  delay(1);  // Wait for 1 ms, slightly reduces power consumption
 }
