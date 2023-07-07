@@ -1245,11 +1245,14 @@ void setup1() {
       display.setTextColor(DISPLAY_WHITE);
 
       display.clearDisplay();
+
       display.println("Open Gamma Detector");
       display.println();
       display.setTextSize(1);
       display.print("FW ");
       display.println(FWVERS);
+      display.drawBitmap(128 - 34, 64 - 34, opengamma_pcb, 32, 32, DISPLAY_WHITE);
+
       display.display();
       //delay(2000);
     }
@@ -1271,12 +1274,12 @@ void setup1() {
   schedule.addTask(updateBaselineTask);
   schedule.addTask(resetPHCircuitTask);
 
-  writeDebugFileTimeTask.enable();
   queryButtonTask.enable();
-  dataOutputTask.enable();
   resetPHCircuitTask.enable();
   updateBaselineTask.enable();
-  updateDisplayTask.enableDelayed(2000);
+  writeDebugFileTimeTask.enableDelayed(60 * 60 * 1000);
+  dataOutputTask.enableDelayed(OUT_REFRESH);
+  updateDisplayTask.enableDelayed(DISPLAY_REFRESH);
 }
 
 
