@@ -15,10 +15,10 @@
   ##   Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
-
-  TODO: cps bar graph while in Geiger Mode instead of empty spectrum
-  TODO: dead time correction for cps
   
+  TODO: dead time correction for cps -> Running Average for dead time!
+  TODO: cps bar graph while in Geiger Mode instead of empty spectrum
+
 */
 
 #define _TASK_SCHEDULING_OPTIONS
@@ -33,7 +33,7 @@
 #include <SimpleShell_Enhanced.h>  // Serial Commands/Console
 #include <ArduinoJson.h>           // Load and save the settings file
 #include <LittleFS.h>              // Used for FS, stores the settings and debug files
-#include <Statistical.h>           // Used to get the median for baseline subtraction
+#include <RunningMedian.h>         // Used to get running median and average with circular buffers
 
 /*
     ===================
@@ -48,7 +48,7 @@
 #define PH_RESET 1                  // Milliseconds after which the P&H circuit will be reset once
 #define EVENT_BUFFER 50000          // Buffer this many events for Serial.print
 #define TRNG_BITS 8                 // Number of bits for each random number, max 8
-#define BASELINE_NUM 100            // Number of measurements taken to determine the DC baseline
+#define BASELINE_NUM 101            // Number of measurements taken to determine the DC baseline
 #define CONFIG_FILE "/config.json"  // File to store the settings
 #define DEBUG_FILE "/debug.json"    // File to store some misc debug info
 #define DISPLAY_REFRESH 1000        // Milliseconds between display refreshs
@@ -79,7 +79,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "3.5.0";  // Firmware Version Code
+const String FWVERS = "3.5.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -114,13 +114,13 @@ volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRN
 volatile unsigned long dt_sum = 0;         // Total detector dead time in µs
 volatile uint32_t dt_sum_num = 0;          // Number of dead time measurements
 
-uint16_t baselines[BASELINE_NUM];  // Array of a number of baseline (DC bias) measurements at the SiPM input
-uint16_t current_baseline = 0;     // Median value of the input baseline voltage
+RunningMedian baseline(BASELINE_NUM);  // Array of a number of baseline (DC bias) measurements at the SiPM input
+uint16_t current_baseline = 0;         // Median value of the input baseline voltage
 
 volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 
 // Stores 5 * DISPLAY_REFRESH worth of "current" cps to calculate an average cps value in a ring buffer config
-float counts_buffer[5] = {};
+RunningMedian counts(5);
 
 Config conf;  // Configuration object
 //ADCInput sipm(AMP_PIN);
@@ -238,23 +238,21 @@ void dataOutput() {
 
 
 void updateBaseline() {
-  static uint8_t baseline_index = 0;
+  static uint8_t baseline_done = 0;
 
   // Compute the median DC baseline to subtract from each pulse
   if (conf.subtract_baseline) {
     if (!adc_lock) {
       adc_lock = true;  // Disable interrupt ADC measurements while resetting
-      baselines[baseline_index] = analogRead(AIN_PIN);
+      baseline.add(analogRead(AIN_PIN));
       adc_lock = false;
 
-      baseline_index++;
+      baseline_done++;
 
-      if (baseline_index >= BASELINE_NUM) {
-        Array_Stats<uint16_t> Data_Array(baselines, sizeof(baselines) / sizeof(baselines[0]));
-        current_baseline = round(Data_Array.Quartile(2));  // Take the median value
-        //current_baseline = round(Data_Array.Average(Data_Array.Arithmetic_Avg));
+      if (baseline_done >= BASELINE_NUM) {
+        current_baseline = round(baseline.getMedian());  // Take the median value
 
-        baseline_index = 0;
+        baseline_done = 0;
       }
     }
   }
@@ -847,23 +845,9 @@ void drawSpectrum() {
   display.clearDisplay();
   display.setCursor(0, 0);
 
-  static uint8_t buffer_index = 0;
-  const uint8_t BUFFER_SIZE = sizeof(counts_buffer) / sizeof(counts_buffer[0]);
-  counts_buffer[buffer_index] = new_total * 1000.0 / time_delta;
+  counts.add(new_total * 1000.0 / time_delta);
 
-  if (buffer_index + 1 >= BUFFER_SIZE) {
-    buffer_index = 0;
-  } else {
-    buffer_index++;
-  }
-
-  float avg_cps = 0;
-  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    avg_cps += counts_buffer[i];
-  }
-  avg_cps /= BUFFER_SIZE;
-
-  display.print(avg_cps, 1);
+  display.print(counts.getAverage(), 1);
   display.print(" cps");
 
   static int16_t temp = round(readTemp());
@@ -925,33 +909,17 @@ void drawGeigerCounts() {
     time_delta = 1000;
   }
 
-  static uint8_t buffer_index = 0;
-  const uint8_t BUFFER_SIZE = sizeof(counts_buffer) / sizeof(counts_buffer[0]);
-  counts_buffer[buffer_index] = new_total * 1000.0 / time_delta;
-
-  if (buffer_index + 1 >= BUFFER_SIZE) {
-    buffer_index = 0;
-  } else {
-    buffer_index++;
-  }
-
-  float avg_cps = 0;
-  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    avg_cps += counts_buffer[i];
-  }
-  avg_cps /= BUFFER_SIZE;
+  counts.add(new_total * 1000.0 / time_delta);
+  float avg_cps = counts.getAverage();
 
   static float max_cps = -1;
   static float min_cps = -1;
-  for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    const float cps = counts_buffer[i];
 
-    if (max_cps == -1 || cps > max_cps) {
-      max_cps = cps;
-    }
-    if (min_cps <= 0 || cps < min_cps) {
-      min_cps = cps;
-    }
+  if (max_cps == -1 || avg_cps > max_cps) {
+    max_cps = avg_cps;
+  }
+  if (min_cps <= 0 || avg_cps < min_cps) {
+    min_cps = avg_cps;
   }
 
   display.clearDisplay();
