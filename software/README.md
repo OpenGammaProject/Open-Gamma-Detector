@@ -27,7 +27,7 @@ The installation and additional documentation can be found in the respective Git
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
 - [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
 - [Adafruit_SH110x](https://github.com/adafruit/Adafruit_SH110X) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SH110X.svg?)](https://www.ardu-badge.com/Adafruit%20SH110X)
-- [Statistical](https://github.com/akkoyun/Statistical) [![arduino-library-badge](https://www.ardu-badge.com/badge/Statistical.svg?)](https://www.ardu-badge.com/Statistical)
+- [RunningMedian](https://github.com/RobTillaart/RunningMedian) [![arduino-library-badge](https://www.ardu-badge.com/badge/RunningMedian.svg?)](https://www.ardu-badge.com/RunningMedian)
 
 They can be installed by searching their names using the IDE's built-in library manager.
 
