@@ -23,7 +23,7 @@ To program the Pico you will need the following board configs in the latest rele
 The installation and additional documentation can be found in the respective GitHub repo, it's not complicated at all and you only need to do it once. You will also need the following additional libraries:
 
 - [TaskScheduler](https://github.com/arkhipenko/TaskScheduler) [![arduino-library-badge](https://www.ardu-badge.com/badge/TaskScheduler.svg?)](https://www.ardu-badge.com/TaskScheduler)
-- [SimpleShell Enhanced](https://github.com/Phoenix1747/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
+- [SimpleShell Enhanced](https://github.com/NuclearPhoenixx/SimpleShell) [![arduino-library-badge](https://www.ardu-badge.com/badge/SimpleShell%20Enhanced.svg?)](https://www.ardu-badge.com/SimpleShell%20Enhanced)
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson) [![arduino-library-badge](https://www.ardu-badge.com/badge/ArduinoJson.svg?)](https://www.ardu-badge.com/ArduinoJson)
 - [Adafruit_SSD1306](https://github.com/adafruit/Adafruit_SSD1306) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SSD1306.svg?)](https://www.ardu-badge.com/Adafruit%20SSD1306)
 - [Adafruit_SH110x](https://github.com/adafruit/Adafruit_SH110X) [![arduino-library-badge](https://www.ardu-badge.com/badge/Adafruit%20SH110X.svg?)](https://www.ardu-badge.com/Adafruit%20SH110X)
