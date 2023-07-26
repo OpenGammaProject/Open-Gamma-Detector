@@ -95,7 +95,7 @@ Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse en
 
 2. Due to the global parts shortage many chips are much harder to come by, if at all that is. Parts that are listed in the BOM should be available easily and with high reliability and stock so that they don't run out quickly. Please let me know if you cannot find a part anymore.
 
-3. The power supply is currently **not** temperature corrected, meaning changes in the ambient temperature with a constant voltage affect the gain of the SiPM. This will naturally result in a different DC bias, energy range and S/N ratio. This effect is negligible around room temperature, though. The temperature dependence of the gain is -0.8%/°C (21°C) for the MicroFC SiPMs.
+3. The power supply is **not** temperature corrected itself, meaning changes in the ambient temperature with a constant voltage affect the gain of the SiPM. This will naturally result in a different DC bias, energy range and S/N ratio. This effect is negligible around room temperature, though. The temperature dependence of the gain is -0.8%/°C (21°C) for the MicroFC SiPMs. **The latest [MicroFC SiPM carrier board](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) has automatic temperature compensation on-board however! So use that if you want to get the best performance out of it.**
 
 ## Troubleshooting and FAQ
 
