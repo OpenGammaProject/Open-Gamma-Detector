@@ -22,26 +22,26 @@ If you want a barebone version of the Open Gamma Detector to count pulses or som
 
 Here are some of the most important specs:
 
-* Compact design: Total size 120 x 50 mm. Approx. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount a scintillator.
-* All-in-one: No external parts (e.g. sound card) required to record gamma spectra.
-* Easily programmable using drag-and-drop firmware files or the standard Arduino IDE.
-* Low-voltage device: No HV needed like with photomultiplier tubes.
-* Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
-* 4096 ADC channels with built-in 3 V voltage reference.
-* Energy resolution of ~8% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
-* Default (Energy) Mode: About 15 µs total dead time while measuring energy.
-* Geiger Mode: About 5 µs total dead time without energy measurements.
-* Low power consumption: ~25 mA @ 5 V with default firmware.
-* Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
-* Built-in True Random Number Generator.
-* Simple OLED support out of the box (SSD1306 and SH110x).
-* Built-in customizable ticker support.
+- Compact design: Total size 120 x 50 mm. Approx. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount a scintillator.
+- All-in-one: No external parts (e.g. sound card) required to record gamma spectra.
+- Easily programmable using drag-and-drop firmware files or the standard Arduino IDE.
+- Low-voltage device: No HV needed like with photomultiplier tubes.
+- Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
+- 4096 ADC channels with built-in 3 V voltage reference.
+- Energy resolution of ~8% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
+- Default (Energy) Mode: About 15 µs total dead time while measuring energy.
+- Geiger Mode: About 5 µs total dead time without energy measurements.
+- Low power consumption: ~25 mA @ 5 V with default firmware.
+- Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
+- Built-in True Random Number Generator.
+- Simple OLED support out of the box (SSD1306 and SH110x).
+- Built-in customizable ticker support.
 
 ## How To Get One
 
-* For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/). Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own.
+- For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/). Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own.
 
-* The fully assembled main detector board can be purchased on my [Tindie store](https://www.tindie.com/products/28827/). With your purchase your are also supporting me in my efforts to maintain and improve this project, thanks!
+- The fully assembled main detector board can be purchased on my [Tindie store](https://www.tindie.com/products/28827/). With your purchase your are also supporting me in my efforts to maintain and improve this project, thanks!
 
 <a href="https://www.tindie.com/stores/nuclearphoenix/?ref=offsite_badges&utm_source=sellers_NuclearPhoenix&utm_medium=badges&utm_campaign=badge_large"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-larges.png" alt="I sell on Tindie" width="200" height="104"></a>
 
@@ -77,17 +77,21 @@ Two hour long background spectrum with no samples:
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
-30 minute spectrum of a standard household ionization smoke detector. Contains roughly 0.9 µCi of Am-241. Gamma peaks at 26.34 and 59.54 keV:
+30 minute spectrum of Am-241 commonly used in standard household ionization smoke detector. Contains roughly 0.9 µCi of Am-241. Gamma peaks at 26.34 and 59.54 keV:
 
 ![Am-176 spectrum](docs/am-241.png)
 
-30 minute spectrum of a small tea cup with pure Uraninite (Pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV:
+30 minute spectrum of a small tea cup with pure Uraninite (also known as pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV:
 
 ![Uraninite Glaze](docs/glaze.png)
 
-Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse energy resolution). You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy):
+Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse energy resolution than the latest version). You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy) as well as the compton edge and continuum:
 
 ![Na-22](docs/na-22.png)
+
+2 hour long spectrum of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak:
+
+![Mushroom "test source"](docs/mushrooms.png)
 
 ## Known Limitations
 
