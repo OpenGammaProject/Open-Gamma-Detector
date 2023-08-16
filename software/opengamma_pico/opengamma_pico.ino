@@ -79,7 +79,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "3.5.1";  // Firmware Version Code
+const String FWVERS = "3.5.2";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -517,8 +517,10 @@ void fsInfo([[maybe_unused]] String *args) {
 
 
 void getSpectrumData([[maybe_unused]] String *args) {
+  cleanPrintln();
+  println("Pulse height histogram, ready to be copied:");
   for (size_t i = 0; i < pow(2, ADC_RES); i++) {
-    cleanPrint(String(spectrum[i]) + ";");
+    cleanPrintln(spectrum[i]);
   }
   cleanPrintln();
 }
