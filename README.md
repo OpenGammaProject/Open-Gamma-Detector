@@ -2,7 +2,13 @@
 
 # Open Gamma Detector
 
-**This is the latest hardware revision 3.0. For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 2.x and 3.0 hardware can be found [here](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/217500-here-comes-30).**
+**IMPORTANT, PLEASE READ:** I am currently in the midst of updating everything to the brand-new revision 4.0. This will take a couple of weeks for each and everything to be up-to-date. There will be a Hackaday Log with more info about everything shortly. Please be patient, thanks ;)
+
+The hardware files are already here and the software works. However, there will still be some changes to the final software and all the documentation will be slowly updated.
+
+---
+
+**This is the latest hardware revision 4.0. For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 4.0 and 3.x hardware can be found [TODO](https://insert.link).**
 
 **This project is also on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I post important project updates and other announcements!**
 
