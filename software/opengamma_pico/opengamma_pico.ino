@@ -5,7 +5,7 @@
 
   Triggers on newly detected pulses and measures their energy.
 
-  2022, NuclearPhoenix. Open Gamma Project.
+  2023, NuclearPhoenix. Open Gamma Project.
   https://github.com/OpenGammaProject/Open-Gamma-Detector
 
   ## NOTE:
@@ -15,9 +15,16 @@
   ##   Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
+  TODO: (?) Software Threshold
   
   TODO: dead time correction for cps -> Running Average for dead time!
   TODO: cps bar graph while in Geiger Mode instead of empty spectrum
+  
+  !!!: SETTING FOR TICK_RATE
+  !!!: FIXED buzzer_tick (10ms)
+  !!!: COMMAND TO ENABLE/DISABLE TICKER
+  !!!: BUTTON ON THE PICO TO ENABLE/DISABLE TICKER
+  !!!: NEW SMD BUTTON CHANGES SCREEN
 
 */
 
@@ -26,7 +33,7 @@
 #define _TASK_SLEEP_ON_IDLE_RUN  // Enable 1 ms SLEEP_IDLE powerdowns between tasks if no callback methods were invoked during the pass
 #include <TaskScheduler.h>       // Periodically executes tasks
 
-//#include <ADCInput.h> // Special SiPM readout utilizing the ADC FIFO and Round Robin
+//#include <ADCInput.h>     // Special SiPM readout utilizing the ADC FIFO and Round Robin
 #include "hardware/vreg.h"  // Used for vreg_set_voltage
 #include "Helper.h"         // Misc helper functions
 
@@ -52,12 +59,11 @@
 #define CONFIG_FILE "/config.json"  // File to store the settings
 #define DEBUG_FILE "/debug.json"    // File to store some misc debug info
 #define DISPLAY_REFRESH 1000        // Milliseconds between display refreshs
-#define BUZZER_PIN 9                // Digital PWM pin the buzzer is connected to
-#define BUZZER_FREQ 3000            // Frequency used for the buzzer  PWM
 #define TICK_RATE 10                // Buzzer clicks once every TICK_RATE counts
 
+// These are the default settings that can also be changes via the serial commands
+// Do not touch the struct itself, but only the values of the variables!
 struct Config {
-  // These are the default settings that can also be changes via the serial commands
   bool ser_output = true;          // Wheter data should be Serial.println'ed
   bool geiger_mode = false;        // Measure only cps, not energy
   bool print_spectrum = false;     // Print the finishes spectrum, not just chronological events
@@ -79,18 +85,22 @@ struct Config {
     =================
 */
 
-const String FWVERS = "3.5.2";  // Firmware Version Code
+const String FWVERS = "4.0.0-alpha";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
 const uint8_t VBUS_MEAS = 24;  // VBUS Sense Pin
 const uint8_t PS_PIN = 23;     // SMPS power save pin
 
-const uint8_t AIN_PIN = A1;         // Analog input pin
-const uint8_t AMP_PIN = A0;         // Preamp (baseline) meas pin
-const uint8_t INT_PIN = 16;         // Signal interrupt pin
-const uint8_t RST_PIN = 22;         // Peak detector MOSFET reset pin
-const uint8_t LED = 25;             // LED on GP25
+const uint8_t AIN_PIN = A1;     // Analog input pin
+const uint8_t AMP_PIN = A0;     // Preamp (baseline) meas pin
+const uint8_t INT_PIN = 18;     // Signal interrupt pin
+const uint8_t RST_PIN = 22;     // Peak detector MOSFET reset pin
+const uint8_t LED = 25;         // Built-in LED on GP25
+const uint8_t BUZZER_PIN = 7;   // Buzzer PWM pin for the ticker
+const uint8_t BUTTON_PIN = 14;  // Misc button pin
+
+const uint16_t BUZZER_FREQ = 2700;  // Frequency used for the buzzer PWM (resonance freq of the buzzer)
 const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
 const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
 
@@ -518,11 +528,12 @@ void fsInfo([[maybe_unused]] String *args) {
 
 void getSpectrumData([[maybe_unused]] String *args) {
   cleanPrintln();
-  println("Pulse height histogram, ready to be copied:");
+  println("Pulse height histogram:");
   for (size_t i = 0; i < pow(2, ADC_RES); i++) {
     cleanPrintln(spectrum[i]);
   }
   cleanPrintln();
+  println("Hint: To import this data into Gamma MCA, you have to replace all the ';' with a new line '\n'.");
 }
 
 
@@ -1122,7 +1133,8 @@ void setup() {
   resetSampleHold(5);  // Reset before enabling the interrupts to avoid jamming
 
   //sipm.setBuffers(4, 64);
-  //sipm.begin(1000000);
+  //sipm.onReceive(eventInt);
+  //sipm.begin(200000);
 
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, FALLING);
 
@@ -1146,6 +1158,7 @@ void setup1() {
   pinMode(GND_PIN, INPUT);
   pinMode(VSYS_MEAS, INPUT);
   pinMode(VBUS_MEAS, INPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   Shell.registerCommand(new ShellCommand(getSpectrumData, "read spectrum", "Read the spectrum histogram collected since the last reset."));
   Shell.registerCommand(new ShellCommand(readSettings, "read settings", "Read the current settings (file)."));
@@ -1258,11 +1271,17 @@ void setup1() {
 */
 void loop() {
   // Do nothing here
+
   /*
+  const uint16_t DIG_THRESHOLD = 200;  // Digital threshold for the ADC
+
   if (sipm.available() > 0) {
-    const uint16_t data = sipm.read();
-    if (data > 150) {
-      println(data);
+    //events[event_position] = sipm.read();
+
+    if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
+      event_position = 0;
+    } else {
+      event_position++;
     }
   }
   */
