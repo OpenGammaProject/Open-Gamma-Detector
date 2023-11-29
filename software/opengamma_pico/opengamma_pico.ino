@@ -17,8 +17,9 @@
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
   TODO: (?) Software Threshold
   
-  TODO: dead time correction for cps -> Running Average for dead time!
-  TODO: cps bar graph while in Geiger Mode instead of empty spectrum
+  TODO: Retry a coincidence detection feature
+  TODO: Dead time correction for cps -> Running average for dead time!
+  TODO: Add cps line trend to geiger mode
   
   !!!: SETTING FOR TICK_RATE
   !!!: FIXED buzzer_tick (10ms)
