@@ -2,7 +2,7 @@ summary: Open hardware for a DIY all-in-one gamma-ray spectrometer using popular
 
 site: https://nuclearphoenix.xyz # A site you would like to link to (include http:// or https://)
 
-color: green # for example
+color: black # for example
    # The solder resist color of the preview rendering. If left undefined "green" is used. Can be one of:
        # - green
        # - red
