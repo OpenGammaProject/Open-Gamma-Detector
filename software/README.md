@@ -2,15 +2,15 @@
 
 **If you just want to program you device with all the default settings, choose one of the `.uf2` files in this directory. This will be all you need if you just want to get going!**
 
-If you want to play around with the firmware, the Arduino sketch can be found inside `opengamma_pico`. It also includes some instructions on how to program.
+If you want to play around with the firmware, the Arduino sketch can be found inside `ogd_pico`. It also includes some instructions on how to program. See below for more info about that.
 
 ## Programming the Pi Pico
 
-### Firmware File
+### Firmware Files
 
 This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector purchased from my Tindie store.
 
-To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-USB connection. A file manager window should now pop up. Drag and drop the `opengamma_pico-XXX.uf2` file that you downloaded into this directory. The device will restart automatically once the transmission is completed and is ready to use!
+To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-USB connection. A file manager window should now pop up. Drag and drop the `ogd_pico-XXX.uf2` file that you downloaded into this directory. The device will restart automatically once the transmission is completed and is ready to use!
 
 If you want to update or re-flash the firmware, press and hold the `BOOTSEL` button on the Raspberry Pi Pico _while_ plugging it in the USB port of your computer. A file manager windows should once again pop up and you can let go of the button. Drag and drop the UF2 file just like above.
 
@@ -35,7 +35,7 @@ Please have a look at the `USER SETTINGS` in the Arduino sketch. You might need 
 
 Flash the Pico by choosing the `Raspberry Pi Pico` under `Tools/Board/Raspberry Pi RP2040 Boards` and then selecting `Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)`, leaving everything else at the default value. You can then press the big `Upload` button.
 
-You can also try to **overclock** the device if you want. You cannot really destroy anything as far as I know, so be experimental. The worst thing that can happen is the Pico locking up and you needing to reflash it by holding the `BOOTSEL` button. Mine ran stable up until 250 MHz (almost double the stock clock!!!) and that had actually significantly improved the [detector dead time](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/213190-pico-performance-improvements). Also flashing with `-Ofast` enabled also improved performance for me.
+You can also try to **overclock** the device if you want. You cannot destroy anything as far as I know, so be experimental. The worst thing that can happen is the Pico locking up and you needing to reflash it by holding the `BOOTSEL` button. Mine ran stable at up to 225 (with reduced core voltage) or 250 MHz (almost 100 MHz over stock clock!!!) and that had actually significantly improved the [detector dead time](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/213190-pico-performance-improvements). Also flashing with `-Ofast` enabled also improved performance for me.
 
 ## Serial Interface
 
@@ -46,21 +46,22 @@ You can control your spectrometer using the serial interface. The following comm
 Usage:
 	<command> [options]
 Commands:
-	read spectrum	: Read the spectrum histogram collected since the last reset.
-	read settings	: Read the current settings (file).
-	read info		: Read misc info about the firmware and state of the device.
-	read fs			: Read misc info about the used filesystem.
-	set baseline	: <toggle> Automatically subtract the DC bias (baseline) from each signal.
-	set trng		: <toggle> Either 'enable' or 'disable' to toggle the true random number generator output.
-	set display		: <toggle> Either 'enable' or 'disable' to enable or force disable OLED support.
-	set correction	: <toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels.
-	set mode		: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster.
-	set out			: <mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
-	set averaging	: <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
-	set ticker		: <number> Number of milliseconds the buzzer ticker will be on for a single pulse. '0' is off.
-	reset spectrum	: Reset the on-board spectrum histogram.
-	reset settings	: Reset all the settings/revert them back to default values.
-	reboot			: Reboot the device.
+	read spectrum 	: Read the spectrum histogram collected since the last reset.
+	read settings 	: Read the current settings (file).
+	read info 		: Read misc info about the firmware and state of the device.
+	read fs 		: Read misc info about the used filesystem.
+	set baseline 	: <toggle> Automatically subtract the DC bias (baseline) from each signal.
+	set trng 		: <toggle> Either 'on' or 'off' to toggle the true random number generator output.
+	set display 	: <toggle> Either 'on' or 'off' to enable or force disable OLED support.
+	set correction 	: <toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels.
+	set mode 		: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster.
+	set out 		: <mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
+	set averaging 	: <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
+	set tickrate 	: <number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1.
+	set ticker 		: <toggle> Either 'on' or 'off' to enable or disable the onboard ticker.
+	reset spectrum 	: Reset the on-board spectrum histogram.
+	reset settings 	: Reset all the settings/revert them back to default values.
+	reboot 			: Reboot the device.
 ```
 
 All of these commands should be pretty straightforward with their respective description.
@@ -102,28 +103,19 @@ At the moment the software only draws the energy spectrum and the current cps va
 In Geiger mode the min/max cps as well as the average cps will be displayed on the screen.
 
 ![OLED display](../docs/oled.jpg)
+*(Photo of an older Rev 3 board, but you get the gist)*
 
 Of course the I2C header can also be used for any other I2C devices, not only displays! But you will have to write the software on your own.
 
-## Ticker
-
-By connecting a buzzer to the digital pin defined in `BUZZER_PIN` (default is 9: the `RX` pin on the board) and a ground pin, you are set to use the built-in ticker feature. Enable the ticker by calling `set ticker <number>` with a number greater than 0, which will be the on-time of the buzzer for each ticker pulse. Zero will disable the ticker again. A good setting will be somewhere around 1 - 5 milliseconds, e.g. `set ticker 1`.
-
-You can also change the PWM frequency for your buzzer by changing the `BUZZER_FREQ` variable. This can only be done within the Arduino IDE, there is no serial command.
-
-Since this reuses the `RX` pin on the board by default, you will not be able to use the hardware UART output with these pins while using the ticker.
-
-Unfortunately, it also adds about 10 microseconds of dead time to the detector!
-
 ## SPI
 
-A single hardware SPI header is present on the revision 3.x boards with the correct pins already preset in the Arduino sketch. This header can be used to add an SD Card, a non-volatile FRAM storage chip or whatever else really.
+Broken-out hardware SPI pins are present on the revision 4.x boards with the correct pins already configured in the Arduino sketch. These pins can be used to add an SD Card, a non-volatile FRAM storage chip or whatever else really.
 
 ## UART
 
-A single hardware UART pin header is also present on the revision 3.x boards. This can be used to communicate with the device over something like an FTDI USB-to-Serial converter if you don't want to use the USB Serial interface. With this you can also use the Open Gamma Detector with Gamma MCA on a mobile device such as an Android phone.
+Broken-out hardware UART pins are also present on the revision 4.x boards. These can be used to communicate with the device over something like an FTDI USB-to-Serial converter if you don't want to use the USB Serial interface. With this you can also use the Open Gamma Detector with Gamma MCA on a mobile device such as an Android phone.
 
-The device will automatically print to the interfaces that are connected to it, so you don't need to enable or disable anything at all for this to work.
+The device will automatically print to all the interfaces that are connected to it, so you don't need to enable or disable anything at all for this to work.
 
 ## True Random Number Generator
 
