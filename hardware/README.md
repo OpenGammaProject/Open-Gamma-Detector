@@ -118,6 +118,14 @@ The four screw holes on the PCB's actual detector part are connected to the circ
 
 As some level of protection against EMI, the peak and hold capacitor is periodically discharged as to avoid it being charged ever so slightly by interference and the feedback path. This takes place every millisecond by default and cannot be switched on or off via a serial command. This adds less than 1% of additional dead time (~2.5 µs per reset every ms), so should be completely negligible.
 
+## The `ACT` LED
+
+There is an additional LED on the board called `ACT` for "activity". It's directly connected to the comparator that handles the pulse thresholds and will light up for every impulse that's larger than the set threshold voltage for the duration of said impulse. That means generally you won't see much, because the count rates are pretty low and the pulses are really fast (couple of microseconds).
+
+However, it's helpful when setting the correct threshold voltage, because as soon as you decrease it too low and completely get into the noise floor, the LED will visibly light up.
+
+On top of that, since it's not connected to the microcontroller in any way, it's a nice backup for when the device crashes and/or the count rates get so high that it's completely saturating otherwise. So if you see the LED visible light up and you're sure it's not random noise or something else with the settings or temperature, you might be in real danger.
+
 ## 3D Printed Case
 
 You can get a 3D-printable case for the Open Gamma Detector with different styles of covers.
