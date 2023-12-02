@@ -18,14 +18,8 @@
   TODO: (?) Software Threshold
   
   TODO: Retry a coincidence detection feature
-  TODO: Dead time correction for cps -> Running average for dead time!
   TODO: Add cps line trend to geiger mode
-  
-  !!!: SETTING FOR TICK_RATE
-  !!!: FIXED buzzer_tick (10ms)
-  !!!: COMMAND TO ENABLE/DISABLE TICKER
-  !!!: BUTTON ON THE PICO TO ENABLE/DISABLE TICKER
-  !!!: NEW SMD BUTTON CHANGES SCREEN
+  TODO: Add custom display font
 
 */
 
@@ -60,24 +54,24 @@
 #define CONFIG_FILE "/config.json"  // File to store the settings
 #define DEBUG_FILE "/debug.json"    // File to store some misc debug info
 #define DISPLAY_REFRESH 1000        // Milliseconds between display refreshs
-#define TICK_RATE 10                // Buzzer clicks once every TICK_RATE counts
 
-// These are the default settings that can also be changes via the serial commands
-// Do not touch the struct itself, but only the values of the variables!
 struct Config {
+  // These are the default settings that can also be changes via the serial commands
+  // Do not touch the struct itself, but only the values of the variables!
   bool ser_output = true;          // Wheter data should be Serial.println'ed
   bool geiger_mode = false;        // Measure only cps, not energy
   bool print_spectrum = false;     // Print the finishes spectrum, not just chronological events
   size_t meas_avg = 5;             // Number of meas. averaged each event, higher=longer dead time
   bool enable_display = false;     // Enable I2C Display, see settings above
-  bool trng_enabled = false;       // Enable the True Random Number Generator
+  bool enable_trng = false;        // Enable the True Random Number Generator
   bool subtract_baseline = false;  // Subtract the DC bias from each pulse
   bool cps_correction = true;      // Correct the cps for the DNL compensation
-  uint8_t buzzer_tick = 0;         // Ticker on-time for one pulse in ms
+  bool enable_ticker = false;      // Enable the buzzer to be used as a ticker for pulses
+  size_t tick_rate = 20;           // Buzzer ticks once every tick_rate pulses
 
-  // Do NOT modify this function:
+  // Do NOT modify the following operator function
   bool operator==(const Config &other) const {
-    return (buzzer_tick == other.buzzer_tick && cps_correction == other.cps_correction && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && trng_enabled == other.trng_enabled && subtract_baseline == other.subtract_baseline);
+    return (tick_rate == other.tick_rate && enable_ticker == other.enable_ticker && cps_correction == other.cps_correction && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && enable_trng == other.enable_trng && subtract_baseline == other.subtract_baseline);
   }
 };
 /*
@@ -86,7 +80,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "4.0.0-alpha";  // Firmware Version Code
+const String FWVERS = "4.0.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -102,10 +96,11 @@ const uint8_t BUZZER_PIN = 7;   // Buzzer PWM pin for the ticker
 const uint8_t BUTTON_PIN = 14;  // Misc button pin
 
 const uint16_t BUZZER_FREQ = 2700;  // Frequency used for the buzzer PWM (resonance freq of the buzzer)
+const uint8_t BUZZER_TICK = 10;     // On-time of the buzzer for a single pulse in ms
 const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
 const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
 
-const float VREF_VOLTAGE = 3.0;  // ADC reference voltage, defaults 3.3, with reference 3.0
+const float VREF_VOLTAGE = 3.0;  // ADC reference voltage, default is 3.0 with reference
 const uint8_t ADC_RES = 12;      // Use 12-bit ADC resolution
 
 volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];          // Holds the output histogram (spectrum)
@@ -122,8 +117,7 @@ volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a 
 volatile uint8_t bit_index = 0;            // Bit index for the generated number
 volatile uint32_t trng_nums[1000];         // TRNG number output array
 volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRNG array
-volatile unsigned long dt_sum = 0;         // Total detector dead time in µs
-volatile uint32_t dt_sum_num = 0;          // Number of dead time measurements
+volatile uint32_t total_events = 0;        // Total number of all registered pulses
 
 RunningMedian baseline(BASELINE_NUM);  // Array of a number of baseline (DC bias) measurements at the SiPM input
 uint16_t current_baseline = 0;         // Median value of the input baseline voltage
@@ -133,7 +127,12 @@ volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 // Stores 5 * DISPLAY_REFRESH worth of "current" cps to calculate an average cps value in a ring buffer config
 RunningMedian counts(5);
 
-Config conf;  // Configuration object
+// Stores the last
+RunningMedian dead_time(100);
+
+// Configuration struct with all user settings
+Config conf;
+
 //ADCInput sipm(AMP_PIN);
 
 // Check for the right display type
@@ -191,9 +190,27 @@ void queryButton() {
 
     saveSettings();  // Saved updated settings
 
-    while (BOOTSEL) {      // Wait for BOOTSEL to be released
+    while (BOOTSEL) {  // Wait for BOOTSEL to be released
+      delay(10);
       rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
-      delay(1);
+    }
+  }
+
+  if (digitalRead(BUTTON_PIN) == LOW) {
+    // Toggle the onboard ticker
+    conf.enable_ticker = !conf.enable_ticker;
+
+    if (conf.enable_ticker) {
+      println("Enabled ticker output.");
+    } else {
+      println("Disabled ticker output.");
+    }
+
+    saveSettings();  // Saved updated settings
+
+    while (digitalRead(BUTTON_PIN) == LOW) {  // Wait for the button to be released
+      delay(10);
+      rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
     }
   }
 
@@ -236,7 +253,7 @@ void dataOutput() {
   }
 
   // MAYBE SEPARATE TRNG AND SERIAL OUTPUT TASKS?
-  if (conf.trng_enabled) {
+  if (conf.enable_trng) {
     if (Serial || Serial2) {
       for (size_t i = 0; i < number_index; i++) {
         cleanPrint(trng_nums[i], DEC);
@@ -293,13 +310,13 @@ void setSerialOutMode(String *args) {
     conf.ser_output = true;
     conf.print_spectrum = false;
     println("Set serial output mode to events.");
-  } else if (command == "disable") {
+  } else if (command == "off") {
     conf.ser_output = false;
     conf.print_spectrum = false;
     println("Disabled serial outputs.");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Must be 'spectrum', 'events' or 'disable'.", true);
+    println("Must be 'spectrum', 'events' or 'off'.", true);
     return;
   }
   saveSettings();
@@ -311,38 +328,56 @@ void toggleDisplay(String *args) {
   command.replace("set display", "");
   command.trim();
 
-  if (command == "enable") {
+  if (command == "on") {
     conf.enable_display = true;
     println("Enabled display output. You might need to reboot the device.");
-  } else if (command == "disable") {
+  } else if (command == "off") {
     conf.enable_display = false;
     println("Disabled display output. You might need to reboot the device.");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Must be 'enable' or 'disable'.", true);
+    println("Must be 'on' or 'off'.", true);
     return;
   }
   saveSettings();
 }
 
 
-void setTickerTime(String *args) {
+void toggleTicker(String *args) {
   String command = *args;
   command.replace("set ticker", "");
   command.trim();
 
-  const long number = command.toInt();
-
-  if (number >= 0) {
-    conf.buzzer_tick = number;
-    println("Set ticker output to " + String(number) + ".");
-    println("You might need to reboot the device.");
+  if (command == "on") {
+    conf.enable_ticker = true;
+    println("Enabled ticker output.");
+  } else if (command == "off") {
+    conf.enable_ticker = false;
+    println("Disabled ticker output.");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Parameter must be a number >= 0.", true);
+    println("Must be 'on' or 'off'.", true);
     return;
   }
   saveSettings();
+}
+
+
+void setTickerRate(String *args) {
+  String command = *args;
+  command.replace("set tickrate", "");
+  command.trim();
+
+  const long number = command.toInt();
+
+  if (number > 0) {
+    conf.tick_rate = number;
+    println("Set ticker rate to " + String(number) + ".");
+    saveSettings();
+  } else {
+    println("Invalid input '" + command + "'.", true);
+    println("Parameter must be a number > 0.", true);
+  }
 }
 
 
@@ -374,15 +409,15 @@ void toggleTRNG(String *args) {
   command.replace("set trng", "");
   command.trim();
 
-  if (command == "enable") {
-    conf.trng_enabled = true;
+  if (command == "on") {
+    conf.enable_trng = true;
     println("Enabled True Random Number Generator output.");
-  } else if (command == "disable") {
-    conf.trng_enabled = false;
+  } else if (command == "off") {
+    conf.enable_trng = false;
     println("Disabled True Random Number Generator output.");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Must be 'enable' or 'disable'.", true);
+    println("Must be 'on' or 'off'.", true);
     return;
   }
   saveSettings();
@@ -394,16 +429,16 @@ void toggleBaseline(String *args) {
   command.replace("set baseline", "");
   command.trim();
 
-  if (command == "enable") {
+  if (command == "on") {
     conf.subtract_baseline = true;
     println("Enabled automatic DC bias subtraction.");
-  } else if (command == "disable") {
+  } else if (command == "off") {
     conf.subtract_baseline = false;
     current_baseline = 0;  // Reset baseline back to zero
     println("Disabled automatic DC bias subtraction.");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Must be 'enable' or 'disable'.", true);
+    println("Must be 'on' or 'off'.", true);
     return;
   }
   saveSettings();
@@ -415,15 +450,15 @@ void toggleCPSCorrection(String *args) {
   command.replace("set correction", "");
   command.trim();
 
-  if (command == "enable") {
+  if (command == "on") {
     conf.cps_correction = true;
     println("Enabled CPS correction.");
-  } else if (command == "disable") {
+  } else if (command == "off") {
     conf.cps_correction = false;
     println("Disabled CPS correction.");
   } else {
     println("Invalid input '" + command + "'.", true);
-    println("Must be 'enable' or 'disable'.", true);
+    println("Must be 'on' or 'off'.", true);
     return;
   }
   saveSettings();
@@ -439,12 +474,11 @@ void setMeasAveraging(String *args) {
   if (number > 0) {
     conf.meas_avg = number;
     println("Set measurement averaging to " + String(number) + ".");
+    saveSettings();
   } else {
     println("Invalid input '" + command + "'.", true);
     println("Parameter must be a number > 0.", true);
-    return;
   }
-  saveSettings();
 }
 
 
@@ -464,6 +498,8 @@ void deviceInfo([[maybe_unused]] String *args) {
     power_on = doc["power_on_hours"];
   }
 
+  float avg_dt = dead_time.getMedianAverage(50);
+
   debugFile.close();
 
   println("=========================");
@@ -475,18 +511,18 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Runtime: " + String(millis() / 1000.0) + " s");
   print("Average Dead Time: ");
 
-  if (dt_sum_num == 0) {
+  if (total_events == 0) {
     cleanPrint("no impulses");
   } else {
-    cleanPrint(String(round(float(dt_sum) / float(dt_sum_num)), 0));
+    cleanPrint(String(round(avg_dt), 0));
   }
 
   cleanPrintln(" µs");
 
-  const float deadtime_frac = float(dt_sum) / 1000.0 / float(millis()) * 100.0;
+  const float deadtime_frac = avg_dt * total_events / 1000.0 / float(millis()) * 100.0;
 
   println("Total Dead Time: " + String(deadtime_frac) + " %");
-  println("Total Number Of Impulses: " + String(dt_sum_num));
+  println("Total Number Of Impulses: " + String(total_events));
   println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
   println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
   println("Free Heap Memory: " + String(rp2040.getFreeHeap() / 1000.0) + " kB");
@@ -731,8 +767,8 @@ Config loadSettings(bool msg = true) {
   if (doc.containsKey("enable_display")) {
     new_conf.enable_display = doc["enable_display"];
   }
-  if (doc.containsKey("trng_enabled")) {
-    new_conf.trng_enabled = doc["trng_enabled"];
+  if (doc.containsKey("enable_trng")) {
+    new_conf.enable_trng = doc["enable_trng"];
   }
   if (doc.containsKey("subtract_baseline")) {
     new_conf.subtract_baseline = doc["subtract_baseline"];
@@ -740,8 +776,11 @@ Config loadSettings(bool msg = true) {
   if (doc.containsKey("cps_correction")) {
     new_conf.cps_correction = doc["cps_correction"];
   }
-  if (doc.containsKey("buzzer_tick")) {
-    new_conf.buzzer_tick = doc["buzzer_tick"];
+  if (doc.containsKey("enable_ticker")) {
+    new_conf.enable_ticker = doc["enable_ticker"];
+  }
+  if (doc.containsKey("tick_rate")) {
+    new_conf.tick_rate = doc["tick_rate"];
   }
 
   if (msg) {
@@ -766,10 +805,11 @@ bool writeSettingsFile() {
   doc["print_spectrum"] = conf.print_spectrum;
   doc["meas_avg"] = conf.meas_avg;
   doc["enable_display"] = conf.enable_display;
-  doc["trng_enabled"] = conf.trng_enabled;
+  doc["enable_trng"] = conf.enable_trng;
   doc["subtract_baseline"] = conf.subtract_baseline;
   doc["cps_correction"] = conf.cps_correction;
-  doc["buzzer_tick"] = conf.buzzer_tick;
+  doc["enable_ticker"] = conf.enable_ticker;
+  doc["tick_rate"] = conf.tick_rate;
 
   serializeJson(doc, saveFile);
 
@@ -861,7 +901,14 @@ void drawSpectrum() {
 
   counts.add(new_total * 1000.0 / time_delta);
 
-  display.print(counts.getAverage(), 1);
+  float avg_dt = dead_time.getMedianAverage(50);
+  float avg_cps = counts.getAverage();
+  float avg_cps_corrected = avg_cps;
+  if (avg_dt > 0.) {
+    avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1e6);
+  }
+
+  display.print(avg_cps_corrected, 1);
   display.print(" cps");
 
   static int16_t temp = round(readTemp());
@@ -926,14 +973,20 @@ void drawGeigerCounts() {
   counts.add(new_total * 1000.0 / time_delta);
   float avg_cps = counts.getAverage();
 
+  float avg_dt = dead_time.getMedianAverage(50);
+  float avg_cps_corrected = avg_cps;
+  if (avg_dt > 0.) {
+    avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1e6);
+  }
+
   static float max_cps = -1;
   static float min_cps = -1;
 
-  if (max_cps == -1 || avg_cps > max_cps) {
-    max_cps = avg_cps;
+  if (max_cps == -1 || avg_cps_corrected > max_cps) {
+    max_cps = avg_cps_corrected;
   }
-  if (min_cps <= 0 || avg_cps < min_cps) {
-    min_cps = avg_cps;
+  if (min_cps <= 0 || avg_cps_corrected < min_cps) {
+    min_cps = avg_cps_corrected;
   }
 
   display.clearDisplay();
@@ -966,17 +1019,18 @@ void drawGeigerCounts() {
 
   display.drawFastHLine(0, 18, SCREEN_WIDTH, DISPLAY_WHITE);
 
-  display.setCursor(0, 22);
+  display.setCursor(0, 26);
 
-  if (avg_cps > 1000) {
-    display.print(avg_cps / 1000.0, 2);
-    display.println(" kcps");
+  if (avg_cps_corrected > 1000) {
+    display.print(avg_cps_corrected / 1000.0, 2);
+    display.print("k");
   } else {
-    display.print(avg_cps, 1);
-    display.println(" cps");
+    display.print(avg_cps_corrected, 1);
   }
 
   display.setTextSize(1);
+  display.println(" cps");
+
   display.display();
 }
 
@@ -994,15 +1048,15 @@ void eventInt() {
 
   digitalWriteFast(LED, HIGH);  // Enable activity LED
 
-  const unsigned long start_millis = millis();
-  static unsigned long last_tick = start_millis;  // Last buzzer tick in ms, not needed with tone()
+  //const unsigned long start_millis = millis();
+  //static unsigned long last_tick = start_millis;  // Last buzzer tick in ms, not needed with tone()
   static uint8_t count = 0;
 
   // Check if ticker is enabled, currently not "ticking" and also catch the millis() overflow
-  if (conf.buzzer_tick > 0 && (start_millis - last_tick > conf.buzzer_tick || start_millis < last_tick)) {
-    if (count >= TICK_RATE - 1) {                       // Only click at every 10th count
-      tone(BUZZER_PIN, BUZZER_FREQ, conf.buzzer_tick);  // Worse at higher cps
-      last_tick = start_millis;
+  if (conf.enable_ticker /* && (start_millis - last_tick > BUZZER_TICK || start_millis < last_tick)*/) {
+    if (count >= conf.tick_rate - 1) {             // Only click at every 10th count
+      tone(BUZZER_PIN, BUZZER_FREQ, BUZZER_TICK);  // Worse at higher cps
+      //last_tick = start_millis;
       count = 0;
     } else {
       count++;
@@ -1053,7 +1107,7 @@ void eventInt() {
     }
   }
 
-  if (conf.trng_enabled) {
+  if (conf.enable_trng) {
     static uint8_t trng_index = 0;  // Timestamp index for True Random Number Generator
 
     // Calculations for the TRNG
@@ -1099,13 +1153,8 @@ void eventInt() {
 
   if (end >= start) {  // Catch micros() overflow
     // Compute Detector Dead Time
-    dt_sum += end - start;
-    dt_sum_num++;
-
-    if (dt_sum_num >= 4294967294) {  // Catch dead time number overflow 2^32 - 2
-      dt_sum_num = 0;
-      dt_sum = 0;
-    }
+    total_events++;
+    dead_time.add(end - start);
   }
 
   // Re-enable interrupts
@@ -1154,7 +1203,8 @@ void setup1() {
   // -> Also with PS_PIN LOW I have experiences high-pitched (~ 15 kHz range) coil whine!
   pinMode(PS_PIN, OUTPUT_4MA);
   gpio_set_slew_rate(PS_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
-  digitalWrite(PS_PIN, HIGH);
+  //digitalWrite(PS_PIN, HIGH);
+  digitalWrite(PS_PIN, LOW);
 
   pinMode(GND_PIN, INPUT);
   pinMode(VSYS_MEAS, INPUT);
@@ -1167,14 +1217,15 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(fsInfo, "read fs", "Read misc info about the used filesystem."));
 
   Shell.registerCommand(new ShellCommand(toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal."));
-  Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'enable' or 'disable' to toggle the true random number generator output."));
-  Shell.registerCommand(new ShellCommand(toggleDisplay, "set display", "<toggle> Either 'enable' or 'disable' to enable or force disable OLED support."));
-  Shell.registerCommand(new ShellCommand(toggleCPSCorrection, "set correction", "<toggle> Either 'enable' or 'disable' to toggle the CPS correction for the 4 faulty ADC channels."));
+  Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'on' or 'off' to toggle the true random number generator output."));
+  Shell.registerCommand(new ShellCommand(toggleDisplay, "set display", "<toggle> Either 'on' or 'off' to enable or force disable OLED support."));
+  Shell.registerCommand(new ShellCommand(toggleCPSCorrection, "set correction", "<toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels."));
 
   Shell.registerCommand(new ShellCommand(setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster."));
-  Shell.registerCommand(new ShellCommand(setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'disable'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
+  Shell.registerCommand(new ShellCommand(setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
   Shell.registerCommand(new ShellCommand(setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
-  Shell.registerCommand(new ShellCommand(setTickerTime, "set ticker", "<number> Number of milliseconds the buzzer ticker will be on for a single pulse. '0' is off."));
+  Shell.registerCommand(new ShellCommand(setTickerRate, "set tickrate", "<number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1."));
+  Shell.registerCommand(new ShellCommand(toggleTicker, "set ticker", "<number> Either 'on' or 'off' to enable or disable the onboard ticker."));
 
   Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
   Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
@@ -1199,11 +1250,10 @@ void setup1() {
   Serial2.setRX(9);
   Serial2.setTX(8);
 
-  if (conf.buzzer_tick > 0) {  // Set up buzzer if enabled
-    pinMode(BUZZER_PIN, OUTPUT_12MA);
-    gpio_set_slew_rate(BUZZER_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
-    digitalWrite(BUZZER_PIN, LOW);
-  }
+  // Set up buzzer
+  pinMode(BUZZER_PIN, OUTPUT_12MA);
+  gpio_set_slew_rate(BUZZER_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
+  digitalWrite(BUZZER_PIN, LOW);
 
   Shell.begin(2000000);
   Serial2.begin(2000000);
