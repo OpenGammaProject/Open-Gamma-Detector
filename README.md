@@ -35,13 +35,13 @@ Here are some of the most important specs:
 - Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
 - 4096 ADC channels with built-in 3 V voltage reference.
 - Energy resolution of ~8% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
-- Default (Energy) Mode: About 15 µs total dead time while measuring energy.
-- Geiger Mode: About 5 µs total dead time without energy measurements.
-- Low power consumption: ~25 mA @ 5 V with default firmware.
+- Energy Mode: About 15 µs total dead time while measuring energy minimum.
+- Geiger Mode: About 5 µs total dead time without energy measurements minimum.
+- Low power consumption: ~20 mA @ 5 V with default firmware at normal background.
+- Built-in ticker (buzzer) for audible pulse count rate output.
 - Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
-- Built-in True Random Number Generator.
 - Simple OLED support out of the box (SSD1306 and SH110x).
-- Built-in customizable ticker support.
+- Built-in True Random Number Generator.
 
 ## How To Get One
 
@@ -51,7 +51,7 @@ Here are some of the most important specs:
 
 <a href="https://www.tindie.com/stores/nuclearphoenix/?ref=offsite_badges&utm_source=sellers_NuclearPhoenix&utm_medium=badges&utm_campaign=badge_large"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-larges.png" alt="I sell on Tindie" width="200" height="104"></a>
 
-**In both cases you will also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR) and scintillator (NaI(Tl) recommended) separately at a distributor of your choice.**
+**In both cases you will also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR) and scintillator (NaI(Tl) recommended) separately at a distributor of your choice.** You might also want to grab one of the countless SiPM breakout boards I made.
 
 ## Working Principle
 
@@ -73,9 +73,9 @@ To program the Pico and/or play around with the firmware, head to the [software 
 
 ## Example Spectra
 
-Here is a small collection of example spectra I could make quickly without putting much effort into the detector settings (threshold, SiPM voltage, software tweaks). In addition, neither the electronics nor the scintillator and sample were shielded from EMI or background radiation whatsoever.
+Here is a small collection of example spectra I could make quickly without putting much effort into the detector settings (threshold, SiPM voltage, software tweaks). I'm using the [Tiny MicroFC Breakout](https://github.com/OpenGammaProject/Tiny-MicroFC-Carrier-Board) and just a single SiPM (which isn't the optimal setup actually). In addition, neither the electronics nor the scintillator and sample were shielded from EMI or background radiation whatsoever. So as you can see the detector is actually pretty robust in that regard.
 
-Two hour long background spectrum with no samples:
+4 hour long background spectrum with no samples:
 
 ![Background spectrum](docs/bg.png)
 
@@ -83,7 +83,7 @@ Two hour long background spectrum with no samples:
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
-30 minute spectrum of Am-241 commonly used in standard household ionization smoke detector. Contains roughly 0.9 µCi of Am-241. Gamma peaks at 26.34 and 59.54 keV:
+5 minute spectrum of Am-241 commonly used in household ionization smoke detectors (e.g. in the US, they're no longer allowed in the EU). Gamma peaks at 26.34 and 59.54 keV:
 
 ![Am-176 spectrum](docs/am-241.png)
 
@@ -95,7 +95,7 @@ Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse en
 
 ![Na-22](docs/na-22.png)
 
-2 hour long spectrum of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak:
+4 hour long spectrum of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak:
 
 ![Mushroom "test source"](docs/mushrooms.png)
 
@@ -103,7 +103,7 @@ Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse en
 
 1. The Raspberry Pi Pico's ADC has some pretty [severe DNL issues](https://pico-adc.markomo.me/INL-DNL/#dnl) that result in four channels being much more sensitive (wider input range) than the rest. For now the simplest solution was to discard all four of them, by printing a `0` when any of them comes up in the measurement (to not affect the cps readings). You can turn this behavior off by using the `set correction` command. This is by no means perfect or ideal, but it works for now until this gets fixed in a later hardware revision of the RP2040 (wish us luck!).
 
-2. Due to the global parts shortage many chips are much harder to come by, if at all that is. Parts that are listed in the BOM should be available easily and with high reliability and stock so that they don't run out quickly. Please let me know if you cannot find a part anymore.
+2. Due to parts shortages some chips might be much harder to come by, if at all that is. Parts that are listed in the BOM should be available easily and with high reliability and stock so that they don't run out quickly. Please let me know if you cannot find a part anymore.
 
 3. The power supply is **not** temperature corrected itself, meaning changes in the ambient temperature with a constant voltage affect the gain of the SiPM. This will naturally result in a different DC bias, energy range and S/N ratio. This effect is negligible around room temperature, though. The temperature dependence of the gain is -0.8%/°C (21°C) for the MicroFC SiPMs. **The latest [MicroFC SiPM carrier board](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) has automatic temperature compensation on-board however! So use that if you want to get the best performance out of it.**
 
