@@ -2,9 +2,7 @@
 
 # Open Gamma Detector
 
-**IMPORTANT, PLEASE READ:** I am currently in the midst of updating everything to the brand-new revision 4.0. This will take a few weeks for each and everything to be up-to-date. In the mean time there is a [log on Hackaday](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/225597-revision-40-status-report) about the latest status of the project. Please be patient, thanks ;)
-
-The hardware files are already here and the software works. However, there will still be some changes to the final software and all the documentation will be slowly updated.
+**IMPORTANT, PLEASE READ:** I am currently in the midst of updating everything to the brand-new revision 4.0. This will take a few weeks for each and every little detail to be up-to-date. The latest status updates are always available on [Hackaday](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/logs). There will also be an announcement about the Tindie restock. Please be patient, thanks ;)
 
 ---
 
