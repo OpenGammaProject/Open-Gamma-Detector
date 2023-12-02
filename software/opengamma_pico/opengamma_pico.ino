@@ -1225,7 +1225,7 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
   Shell.registerCommand(new ShellCommand(setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
   Shell.registerCommand(new ShellCommand(setTickerRate, "set tickrate", "<number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1."));
-  Shell.registerCommand(new ShellCommand(toggleTicker, "set ticker", "<number> Either 'on' or 'off' to enable or disable the onboard ticker."));
+  Shell.registerCommand(new ShellCommand(toggleTicker, "set ticker", "<toggle> Either 'on' or 'off' to enable or disable the onboard ticker."));
 
   Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
   Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
