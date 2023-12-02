@@ -73,6 +73,12 @@ The software aims to be as simple as possible to understand and maintain. To ach
 
 To program the Pico and/or play around with the firmware, head to the [software directory](/software/). There you will also find documentation on the serial interface (!), display support, and much more.
 
+## Troubleshooting and FAQ
+
+Please have a look at [REFERENCE.md](REFERENCE.md) for some general guidance.
+
+If this doesn't help you, feel free to reach out and create an issue or open a discussions thread.
+
 ## Example Spectra
 
 Here is a small collection of example spectra I could make quickly without putting much effort into the detector settings (threshold, SiPM voltage, software tweaks). I'm using the [Tiny MicroFC Breakout](https://github.com/OpenGammaProject/Tiny-MicroFC-Carrier-Board) and just a single SiPM (which isn't the optimal setup actually). In addition, neither the electronics nor the scintillator and sample were shielded from EMI or background radiation whatsoever. So as you can see the detector is actually pretty robust in that regard.
@@ -108,12 +114,6 @@ Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse en
 2. Due to parts shortages some chips might be much harder to come by, if at all that is. Parts that are listed in the BOM should be available easily and with high reliability and stock so that they don't run out quickly. Please let me know if you cannot find a part anymore.
 
 3. The power supply is **not** temperature corrected itself, meaning changes in the ambient temperature with a constant voltage affect the gain of the SiPM. This will naturally result in a different DC bias, energy range and S/N ratio. This effect is negligible around room temperature, though. The temperature dependence of the gain is -0.8%/°C (21°C) for the MicroFC SiPMs. **The latest [MicroFC SiPM carrier board](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) has automatic temperature compensation on-board however! So use that if you want to get the best performance out of it.**
-
-## Troubleshooting and FAQ
-
-Please have a look at [REFERENCE.md](REFERENCE.md) for some general guidance.
-
-If this doesn't help you, feel free to reach out and create an issue or open a discussions thread.
 
 ## Some Ideas
 
