@@ -93,7 +93,7 @@ Spectrum (5min) of Am-241 commonly used in household ionization smoke detectors 
 
 ![Am-176 spectrum](docs/am-241.png)
 
-Spectrum (2h) of a small tea cup with pure Uraninite (also known as pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV:
+Spectrum (2h) of a small tea cup with pure Uraninite (also known as pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV. Because they just used the pure Uraninite without any filtering whatsoever, there is also some U-235 in it and all the daughter radionuclides as well:
 
 ![Uraninite Glaze](docs/glaze.png)
 
