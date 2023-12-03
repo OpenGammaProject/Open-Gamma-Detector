@@ -1203,7 +1203,10 @@ void setup1() {
   // -> Also with PS_PIN LOW I have experiences high-pitched (~ 15 kHz range) coil whine!
   pinMode(PS_PIN, OUTPUT_4MA);
   gpio_set_slew_rate(PS_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
-  digitalWrite(PS_PIN, HIGH);
+  // Not really sure what results in better spectra...
+  // It doesn't change a whole lot, so might as well keep the energy saving mode?
+  digitalWrite(PS_PIN, LOW);
+  //digitalWrite(PS_PIN, HIGH);
 
   pinMode(GND_PIN, INPUT);
   pinMode(VSYS_MEAS, INPUT);
