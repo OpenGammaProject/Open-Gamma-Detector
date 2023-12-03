@@ -81,19 +81,19 @@ If this doesn't help you, feel free to reach out and create an issue or open a d
 
 Here is a small collection of example spectra I could make quickly without putting much effort into the detector settings (threshold, SiPM voltage, software tweaks). I'm using the [Tiny MicroFC Breakout](https://github.com/OpenGammaProject/Tiny-MicroFC-Carrier-Board) and just a single SiPM (which isn't the optimal setup actually). In addition, neither the electronics nor the scintillator and sample were shielded from EMI or background radiation whatsoever. So as you can see the detector is actually pretty robust in that regard.
 
-4 hour long background spectrum with no samples:
+Background spectrum (4h) with no samples:
 
 ![Background spectrum](docs/bg.png)
 
-30 minute spectrum of two tiny (~5 g) LYSO scintillator showing two distinct gamma peaks (201.83, 306.78 keV) with an additional ~55 keV X-ray peak. The 307 keV peak has ~13.5% energy resolution in this case:
+Spectrum (2h) of two tiny (~5 g) LYSO scintillator showing two distinct gamma peaks (201.83, 306.78 keV) with an additional ~55 keV X-ray peak. The 307 keV peak has an energy resolution of ~14% in this case:
 
 ![Lu-176 spectrum](docs/lu-176.png)
 
-5 minute spectrum of Am-241 commonly used in household ionization smoke detectors (e.g. in the US, they're no longer allowed in the EU). Gamma peaks at 26.34 and 59.54 keV:
+Spectrum (5min) of Am-241 commonly used in household ionization smoke detectors (e.g. in the US, no longer in the EU). Gamma peaks at 26.34 and 59.54 keV:
 
 ![Am-176 spectrum](docs/am-241.png)
 
-30 minute spectrum of a small tea cup with pure Uraninite (also known as pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV:
+Spectrum (2h) of a small tea cup with pure Uraninite (also known as pitchblende) contents in its glaze. You can see all kinds of isotopes of the Uranium series including the Bi-214 peak at ~610 keV:
 
 ![Uraninite Glaze](docs/glaze.png)
 
@@ -101,7 +101,7 @@ Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse en
 
 ![Na-22](docs/na-22.png)
 
-4 hour long spectrum of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak:
+Spectrum (4h) of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak. Resolution of the 662 keV peak was ~10%, because I was only using a single SiPM with an old 9% scintillator:
 
 ![Mushroom "test source"](docs/mushrooms.png)
 
