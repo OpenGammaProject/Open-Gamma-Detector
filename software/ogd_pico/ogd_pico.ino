@@ -80,7 +80,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "4.0.0";  // Firmware Version Code
+const String FWVERS = "4.0.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
