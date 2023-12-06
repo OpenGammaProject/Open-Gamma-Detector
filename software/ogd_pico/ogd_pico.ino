@@ -61,7 +61,7 @@ struct Config {
   bool ser_output = true;          // Wheter data should be Serial.println'ed
   bool geiger_mode = false;        // Measure only cps, not energy
   bool print_spectrum = false;     // Print the finishes spectrum, not just chronological events
-  size_t meas_avg = 5;             // Number of meas. averaged each event, higher=longer dead time
+  size_t meas_avg = 2;             // Number of meas. averaged each event, higher=longer dead time
   bool enable_display = false;     // Enable I2C Display, see settings above
   bool enable_trng = false;        // Enable the True Random Number Generator
   bool subtract_baseline = false;  // Subtract the DC bias from each pulse
