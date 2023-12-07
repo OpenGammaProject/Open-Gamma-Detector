@@ -2,8 +2,6 @@
 
 # Open Gamma Detector
 
-**IMPORTANT, PLEASE READ:** I am currently in the midst of updating everything to the brand-new revision 4.0. This will take a few weeks for each and every little detail to be up-to-date. The latest status updates are always available on [Hackaday](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/logs). There will also be an announcement about the Tindie restock. Please be patient, thanks ;)
-
 ---
 
 **This is the latest hardware revision 4.0. For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 4.0 and 3.x hardware can be found [here](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/225597-revision-40-status-report).**
