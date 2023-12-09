@@ -80,7 +80,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "4.0.1";  // Firmware Version Code
+const String FWVERS = "4.0.2";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -1075,12 +1075,14 @@ void eventInt() {
       // Discard channels 512, 1536, 2560, and 3584. For now.
       // See RP2040 datasheet Appendix B: Errata
       if (m == 511 || m == 1535 || m == 2559 || m == 3583) {
-        //continue;  // Discard
-        break;
+        continue;  // Discard single measurement
+        //break; // Completely disregard this measurement entirely
       }
       sum += m;
       num++;
     }
+
+    resetSampleHold();
 
     float avg = 0.0;  // Use median instead of average?
 
@@ -1092,8 +1094,6 @@ void eventInt() {
       // Subtract DC bias from pulse avg and then convert float --> uint16_t ADC channel
       mean = round(avg - current_baseline);
     }
-
-    resetSampleHold();
   }
 
   if ((conf.ser_output || conf.enable_display) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
