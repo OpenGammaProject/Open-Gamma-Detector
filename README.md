@@ -79,7 +79,7 @@ If this doesn't help you, feel free to reach out and create an issue or open a d
 
 Here is a small collection of example spectra I could make quickly without putting much effort into the detector settings (threshold, SiPM voltage, software tweaks). I'm using the [Tiny MicroFC Breakout](https://github.com/OpenGammaProject/Tiny-MicroFC-Carrier-Board) and just a single SiPM (which isn't the optimal setup actually). In addition, neither the electronics nor the scintillator and sample were shielded from EMI or background radiation whatsoever. So as you can see the detector is actually pretty robust in that regard.
 
-Background spectrum (4h) with no samples:
+Background spectrum (2h) with no samples:
 
 ![Background spectrum](docs/bg.png)
 
@@ -99,7 +99,7 @@ Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse en
 
 ![Na-22](docs/na-22.png)
 
-Spectrum (4h) of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak. Resolution of the 662 keV peak was ~10%, because I was only using a single SiPM with an old 9% scintillator:
+Spectrum (2h) of about 100 grams of mushrooms still containing the isotope Cs-137 from the Chernobyl disaster. You can clearly see the gamma peak at 662 keV and the ~32 keV X-ray peak. Resolution of the 662 keV peak was ~8.6%, using only a single SiPM and an old NaI scintillator:
 
 ![Mushroom "test source"](docs/mushrooms.png)
 
