@@ -875,6 +875,8 @@ void drawSpectrum() {
     total += totalValue;
   }
 
+  unsigned long now_time = millis();
+
   float scale_factor = 0.0;
 
   if (max_num > 0) {  // No events accumulated, catch divide by zero
@@ -884,13 +886,13 @@ void drawSpectrum() {
   uint32_t new_total = total - last_total;
   last_total = total;
 
-  if (millis() < last_time) {  // Catch Millis() Rollover
-    last_time = millis();
+  if (now_time < last_time) {  // Catch Millis() Rollover
+    last_time = now_time;
     return;
   }
 
-  unsigned long time_delta = millis() - last_time;
-  last_time = millis();
+  unsigned long time_delta = now_time - last_time;
+  last_time = now_time;
 
   if (time_delta == 0) {  // Catch divide by zero
     time_delta = 1000;
@@ -901,11 +903,11 @@ void drawSpectrum() {
 
   counts.add(new_total * 1000.0 / time_delta);
 
-  float avg_dt = dead_time.getMedianAverage(50);
   float avg_cps = counts.getAverage();
+  float avg_dt = dead_time.getAverage();
   float avg_cps_corrected = avg_cps;
   if (avg_dt > 0.) {
-    avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1e6);
+    avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1.0e6);
   }
 
   display.print(avg_cps_corrected, 1);
@@ -955,28 +957,30 @@ void drawGeigerCounts() {
     total += display_spectrum[i];
   }
 
+  unsigned long now_time = millis();
+
   uint32_t new_total = total - last_total;
   last_total = total;
 
-  if (millis() < last_time) {  // Catch Millis() Rollover
-    last_time = millis();
+  if (now_time < last_time) {  // Catch Millis() Rollover
+    last_time = now_time;
     return;
   }
 
-  unsigned long time_delta = millis() - last_time;
-  last_time = millis();
+  unsigned long time_delta = now_time - last_time;
+  last_time = now_time;
 
   if (time_delta == 0) {  // Catch divide by zero
     time_delta = 1000;
   }
 
   counts.add(new_total * 1000.0 / time_delta);
-  float avg_cps = counts.getAverage();
 
-  float avg_dt = dead_time.getMedianAverage(50);
+  float avg_cps = counts.getAverage();
+  float avg_dt = dead_time.getAverage();  //+ 5.0;
   float avg_cps_corrected = avg_cps;
   if (avg_dt > 0.) {
-    avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1e6);
+    avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1.0e6);
   }
 
   static float max_cps = -1;
@@ -1032,6 +1036,10 @@ void drawGeigerCounts() {
   display.println(" cps");
 
   display.display();
+
+  if (total > EVT_RESET_C) {
+    clearSpectrumDisplay();
+  }
 }
 
 
