@@ -4,6 +4,8 @@
 
 If you want to play around with the firmware, the Arduino sketch can be found inside `ogd_pico`. It also includes some instructions on how to program. See below for more info about that.
 
+**Note about HW compatability:** Each hardware revision of the detector has its own major version of the Arduino sketch indicated by the leading number of the version code. The versions are only tested on their respective hardware, so they might and probably will not work with newer or older detector boards. As an example, FW 4.0.2 is designed to only run on Rev. 4 boards, while 3.5.2 is only designed to run on Rev. 3 boards.
+
 ## Programming the Pi Pico
 
 ### Firmware Files
