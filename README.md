@@ -103,6 +103,18 @@ Spectrum (2h) of about 100 grams of mushrooms still containing the isotope Cs-13
 
 ![Mushroom "test source"](docs/mushrooms.png)
 
+---
+
+**Here are some of the same spectra using a larger 1x1 inch scintillator rated at 6.9% @ 662 keV and a 2x2 SiPM array:**
+
+Spectrum (1h) of the same mushroom sample from above. This time the resolution at the 662 keV Cs-137 was 7.7%, not bad!
+
+![Mushroom "test source"](docs/mushrooms-advanced.png)
+
+Spectrum (1h) of a small batch of Lutetium(III) oxide. It contains Lu-176 just like the LYSO scintillator sample from above. Therefore it also has the same peaks, just a lot more clear now. The 307 keV peak now has an energy resolution of 11.5%.
+
+![Lu-176 spectrum](docs/lu-176-advanced.png)
+
 ## Known Limitations
 
 1. The Raspberry Pi Pico's ADC has some pretty [severe DNL issues](https://pico-adc.markomo.me/INL-DNL/#dnl) that result in four channels being much more sensitive (wider input range) than the rest. For now the simplest solution was to discard all four of them, by printing a `0` when any of them comes up in the measurement (to not affect the cps readings). You can turn this behavior off by using the `set correction` command. This is by no means perfect or ideal, but it works for now until this gets fixed in a later hardware revision of the RP2040 (wish us luck!).
