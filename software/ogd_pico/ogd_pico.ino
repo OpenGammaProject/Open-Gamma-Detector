@@ -80,7 +80,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "4.0.2";  // Firmware Version Code
+const String FWVERS = "4.0.3";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -485,7 +485,7 @@ void setMeasAveraging(String *args) {
 void deviceInfo([[maybe_unused]] String *args) {
   File debugFile = LittleFS.open(DEBUG_FILE, "r");
 
-  DynamicJsonDocument doc(512);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, debugFile);
 
   uint32_t power_cycle, power_on;
@@ -590,7 +590,7 @@ void readSettings([[maybe_unused]] String *args) {
     return;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, saveFile);
 
   saveFile.close();
@@ -601,6 +601,7 @@ void readSettings([[maybe_unused]] String *args) {
     return;
   }
 
+  doc.shrinkToFit();  // Optional
   serializeJsonPretty(doc, Serial);
 
   cleanPrintln();
@@ -651,7 +652,7 @@ void readDebugFile() {
     return;
   }
 
-  DynamicJsonDocument doc(512);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, debugFile);
 
   debugFile.close();
@@ -662,6 +663,7 @@ void readDebugFile() {
     return;
   }
 
+  doc.shrinkToFit();  // Optional
   serializeJsonPretty(doc, Serial);
 
   cleanPrintln();
@@ -673,7 +675,7 @@ void writeDebugFileTime() {
   // ALMOST THE SAME AS THE BOOT DEBUG FILE WRITE!
   File debugFile = LittleFS.open(DEBUG_FILE, "r");  // Open read and write
 
-  DynamicJsonDocument doc(512);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, debugFile);
 
   if (!debugFile || error) {
@@ -694,6 +696,7 @@ void writeDebugFileTime() {
   doc["power_on_hours"] = ++temp;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
+  doc.shrinkToFit();                           // Optional
   serializeJson(doc, debugFile);
   debugFile.close();
 }
@@ -703,7 +706,7 @@ void writeDebugFileBoot() {
   // ALMOST THE SAME AS THE TIME DEBUG FILE WRITE!
   File debugFile = LittleFS.open(DEBUG_FILE, "r");  // Open read and write
 
-  DynamicJsonDocument doc(512);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, debugFile);
 
   if (!debugFile || error) {
@@ -724,6 +727,7 @@ void writeDebugFileBoot() {
   doc["power_cycle_count"] = ++temp;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
+  doc.shrinkToFit();                           // Optional
   serializeJson(doc, debugFile);
   debugFile.close();
 }
@@ -741,7 +745,7 @@ Config loadSettings(bool msg = true) {
     return new_conf;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, saveFile);
 
   saveFile.close();
@@ -798,7 +802,7 @@ bool writeSettingsFile() {
     return false;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   doc["ser_output"] = conf.ser_output;
   doc["geiger_mode"] = conf.geiger_mode;
@@ -811,6 +815,7 @@ bool writeSettingsFile() {
   doc["enable_ticker"] = conf.enable_ticker;
   doc["tick_rate"] = conf.tick_rate;
 
+  doc.shrinkToFit();  // Optional
   serializeJson(doc, saveFile);
 
   saveFile.close();
