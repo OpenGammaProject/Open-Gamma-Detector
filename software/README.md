@@ -37,7 +37,7 @@ Please have a look at the `USER SETTINGS` in the Arduino sketch. You might need 
 
 Flash the Pico by choosing the `Raspberry Pi Pico` under `Tools/Board/Raspberry Pi RP2040 Boards` and then selecting `Flash Size: 2MB (Sketch: 1984KB, FS: 64KB)`, leaving everything else at the default value. You can then press the big `Upload` button.
 
-You can also try to **overclock** the device if you want. You cannot destroy anything as far as I know, so be experimental. The worst thing that can happen is the Pico locking up and you needing to reflash it by holding the `BOOTSEL` button. Mine ran stable at up to 225 (with reduced core voltage) or 250 MHz (almost 100 MHz over stock clock!!!) and that had actually significantly improved the [detector dead time](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/213190-pico-performance-improvements). Also flashing with `-Ofast` enabled also improved performance for me.
+You can also try to **overclock** the device if you want. You cannot destroy anything as far as I know, so be experimental. The worst thing that can happen is the Pico locking up and you needing to reflash it by holding the `BOOTSEL` button. Mine ran stable at up to 225 with reduced core voltage and 250 MHz with the default voltage (almost double the stock clock!!!) and that had actually significantly improved the [detector dead time](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/213190-pico-performance-improvements). Also flashing with `-Ofast` enabled also improved performance for me.
 
 ## Serial Interface
 
@@ -121,11 +121,9 @@ The device will automatically print to all the interfaces that are connected to 
 
 ## True Random Number Generator
 
-Radioactive decay is a great source of entropy for a random number generator of course. This device can output true random numbers meaning they are truly, per definition, random, instead of the pseudorandom numbers a PRNG (i.e., an algorithm) can produce. If you enable the TRNG via the serial command, it will periodically (once they are ready) output random numbers between 0 - 255. This could be further used to, for example, periodically re-seed a pseudorandom number generator to increase the overall amount of available numbers to use.
+Radioactive decay is a great source of entropy for a random number generator of course. This device can output true random numbers meaning they are truly, per definition, random, instead of the pseudorandom numbers a PRNG (i.e., an algorithm) can produce. At least if my implementation is correct of course. So you have to somewhat trust me that I didn't make some kind of stupid mistake. I did some crude tests and the numbers look very random to me. They certainly also all have the same chance of being generated over a reasonable test period, which is good. However, I still recommend you to regard this as more of a nice gimmick instead of something to generate PGP keys with to leak confidential NSA data to a journalist or to encrypt your multi-billion dollar bitcoin fortune.
 
-Note that the TRNG uses the same Serial connection as the gamma spectroscopy output, so you have to disable one of them so that you don't mix the outputs. The numbers of both functions are formatted the same for ease of use, i.e. with a semicolon ";" as some kind of "end of data" delimiter.
-
-I highly advise you not to use this implementation as an entropy generator for real and sensitive data as there could always be something wrong with the implementation. **Use at your own risk!** Have fun playing around with that, though.
+If you enable the TRNG via the serial command, it will periodically (once they are ready) output random numbers between 0 - 255. This could be further used to, for example, periodically re-seed a pseudorandom number generator to increase the overall amount of available numbers to use. Note that the TRNG uses the same Serial connection as the gamma spectroscopy output, so you have to disable one of them so that you don't mix the outputs. The numbers of both functions are formatted the same for ease of use, i.e. with a semicolon ";" as some kind of "end of data" delimiter.
 
 ## Data Analysis & Live Plotting
 
