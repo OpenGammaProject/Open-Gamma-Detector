@@ -42,6 +42,10 @@ Some more info on the peripheral headers can be found in the `software` section 
 
 You can also put a little jumper from `VBUS` to `VSYS` if you **only** want to use the detector with the USB connection on the Pico. This bridges the diode on the Raspberry Pi Pico and saves you a couple of mW.
 
+As for the **SiPM connections**, there is a female 2.54mm pin header on the board and also two MCX jacks. The pin headers are just a very easy way to get everything up and running and are fine if you're not really touching them and the scintillator is mounted very close to the header (i.e. on the PCB).
+
+If you want to have a more secure and more importantly shielded way of connecting the SiPM, use MCX cables and the corresponding jacks on the board. There are special MCX breakout cables that have the connectors on one end and then terminate to some stranded copper wire on the other side. You can use this to solder the cable directly to the SiPM breakout board and then have the plug on the other side. However, because you need two cables (one for power and one for signal), be sure to keep them as close together as possible (e.g. twist them together) as to not create a huge ground loop area.
+
 ## Potentiometers
 
 Here is a helpful image about the potentiometer settings for revision 4.0:
