@@ -32,9 +32,9 @@ Here are some of the most important specs:
 - Low-voltage device: No HV needed like with photomultiplier tubes.
 - Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
 - 4096 ADC channels with built-in 3 V voltage reference.
-- Energy resolution of ~8% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
-- Energy Mode: About 15 µs total dead time while measuring energy minimum.
-- Geiger Mode: About 5 µs total dead time without energy measurements minimum.
+- Energy resolution of up to 7% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
+- Energy Mode: About 40 µs total dead time while measuring energy (default settings).
+- Geiger Mode: About 5 µs total dead time without energy measurements (default settings).
 - Low power consumption: ~20 mA @ 5 V with default firmware at normal background.
 - Built-in ticker (buzzer) for audible pulse count rate output.
 - Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
