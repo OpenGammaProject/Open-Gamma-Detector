@@ -80,7 +80,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "4.0.3";  // Firmware Version Code
+const String FWVERS = "4.1.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -94,6 +94,8 @@ const uint8_t RST_PIN = 22;     // Peak detector MOSFET reset pin
 const uint8_t LED = 25;         // Built-in LED on GP25
 const uint8_t BUZZER_PIN = 7;   // Buzzer PWM pin for the ticker
 const uint8_t BUTTON_PIN = 14;  // Misc button pin
+
+const uint8_t LONG_PRESS = 10;  // Time until considered long button press
 
 const uint16_t BUZZER_FREQ = 2700;  // Frequency used for the buzzer PWM (resonance freq of the buzzer)
 const uint8_t BUZZER_TICK = 10;     // On-time of the buzzer for a single pulse in ms
@@ -174,44 +176,70 @@ void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
 
 
 void queryButton() {
-  if (BOOTSEL) {
-    // Switch between Geiger and Energy modes
-    conf.geiger_mode = !conf.geiger_mode;
-    event_position = 0;
-    clearSpectrum();
-    clearSpectrumDisplay();
-    resetSampleHold();
-
-    if (conf.geiger_mode) {
-      println("Switched to geiger mode.");
-    } else {
-      println("Switched to energy measuring mode.");
-    }
-
-    saveSettings();  // Saved updated settings
-
-    while (BOOTSEL) {  // Wait for BOOTSEL to be released
-      delay(10);
-      rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
-    }
-  }
+  static uint16_t pressed = 0;
+  static bool press_lock = false;
 
   if (digitalRead(BUTTON_PIN) == LOW) {
-    // Toggle the onboard ticker
-    conf.enable_ticker = !conf.enable_ticker;
+    pressed++;
 
-    if (conf.enable_ticker) {
-      println("Enabled ticker output.");
-    } else {
-      println("Disabled ticker output.");
+    if (pressed >= LONG_PRESS && !press_lock) {
+      /*
+        Long Press: Toggle Buzzer
+      */
+      conf.enable_ticker = !conf.enable_ticker;
+
+      if (conf.enable_ticker) {
+        println("Enabled ticker output.");
+      } else {
+        println("Disabled ticker output.");
+      }
+
+      updateDisplayTask.forceNextIteration();  // Update the display immediately
+
+      saveSettings();  // Saved updated settings
+      // Introduce some dead time after a button press
+      // Fixes a bug that would make the buzzer go crazy
+      // Idk what's going on, but it's related to the saveSettings() function
+      // Maybe the flash is too slow or something
+      delay(100);
+
+      press_lock = true;
+    }
+  } else {
+    if (pressed > 0) {
+      if (pressed < LONG_PRESS) {
+        /*
+          Short Press: Switch Modes
+        */
+        conf.geiger_mode = !conf.geiger_mode;
+        event_position = 0;
+        clearSpectrum();
+        clearSpectrumDisplay();
+        resetSampleHold();
+
+        if (conf.geiger_mode) {
+          println("Switched to geiger mode.");
+        } else {
+          println("Switched to energy measuring mode.");
+        }
+
+        updateDisplayTask.forceNextIteration();  // Update the display immediately
+
+        saveSettings();  // Saved updated settings
+        // Introduce some dead time after a button press
+        // Fixes a bug that would make the buzzer go crazy
+        // Idk what's going on, but it's related to the saveSettings() function
+        // Maybe the flash is too slow or something
+        delay(100);
+      }
     }
 
-    saveSettings();  // Saved updated settings
+    pressed = 0;
+    press_lock = false;
+  }
 
-    while (digitalRead(BUTTON_PIN) == LOW) {  // Wait for the button to be released
-      delay(10);
-      rp2040.wdt_reset();  // Reset watchdog so that the device doesn't quit if pressed for too long
-    }
+  if (BOOTSEL) {
+    rp2040.rebootToBootloader();
   }
 
   rp2040.wdt_reset();  // Reset watchdog, everything is fine
@@ -220,7 +248,6 @@ void queryButton() {
 
 void updateDisplay() {
   // Update display every DISPLAY_REFRESH ms
-  // MAYBE ONLY START TASK IF DISPLAY IS ENABLED?
   if (conf.enable_display) {
     if (conf.geiger_mode) {
       drawGeigerCounts();
@@ -1310,6 +1337,7 @@ void setup1() {
   // Set up task scheduler and enable tasks
   updateDisplayTask.setSchedulingOption(TASK_INTERVAL);  // TASK_SCHEDULE, TASK_SCHEDULE_NC, TASK_INTERVAL
   dataOutputTask.setSchedulingOption(TASK_INTERVAL);
+  queryButtonTask.setSchedulingOption(TASK_INTERVAL);
   //resetPHCircuitTask.setSchedulingOption(TASK_INTERVAL);
   //updateBaselineTask.setSchedulingOption(TASK_INTERVAL);
 
@@ -1328,7 +1356,11 @@ void setup1() {
   updateBaselineTask.enable();
   writeDebugFileTimeTask.enableDelayed(60 * 60 * 1000);
   dataOutputTask.enableDelayed(OUT_REFRESH);
-  updateDisplayTask.enableDelayed(DISPLAY_REFRESH);
+
+  if (conf.enable_display) {
+    // Only enable display task if the display function is enabled
+    updateDisplayTask.enableDelayed(DISPLAY_REFRESH);
+  }
 }
 
 
