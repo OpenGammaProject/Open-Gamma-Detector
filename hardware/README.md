@@ -59,7 +59,7 @@ As you can see it is pretty simple to set the required voltage and threshold. **
 There are two buttons on the device:
 
 * A small one on the Raspberry Pi Pico itself that is only used to reboot the device into bootloader mode. This is handy if you want to change or update the firmware of the device.
-* A larger one next to the Pico that is used to toggle between spectrum and Geiger mode by **short-pressing** and toggling the buzzer by **long-pressing** it.
+* A larger one next to the Pico that is used to toggle between spectrum and Geiger mode by **short-pressing** (<1 second) and toggling the buzzer by **long-pressing** (>=1 second) it.
 
 ![Potentiometer Controls](../docs/buttons.jpg)
 
