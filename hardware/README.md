@@ -54,6 +54,15 @@ Here is a helpful image about the potentiometer settings for revision 4.0:
 
 As you can see it is pretty simple to set the required voltage and threshold. **Just turn any potentiometer clockwise to increase the corresponding parameter, turn anti-clockwise to decrease.**
 
+## Buttons
+
+There are two buttons on the device:
+
+* A small one on the Raspberry Pi Pico itself that is only used to reboot the device into bootloader mode. This is handy if you want to change or update the firmware of the device.
+* A larger one next to the Pico that is used to toggle between spectrum and Geiger mode by **short-pressing** and toggling the buzzer by **long-pressing** it.
+
+![Potentiometer Controls](../docs/buttons.jpg)
+
 ## Scintillator (Assembly)
 
 The finished [standard MicroFC-](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board), [tiny MicroFC-](https://github.com/OpenGammaProject/Tiny-MicroFC-Carrier-Board) and [AFBR-](https://github.com/OpenGammaProject/AFBR-SiPM-Carrier-Board) SiPM carrier boards are there to allow for easier packaging with the scintillator as well as to be reusable for different detectors as that's by far the single most expensive part and you'll want to use it as long as possible.
@@ -102,26 +111,6 @@ After you applied some, you press both parts together and wrap everything with l
 
 **==> More assembly instructions can be found on the [Hackaday.io project page](https://hackaday.io/project/185211/instructions)!**
 
-## Raspberry Pi Pico W
-
-Since the Pico W has functionally the exact same size and pinout, it can be a trivial replacement for the standard Pico. This can be a great place to start experimenting with connecting to the Open Gamma Detector via Bluetooth or WiFi, there are endless possibilities what you can do with that.
-
-If you switch to the Pico W, though, you will need to modify the stock firmware slightly since internal pins like the input voltage pin are changed.
-
-There is also no firmware build for the Pico W and I don't plan to make one in the near future, since I'm busy enough with the stock firmware, hardware and Gamma MCA, to start building yet another Bluetooth- or WiFi-connected app or whatever.
-
-I'll happily accept PRs if you make something like that, though, so let me know! ;)
-
-## Shielding
-
-Due to the detector measuring small voltages, energy resolution being limited by noise and a small 470 pF capacitor being on board, it can sometimes be pretty sensitive to EMI. For the absolute best performance, you should put your detector into some kind of metal enclosure. It doesn't need to be a thick metal case, a tin can will most likely suffice.
-
-<!--- Once I start assembly I'll look at proving some shielding ideas - Sebyon --->
-
-The four screw holes on the PCB's actual detector part are connected to the circuit GND.
-
-As some level of protection against EMI, the peak and hold capacitor is periodically discharged as to avoid it being charged ever so slightly by interference and the feedback path. This takes place every millisecond by default and cannot be switched on or off via a serial command. This adds less than 1% of additional dead time (~2.5 µs per reset every ms), so should be completely negligible.
-
 ## The `ACT` LED
 
 There is an additional LED on the board called `ACT` for "activity". It's directly connected to the comparator that handles the pulse thresholds and will light up for every impulse that's larger than the set threshold voltage for the duration of said impulse. That means generally you won't see much, because the count rates are pretty low and the pulses are really fast (couple of microseconds).
@@ -139,3 +128,23 @@ All the STL files to print the two parts (main body and cover) can be found in [
 ![Inside view of the box](../docs/inside_box.jpg)
 
 (This is an old image from Revision 2.0, but the footprint is exactly the same, you get the gist.)
+
+## Shielding
+
+Due to the detector measuring small voltages, energy resolution being limited by noise and a small 470 pF capacitor being on board, it can sometimes be pretty sensitive to EMI. For the absolute best performance, you should put your detector into some kind of metal enclosure. It doesn't need to be a thick metal case, a tin can will most likely suffice.
+
+<!--- Once I start assembly I'll look at proving some shielding ideas - Sebyon --->
+
+The four screw holes on the PCB's actual detector part are connected to the circuit GND.
+
+As some level of protection against EMI, the peak and hold capacitor is periodically discharged as to avoid it being charged ever so slightly by interference and the feedback path. This takes place every millisecond by default and cannot be switched on or off via a serial command. This adds less than 1% of additional dead time (~2.5 µs per reset every ms), so should be completely negligible.
+
+## Raspberry Pi Pico W
+
+Since the Pico W has functionally the exact same size and pinout, it can be a trivial replacement for the standard Pico. This can be a great place to start experimenting with connecting to the Open Gamma Detector via Bluetooth or WiFi, there are endless possibilities what you can do with that.
+
+If you switch to the Pico W, though, you will need to modify the stock firmware slightly since internal pins like the input voltage pin are changed.
+
+There is also no firmware build for the Pico W and I don't plan to make one in the near future, since I'm busy enough with the stock firmware, hardware and Gamma MCA, to start building yet another Bluetooth- or WiFi-connected app or whatever.
+
+I'll happily accept PRs if you make something like that, though, so let me know! ;)
