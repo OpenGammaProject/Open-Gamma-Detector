@@ -12,14 +12,16 @@
   ## Only change the highlighted USER SETTINGS below
   ## except you know exactly what you are doing!
   ## Flash with default settings and
-  ##   Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"
+  ##   Flash Size: "2MB (Sketch: 1MB, FS: 1MB)"
 
   TODO: (?) Adafruit TinyUSB lib: WebUSB support
-  TODO: (?) Software Threshold
   
   TODO: Retry a coincidence detection feature
   TODO: Add cps line trend to geiger mode
   TODO: Add custom display font
+
+  TODO: Restructure files to make ino better readable (also Baseline, Recorder and TRNG classes?)
+  TODO: CONST vars
 
 */
 
@@ -31,6 +33,7 @@
 //#include <ADCInput.h>     // Special SiPM readout utilizing the ADC FIFO and Round Robin
 #include "hardware/vreg.h"  // Used for vreg_set_voltage
 #include "Helper.h"         // Misc helper functions
+#include "FS.h"             // Functions for the LittleFS filesystem
 
 #include <SimpleShell_Enhanced.h>  // Serial Commands/Console
 #include <ArduinoJson.h>           // Load and save the settings file
@@ -47,27 +50,31 @@
 #define SCREEN_WIDTH 128            // OLED display width, in pixels
 #define SCREEN_HEIGHT 64            // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C         // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-#define PH_RESET 1                  // Milliseconds after which the P&H circuit will be reset once
 #define EVENT_BUFFER 50000          // Buffer this many events for Serial.print
 #define TRNG_BITS 8                 // Number of bits for each random number, max 8
 #define BASELINE_NUM 101            // Number of measurements taken to determine the DC baseline
 #define CONFIG_FILE "/config.json"  // File to store the settings
 #define DEBUG_FILE "/debug.json"    // File to store some misc debug info
 #define DISPLAY_REFRESH 1000        // Milliseconds between display refreshs
+#define BUZZER_FREQ 2700            // Resonance frequency of the buzzer
+#define AUTOSAVE_TIME 900000        // 15 Minutes in ms, time between recording autosaves
+// Display Types: Select only one! One of them must be true and the other one false
+#define SCREEN_SH1106 false
+#define SCREEN_SSD1306 true
 
 struct Config {
   // These are the default settings that can also be changes via the serial commands
   // Do not touch the struct itself, but only the values of the variables!
-  bool ser_output = true;          // Wheter data should be Serial.println'ed
-  bool geiger_mode = false;        // Measure only cps, not energy
-  bool print_spectrum = false;     // Print the finishes spectrum, not just chronological events
-  size_t meas_avg = 2;             // Number of meas. averaged each event, higher=longer dead time
-  bool enable_display = false;     // Enable I2C Display, see settings above
-  bool enable_trng = false;        // Enable the True Random Number Generator
-  bool subtract_baseline = false;  // Subtract the DC bias from each pulse
-  bool cps_correction = true;      // Correct the cps for the DNL compensation
-  bool enable_ticker = false;      // Enable the buzzer to be used as a ticker for pulses
-  size_t tick_rate = 20;           // Buzzer ticks once every tick_rate pulses
+  bool ser_output = true;         // Wheter data should be Serial.println'ed
+  bool geiger_mode = false;       // Measure only cps, not energy
+  bool print_spectrum = false;    // Print the finishes spectrum, not just chronological events
+  size_t meas_avg = 2;            // Number of meas. averaged each event, higher=longer dead time
+  bool enable_display = false;    // Enable I2C Display, see settings above
+  bool enable_trng = false;       // Enable the True Random Number Generator
+  bool subtract_baseline = true;  // Subtract the DC bias from each pulse
+  bool cps_correction = false;    // Correct the cps for the DNL compensation
+  bool enable_ticker = false;     // Enable the buzzer to be used as a ticker for pulses
+  size_t tick_rate = 20;          // Buzzer ticks once every tick_rate pulses
 
   // Do NOT modify the following operator function
   bool operator==(const Config &other) const {
@@ -80,7 +87,7 @@ struct Config {
     =================
 */
 
-const String FWVERS = "4.1.0";  // Firmware Version Code
+const String FW_VERSION = "4.2.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -97,7 +104,6 @@ const uint8_t BUTTON_PIN = 14;  // Misc button pin
 
 const uint8_t LONG_PRESS = 10;  // Time until considered long button press
 
-const uint16_t BUZZER_FREQ = 2700;  // Frequency used for the buzzer PWM (resonance freq of the buzzer)
 const uint8_t BUZZER_TICK = 10;     // On-time of the buzzer for a single pulse in ms
 const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
 const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
@@ -123,6 +129,11 @@ volatile uint32_t total_events = 0;        // Total number of all registered pul
 
 RunningMedian baseline(BASELINE_NUM);  // Array of a number of baseline (DC bias) measurements at the SiPM input
 uint16_t current_baseline = 0;         // Median value of the input baseline voltage
+
+uint32_t recordingDuration = 0;        // Duration of the spectrum recording in seconds
+String recordingFile = "";             // Filename for the spectrum recording file
+volatile bool isRecording = false;     // Currently running a recording
+unsigned long recordingStartTime = 0;  // Start timestamp of the recording in ms
 
 volatile bool adc_lock = false;  // Locks the ADC if it's currently in use
 
@@ -155,6 +166,7 @@ void updateDisplay();
 void dataOutput();
 void updateBaseline();
 void resetPHCircuit();
+void recordCycle();
 
 // Tasks
 Task writeDebugFileTimeTask(60 * 60 * 1000, TASK_FOREVER, &writeDebugFileTime);
@@ -162,16 +174,44 @@ Task queryButtonTask(100, TASK_FOREVER, &queryButton);
 Task updateDisplayTask(DISPLAY_REFRESH, TASK_FOREVER, &updateDisplay);
 Task dataOutputTask(OUT_REFRESH, TASK_FOREVER, &dataOutput);
 Task updateBaselineTask(1, TASK_FOREVER, &updateBaseline);
-Task resetPHCircuitTask(PH_RESET, TASK_FOREVER, &resetPHCircuit);
+Task resetPHCircuitTask(1, TASK_FOREVER, &resetPHCircuit);
+Task recordCycleTask(60000, 0, &recordCycle);
 
 // Scheduler
 Scheduler schedule;
+
+
+void clearSpectrum() {
+  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
+    spectrum[i] = 0;
+  }
+}
+
+
+void clearSpectrumDisplay() {
+  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
+    display_spectrum[i] = 0;
+  }
+  start_time = millis();  // Spectrum pulse collection has started
+  last_time = millis();
+  last_total = 0;  // Remove old values
+}
 
 
 void resetSampleHold(uint8_t time = 2) {  // Reset sample and hold circuit
   digitalWriteFast(RST_PIN, HIGH);
   delayMicroseconds(time);  // Discharge for (default) 2 µs -> ~99% discharge time for 1 kOhm and 470 pF
   digitalWriteFast(RST_PIN, LOW);
+}
+
+
+void resetPHCircuit() {
+  if (!adc_lock) {
+    adc_lock = true;    // Disable interrupt ADC measurements while resetting
+    resetSampleHold();  // Periodically reset the S&H/P&H circuit
+    adc_lock = false;
+  }
+  // TODO: Check if adc was locked and decrease interval to compensate
 }
 
 
@@ -246,18 +286,6 @@ void queryButton() {
 }
 
 
-void updateDisplay() {
-  // Update display every DISPLAY_REFRESH ms
-  if (conf.enable_display) {
-    if (conf.geiger_mode) {
-      drawGeigerCounts();
-    } else {
-      drawSpectrum();
-    }
-  }
-}
-
-
 void dataOutput() {
   // MAYBE ONLY START TASK IF OUTPUT IS ENABLED?
   if (conf.ser_output) {
@@ -314,13 +342,156 @@ void updateBaseline() {
 }
 
 
-void resetPHCircuit() {
-  if (!adc_lock) {
-    adc_lock = true;    // Disable interrupt ADC measurements while resetting
-    resetSampleHold();  // Periodically reset the S&H/P&H circuit
-    adc_lock = false;
+float readTemp() {
+  adc_lock = true;                        // Flag this, so that nothing else uses the ADC in the mean time
+  delayMicroseconds(conf.meas_avg * 20);  // Wait for an already-executing interrupt
+  const float temp = analogReadTemp(VREF_VOLTAGE);
+  adc_lock = false;
+  return temp;
+}
+
+
+void recordCycle() {
+  static unsigned long saveTime = 0;
+  static uint32_t recordingSpectrum[uint16_t(pow(2, ADC_RES))];
+
+  const unsigned long nowTime = millis();
+
+  if (!isRecording) {
+    isRecording = true;
+    recordingStartTime = nowTime;
+    saveTime = nowTime;
+
+    // Copy original spectrum data into recordingSpectrum
+    for (uint16_t i = 0; i < uint16_t(pow(2, ADC_RES)); i++) {
+      recordingSpectrum[i] = spectrum[i];
+    }
   }
-  // TODO: Check if adc was locked and decrease interval to compensate
+
+  isRecording = !recordCycleTask.isLastIteration();
+
+  // Last iteration or autosave interval -> save to file
+  if (!isRecording || (nowTime - saveTime >= AUTOSAVE_TIME)) {
+    // Generate current recording spectrum in NPESv2 format
+    JsonDocument doc;
+
+    doc["schemaVersion"] = "NPESv2";
+
+    JsonObject data_0 = doc["data"].add<JsonObject>();
+
+    JsonObject data_0_deviceData = data_0["deviceData"].to<JsonObject>();
+    data_0_deviceData["softwareName"] = "OGD FW " + FW_VERSION;
+    data_0_deviceData["deviceName"] = "Open Gamma Detector Rev. 4";
+
+    JsonObject data_0_resultData_energySpectrum = data_0["resultData"]["energySpectrum"].to<JsonObject>();
+    data_0_resultData_energySpectrum["numberOfChannels"] = uint16_t(pow(2, ADC_RES));
+    data_0_resultData_energySpectrum["measurementTime"] = round((nowTime - recordingStartTime) / 1000.0);
+
+    JsonArray data_0_resultData_energySpectrum_spectrum = data_0_resultData_energySpectrum["spectrum"].to<JsonArray>();
+
+    uint32_t sum = 0;
+    for (uint16_t i = 0; i < uint16_t(pow(2, ADC_RES)); i++) {
+      uint32_t diff = spectrum[i] - recordingSpectrum[i];
+      data_0_resultData_energySpectrum_spectrum.add(diff);
+      sum += diff;
+    }
+
+    data_0_resultData_energySpectrum["validPulseCount"] = sum;
+
+    doc.shrinkToFit();
+
+    File saveFile = LittleFS.open(DATA_DIR_PATH + recordingFile, "w");  // Open read and write
+    serializeJson(doc, saveFile);
+    saveFile.close();
+
+    saveTime = nowTime;
+  }
+}
+
+/*
+  BEGIN SERIAL COMMANDS
+*/
+void recordStart(String *args) {
+  String command = *args;
+  command.replace("record start", "");
+  command.trim();
+
+  if (isRecording) {
+    println("Device is already recording! You must stop the current recording to start a new one.", true);
+    return;
+  }
+
+  // Find the position of the first space
+  const int spaceChar = command.indexOf(' ');
+
+  // Extract the command
+  String timeStr = command.substring(0, spaceChar);
+  timeStr.trim();
+  const long time = timeStr.toInt();
+
+  if (time <= 0) {
+    println("Invalid time input '" + command + "'.", true);
+    println("Time parameter must be a number > 0.", true);
+    return;
+  }
+
+  String filename = command.substring(spaceChar);
+  filename.trim();
+
+  if (filename == "") {
+    println("Invalid file input '" + command + "'.", true);
+    println("Filename must be a string with a non-zero length.", true);
+    return;
+  }
+
+  recordingFile = filename + ".json";  // Force JSON file extension because of NPESv2
+  recordingDuration = time;
+
+  println("Starting recording to file '" + recordingFile + "' for " + String(recordingDuration) + " minutes.");
+  println("You can always check out the current status or stop the recording.");
+
+  // Set task duration and start the task
+  recordCycleTask.setIterations(time + 1);  // Time is in minutes, task executes every minute, so time == iterations
+  recordCycleTask.enable();
+}
+
+
+void recordStop([[maybe_unused]] String *args) {
+  if (!isRecording) {
+    println("No recording is currently running.", true);
+    return;
+  }
+
+  unsigned long runTime = recordCycleTask.getRunCounter();
+
+  recordCycleTask.setIterations(1);  // Run for one last time
+  recordCycleTask.restart();         // Run immediately
+
+  println("Stopped spectrum recording to file '" + recordingFile + "' after " + String(runTime) + " minutes.");
+}
+
+
+void recordStatus([[maybe_unused]] String *args) {
+  if (!recordCycleTask.isEnabled()) {
+    println("No recording is currently running.", true);
+    print("Last recording: ", true);
+    cleanPrintln(recordingFile);
+    return;
+  }
+
+  float runTime = (millis() - recordingStartTime) / 1000.0 / 60.0;
+
+  println("Recording Status: \tRunning...");
+  print("Recording File: \t");
+  cleanPrintln(recordingFile);
+  print("Recording Time: \t");
+  cleanPrint(runTime);
+  cleanPrint(" / ");
+  cleanPrint(recordingDuration);
+  cleanPrintln(" minutes");
+  print("Progress: \t\t");
+  cleanPrint(runTime / recordingDuration * 100.0);
+  cleanPrintln(" %");
 }
 
 
@@ -533,10 +704,10 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("-- Open Gamma Detector --");
   println("By NuclearPhoenix, Open Gamma Project");
   println("2023. https://github.com/OpenGammaProject");
-  println("Firmware Version: " + FWVERS);
+  println("Firmware Version: " + FW_VERSION);
   println("=========================");
-  println("Runtime: " + String(millis() / 1000.0) + " s");
-  print("Average Dead Time: ");
+  println("Runtime: \t\t" + String(millis() / 1000.0) + " s");
+  print("Average Dead Time: \t");
 
   if (total_events == 0) {
     cleanPrint("no impulses");
@@ -548,45 +719,32 @@ void deviceInfo([[maybe_unused]] String *args) {
 
   const float deadtime_frac = avg_dt * total_events / 1000.0 / float(millis()) * 100.0;
 
-  println("Total Dead Time: " + String(deadtime_frac) + " %");
-  println("Total Number Of Impulses: " + String(total_events));
-  println("CPU Frequency: " + String(rp2040.f_cpu() / 1e6) + " MHz");
-  println("Used Heap Memory: " + String(rp2040.getUsedHeap() / 1000.0) + " kB");
-  println("Free Heap Memory: " + String(rp2040.getFreeHeap() / 1000.0) + " kB");
-  println("Total Heap Size: " + String(rp2040.getTotalHeap() / 1000.0) + " kB");
-  println("Temperature: " + String(round(readTemp() * 10.0) / 10.0, 1) + " °C");
-  println("USB Connection: " + String(digitalRead(VBUS_MEAS)));
+  println("Total Dead Time: \t" + String(deadtime_frac) + " %");
+  println("Total Pulses: \t" + String(total_events));
+  println("CPU Frequency: \t" + String(rp2040.f_cpu() / 1e6) + " MHz");
+  println("Used Heap Memory: \t" + String(rp2040.getUsedHeap() / 1000.0) + " kB");
+  println("Free Heap Memory: \t" + String(rp2040.getFreeHeap() / 1000.0) + " kB");
+  println("Total Heap Size: \t" + String(rp2040.getTotalHeap() / 1000.0) + " kB");
+  println("Temperature: \t" + String(round(readTemp() * 10.0) / 10.0, 1) + " °C");
+  println("USB Connection: \t" + String(digitalRead(VBUS_MEAS)));
 
   const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
 
-  println("Supply Voltage: " + String(round(v * 10.0) / 10.0, 1) + " V");
+  println("Supply Voltage: \t" + String(round(v * 10.0) / 10.0, 1) + " V");
 
-  print("Power Cycle Count: ");
+  print("Power Cycle Count: \t");
   if (power_cycle == 0) {
     cleanPrintln("n/a");
   } else {
     cleanPrintln(power_cycle);
   }
 
-  print("Power-on hours: ");
+  print("Power-on hours: \t");
   if (power_on == 0) {
     cleanPrintln("n/a");
   } else {
     cleanPrintln(power_on);
   }
-}
-
-
-void fsInfo([[maybe_unused]] String *args) {
-  FSInfo fsinfo;
-  LittleFS.info(fsinfo);
-  println("Total Size: " + String(fsinfo.totalBytes / 1000.0) + " kB");
-  print("Used Size: " + String(fsinfo.usedBytes / 1000.0) + " kB");
-  cleanPrintln(" / " + String(float(fsinfo.usedBytes) / fsinfo.totalBytes * 100) + " %");
-  println("Block Size: " + String(fsinfo.blockSize / 1000.0) + " kB");
-  println("Page Size: " + String(fsinfo.pageSize) + " B");
-  println("Max Open Files: " + String(fsinfo.maxOpenFiles));
-  println("Max Path Length: " + String(fsinfo.maxPathLength));
 }
 
 
@@ -654,50 +812,21 @@ void rebootNow([[maybe_unused]] String *args) {
 }
 
 
-void clearSpectrum() {
-  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
-    spectrum[i] = 0;
-  }
+void serialEvent() {
+  Shell.handleEvent();  // Handle the serial input for the USB Serial
 }
 
 
-void clearSpectrumDisplay() {
-  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
-    display_spectrum[i] = 0;
-  }
-  start_time = millis();  // Spectrum pulse collection has started
-  last_time = millis();
-  last_total = 0;  // Remove old values
+void serialEvent2() {
+  Shell.handleEvent();  // Handle the serial input for the Hardware Serial
 }
+/*
+  END SERIAL COMMANDS
+*/
 
-
-void readDebugFile() {
-  File debugFile = LittleFS.open(DEBUG_FILE, "r");
-
-  if (!debugFile) {
-    println("Could not open debug file!", true);
-    return;
-  }
-
-  JsonDocument doc;
-  DeserializationError error = deserializeJson(doc, debugFile);
-
-  debugFile.close();
-
-  if (error) {
-    print("Could not load debug info from json file: ", true);
-    cleanPrintln(error.f_str());
-    return;
-  }
-
-  doc.shrinkToFit();  // Optional
-  serializeJsonPretty(doc, Serial);
-
-  cleanPrintln();
-  println("Read debug file successfully.");
-}
-
-
+/*
+  BEGIN DEBUG AND SETTINGS
+*/
 void writeDebugFileTime() {
   // ALMOST THE SAME AS THE BOOT DEBUG FILE WRITE!
   File debugFile = LittleFS.open(DEBUG_FILE, "r");  // Open read and write
@@ -862,24 +991,22 @@ bool saveSettings() {
   //println("Successfuly written config to flash.");
   return writeSettingsFile();
 }
+/*
+  END DEBUG AND SETTINGS
+*/
 
-
-void serialEvent() {
-  Shell.handleEvent();  // Handle the serial input for the USB Serial
-}
-
-
-void serialEvent2() {
-  Shell.handleEvent();  // Handle the serial input for the Hardware Serial
-}
-
-
-float readTemp() {
-  adc_lock = true;                        // Flag this, so that nothing else uses the ADC in the mean time
-  delayMicroseconds(conf.meas_avg * 20);  // Wait for an already-executing interrupt
-  const float temp = analogReadTemp(VREF_VOLTAGE);
-  adc_lock = false;
-  return temp;
+/*
+  BEGIN DISPLAY FUNCTIONS
+*/
+void updateDisplay() {
+  // Update display every DISPLAY_REFRESH ms
+  if (conf.enable_display) {
+    if (conf.geiger_mode) {
+      drawGeigerCounts();
+    } else {
+      drawSpectrum();
+    }
+  }
 }
 
 
@@ -932,6 +1059,11 @@ void drawSpectrum() {
 
   display.clearDisplay();
   display.setCursor(0, 0);
+
+  if (isRecording) {
+    display.drawBitmap(0, -1, play_solid, 6, 8, DISPLAY_WHITE);
+    display.setCursor(10, 0);
+  }
 
   counts.add(new_total * 1000.0 / time_delta);
 
@@ -1028,6 +1160,11 @@ void drawGeigerCounts() {
   display.clearDisplay();
   display.setCursor(0, 0);
 
+  if (isRecording) {
+    display.drawBitmap(SCREEN_WIDTH - 7, 9, play_solid, 6, 8, DISPLAY_WHITE);
+  }
+
+
   display.print("Min: ");
   display.println(min_cps, 1);
 
@@ -1073,7 +1210,9 @@ void drawGeigerCounts() {
     clearSpectrumDisplay();
   }
 }
-
+/*
+  END DISPLAY FUNCTIONS
+*/
 
 void eventInt() {
   // Disable interrupt generation for this pin ASAP.
@@ -1136,7 +1275,7 @@ void eventInt() {
     }
   }
 
-  if ((conf.ser_output || conf.enable_display) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
+  if ((conf.ser_output || conf.enable_display || isRecording) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
     events[event_position] = mean;
     spectrum[mean] += 1;
     display_spectrum[mean] += 1;
@@ -1206,7 +1345,7 @@ void eventInt() {
 }
 
 /*
-    SETUP FUNCTIONS
+  BEGIN SETUP FUNCTIONS
 */
 void setup() {
   pinMode(AMP_PIN, INPUT);
@@ -1257,17 +1396,24 @@ void setup1() {
   Shell.registerCommand(new ShellCommand(readSettings, "read settings", "Read the current settings (file)."));
   Shell.registerCommand(new ShellCommand(deviceInfo, "read info", "Read misc info about the firmware and state of the device."));
   Shell.registerCommand(new ShellCommand(fsInfo, "read fs", "Read misc info about the used filesystem."));
+  Shell.registerCommand(new ShellCommand(readDirFS, "read dir", "Show contents of the data directory."));
+  Shell.registerCommand(new ShellCommand(readFileFS, "read file", "<filename> Print the contents of the file <filename> from the data directory."));
+  Shell.registerCommand(new ShellCommand(removeFileFS, "remove file", "<filename> Remove the file <filename> from the data directory."));
 
   Shell.registerCommand(new ShellCommand(toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal."));
   Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'on' or 'off' to toggle the true random number generator output."));
   Shell.registerCommand(new ShellCommand(toggleDisplay, "set display", "<toggle> Either 'on' or 'off' to enable or force disable OLED support."));
   Shell.registerCommand(new ShellCommand(toggleCPSCorrection, "set correction", "<toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels."));
 
-  Shell.registerCommand(new ShellCommand(setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is ~3x faster."));
+  Shell.registerCommand(new ShellCommand(setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster."));
   Shell.registerCommand(new ShellCommand(setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
   Shell.registerCommand(new ShellCommand(setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
   Shell.registerCommand(new ShellCommand(setTickerRate, "set tickrate", "<number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1."));
   Shell.registerCommand(new ShellCommand(toggleTicker, "set ticker", "<toggle> Either 'on' or 'off' to enable or disable the onboard ticker."));
+
+  Shell.registerCommand(new ShellCommand(recordStart, "record start", "<time [min]> <filename> Start spectrum recording for duration <time> in minutes, (auto)save to <filename>."));
+  Shell.registerCommand(new ShellCommand(recordStop, "record stop", "Stop the recording."));
+  Shell.registerCommand(new ShellCommand(recordStatus, "record status", "Get the recording status."));
 
   Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
   Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
@@ -1301,7 +1447,7 @@ void setup1() {
   Serial2.begin(2000000);
 
   println("Welcome to the Open Gamma Detector!");
-  println("Firmware Version " + FWVERS);
+  println("Firmware Version " + FW_VERSION);
 
   if (conf.enable_display) {
     bool begin = false;
@@ -1326,7 +1472,7 @@ void setup1() {
       display.println();
       display.setTextSize(1);
       display.print("FW ");
-      display.println(FWVERS);
+      display.println(FW_VERSION);
       display.drawBitmap(128 - 34, 64 - 34, opengamma_pcb, 32, 32, DISPLAY_WHITE);
 
       display.display();
@@ -1350,6 +1496,7 @@ void setup1() {
   schedule.addTask(dataOutputTask);
   schedule.addTask(updateBaselineTask);
   schedule.addTask(resetPHCircuitTask);
+  schedule.addTask(recordCycleTask);
 
   queryButtonTask.enable();
   resetPHCircuitTask.enable();
@@ -1362,10 +1509,12 @@ void setup1() {
     updateDisplayTask.enableDelayed(DISPLAY_REFRESH);
   }
 }
-
+/*
+  END SETUP FUNCTIONS
+*/
 
 /*
-  LOOP FUNCTIONS
+  BEGIN LOOP FUNCTIONS
 */
 void loop() {
   // Do nothing here
@@ -1393,3 +1542,6 @@ void loop1() {
 
   delay(1);  // Wait for 1 ms, slightly reduces power consumption
 }
+/*
+  END LOOP FUNCTIONS
+*/

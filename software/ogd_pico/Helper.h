@@ -1,28 +1,29 @@
 /*
 
-  Misc helper functions used for the Open Gamma Detector sketch.
+  Misc helper functions used in the main Open Gamma Detector sketch.
 
   2023, NuclearPhoenix. Open Gamma Project.
   https://github.com/OpenGammaProject/Open-Gamma-Detector
 
 */
 
-#include "Arduino.h"
+#ifndef HELPER_H
+#define HELPER_H
 
-// Display Types
-#define SCREEN_SH1106 0
-#define SCREEN_SSD1306 1
+#include <Arduino.h>  // Needed for Serial, String and uint data types
 
 void cleanPrintln(const String &text = String(""));
-void cleanPrint(const String &text = String(""));
 void cleanPrintln(unsigned int number, int base = DEC);
+void cleanPrint(const String &text = String(""));
 void cleanPrint(unsigned int number, int base = DEC);
 
 void print(String text = "", bool error = false);
+void print(unsigned int number, bool error = false);
 void println(String text = "", bool error = false);
+void println(unsigned int number, bool error = false);
 
-// opengamma_pcb, 32 , 32 px
-const uint8_t opengamma_pcb[] PROGMEM = {
+// opengamma_pcb, 32x32 px
+const uint8_t opengamma_pcb[] = {
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x01, 0x80, 0x00,
@@ -56,3 +57,10 @@ const uint8_t opengamma_pcb[] PROGMEM = {
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00
 };
+
+// play_solid, 6x8 px
+const unsigned char play_solid[] = {
+  0x00, 0xe0, 0xf0, 0xfc, 0xfc, 0xf0, 0xe0, 0x00
+};
+
+#endif  // HELPER_H
