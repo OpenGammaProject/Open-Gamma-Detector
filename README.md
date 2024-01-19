@@ -26,13 +26,14 @@ Here are some of the most important specs:
 
 - Compact design: Total size 120 x 50 mm. Approx. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount a scintillator.
 - All-in-one: No external parts (e.g. sound card) required to record gamma spectra.
+- Standalone spectra recordings on built-in flash.
 - Easily programmable using drag-and-drop firmware files or the standard Arduino IDE.
 - Low-voltage device: No HV needed like with photomultiplier tubes.
 - Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
 - 4096 ADC channels with built-in 3 V voltage reference.
 - Energy resolution of up to 7% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
-- Energy Mode: About 40 µs total dead time while measuring energy (default settings).
-- Geiger Mode: About 5 µs total dead time without energy measurements (default settings).
+- Energy Mode: ~20 µs total dead time while measuring energy (default settings).
+- Geiger Mode: <5 µs total dead time without energy measurements (default settings).
 - Low power consumption: ~20 mA @ 5 V with default firmware at normal background.
 - Built-in ticker (buzzer) for audible pulse count rate output.
 - Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
