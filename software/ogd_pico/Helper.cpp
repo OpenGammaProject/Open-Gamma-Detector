@@ -9,8 +9,6 @@
 
 #include "Helper.h"
 
-#include <ArduinoJson.h>  // Needed for NPESv2 formatting and saving
-
 void cleanPrintln(const String &text) {
   if (Serial) {
     Serial.println(text);
