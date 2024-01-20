@@ -30,7 +30,6 @@
 #define _TASK_SLEEP_ON_IDLE_RUN  // Enable 1 ms SLEEP_IDLE powerdowns between tasks if no callback methods were invoked during the pass
 #include <TaskScheduler.h>       // Periodically executes tasks
 
-//#include <ADCInput.h>     // Special SiPM readout utilizing the ADC FIFO and Round Robin
 #include "hardware/vreg.h"  // Used for vreg_set_voltage
 #include "Helper.h"         // Misc helper functions
 #include "FS.h"             // Functions for the LittleFS filesystem
@@ -145,8 +144,6 @@ RunningMedian dead_time(100);
 
 // Configuration struct with all user settings
 Config conf;
-
-//ADCInput sipm(AMP_PIN);
 
 // Check for the right display type
 #if (SCREEN_TYPE == SCREEN_SH1106)
@@ -1361,10 +1358,6 @@ void setup() {
 
   resetSampleHold(5);  // Reset before enabling the interrupts to avoid jamming
 
-  //sipm.setBuffers(4, 64);
-  //sipm.onReceive(eventInt);
-  //sipm.begin(200000);
-
   attachInterrupt(digitalPinToInterrupt(INT_PIN), eventInt, FALLING);
 
   start_time = millis();  // Spectrum pulse collection has started
@@ -1518,20 +1511,6 @@ void setup1() {
 */
 void loop() {
   // Do nothing here
-
-  /*
-  const uint16_t DIG_THRESHOLD = 200;  // Digital threshold for the ADC
-
-  if (sipm.available() > 0) {
-    //events[event_position] = sipm.read();
-
-    if (event_position >= EVENT_BUFFER - 1) {  // Increment if memory available, else overwrite array
-      event_position = 0;
-    } else {
-      event_position++;
-    }
-  }
-  */
 
   __wfi();  // Wait for interrupt
 }
