@@ -22,6 +22,7 @@
 
   TODO: Restructure files to make ino better readable (also Baseline, Recorder and TRNG classes?)
   TODO: CONST vars
+  TODO: Use bit shifting instead of pow for ADC bins
 
 */
 
@@ -225,11 +226,7 @@ void queryButton() {
       */
       conf.enable_ticker = !conf.enable_ticker;
 
-      if (conf.enable_ticker) {
-        println("Enabled ticker output.");
-      } else {
-        println("Disabled ticker output.");
-      }
+      println(conf.enable_ticker ? "Enabled ticker output." : "Disabled ticker output.");
 
       updateDisplayTask.forceNextIteration();  // Update the display immediately
 
@@ -254,11 +251,7 @@ void queryButton() {
         clearSpectrumDisplay();
         resetSampleHold();
 
-        if (conf.geiger_mode) {
-          println("Switched to geiger mode.");
-        } else {
-          println("Switched to energy measuring mode.");
-        }
+        println(conf.geiger_mode ? "Switched to geiger mode." : "Switched to energy measuring mode.");
 
         updateDisplayTask.forceNextIteration();  // Update the display immediately
 
@@ -706,11 +699,7 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Runtime: \t\t" + String(millis() / 1000.0) + " s");
   print("Average Dead Time: \t");
 
-  if (total_events == 0) {
-    cleanPrint("no impulses");
-  } else {
-    cleanPrint(String(round(avg_dt), 0));
-  }
+  cleanPrint((total_events == 0) ? "n/a" : String(round(avg_dt), 0));
 
   cleanPrintln(" µs");
 
@@ -719,9 +708,8 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Total Dead Time: \t" + String(deadtime_frac) + " %");
   println("Total Pulses: \t" + String(total_events));
   println("CPU Frequency: \t" + String(rp2040.f_cpu() / 1e6) + " MHz");
-  println("Used Heap Memory: \t" + String(rp2040.getUsedHeap() / 1000.0) + " kB");
-  println("Free Heap Memory: \t" + String(rp2040.getFreeHeap() / 1000.0) + " kB");
-  println("Total Heap Size: \t" + String(rp2040.getTotalHeap() / 1000.0) + " kB");
+  println("Used Heap Memory: \t" + String(rp2040.getUsedHeap() / 1000.0) + " kB / " + String(rp2040.getUsedHeap() * 100.0 / rp2040.getTotalHeap(), 0) + "%");
+  println("Free Heap Memory: \t" + String(rp2040.getFreeHeap() / 1000.0) + " kB / " + String(rp2040.getFreeHeap() * 100.0 / rp2040.getTotalHeap(), 0) + "%");
   println("Temperature: \t" + String(round(readTemp() * 10.0) / 10.0, 1) + " °C");
   println("USB Connection: \t" + String(digitalRead(VBUS_MEAS)));
 
@@ -730,18 +718,10 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Supply Voltage: \t" + String(round(v * 10.0) / 10.0, 1) + " V");
 
   print("Power Cycle Count: \t");
-  if (power_cycle == 0) {
-    cleanPrintln("n/a");
-  } else {
-    cleanPrintln(power_cycle);
-  }
+  cleanPrintln((power_cycle == 0) ? "n/a" : String(power_cycle));
 
   print("Power-on hours: \t");
-  if (power_on == 0) {
-    cleanPrintln("n/a");
-  } else {
-    cleanPrintln(power_on);
-  }
+  cleanPrintln((power_on == 0) ? "n/a" : String(power_on));
 }
 
 
@@ -873,10 +853,7 @@ void writeDebugFileBoot() {
 
   debugFile.close();
 
-  uint32_t temp = 0;
-  if (doc.containsKey("power_cycle_count")) {
-    temp = doc["power_cycle_count"];
-  }
+  uint32_t temp = doc.containsKey("power_cycle_count") ? doc["power_cycle_count"] : 0;
   doc["power_cycle_count"] = ++temp;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
@@ -998,11 +975,7 @@ bool saveSettings() {
 void updateDisplay() {
   // Update display every DISPLAY_REFRESH ms
   if (conf.enable_display) {
-    if (conf.geiger_mode) {
-      drawGeigerCounts();
-    } else {
-      drawSpectrum();
-    }
+    conf.geiger_mode ? drawGeigerCounts() : drawSpectrum();
   }
 }
 
@@ -1080,11 +1053,8 @@ void drawSpectrum() {
     temp = round(readTemp());
   }
 
-  if (temp < 0) {
-    display.setCursor(SCREEN_WIDTH - 36, 0);
-  } else {
-    display.setCursor(SCREEN_WIDTH - 30, 0);
-  }
+  display.setCursor(SCREEN_WIDTH - ((temp < 0) ? 36 : 30), 0);
+
   display.print(temp);
   display.print(" ");
   display.print((char)247);
@@ -1174,11 +1144,8 @@ void drawGeigerCounts() {
     temp = round(readTemp());
   }
 
-  if (temp < 0) {
-    display.setCursor(SCREEN_WIDTH - 36, 0);
-  } else {
-    display.setCursor(SCREEN_WIDTH - 30, 0);
-  }
+  display.setCursor(SCREEN_WIDTH - ((temp < 0) ? 36 : 30), 0);
+
   display.print(temp);
   display.print(" ");
   display.print((char)247);
@@ -1297,11 +1264,7 @@ void eventInt() {
         const uint32_t delta0 = trng_stamps[1] - trng_stamps[0];
         const uint32_t delta1 = trng_stamps[2] - trng_stamps[1];
 
-        if (delta0 < delta1) {
-          bitWrite(random_num, bit_index, 0);
-        } else {
-          bitWrite(random_num, bit_index, 1);
-        }
+        bitWrite(random_num, bit_index, (delta0 < delta1));
 
         if (bit_index < TRNG_BITS - 1) {
           bit_index++;
