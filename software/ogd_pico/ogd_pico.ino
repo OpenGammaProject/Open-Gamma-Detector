@@ -22,7 +22,6 @@
 
   TODO: Restructure files to make ino better readable (also Baseline, Recorder and TRNG classes?)
   TODO: CONST vars
-  TODO: Use bit shifting instead of pow for ADC bins
 
 */
 
@@ -108,11 +107,12 @@ const uint8_t BUZZER_TICK = 10;     // On-time of the buzzer for a single pulse 
 const uint16_t EVT_RESET_C = 3000;  // Number of counts after which the OLED stats will be reset
 const uint16_t OUT_REFRESH = 1000;  // Milliseconds between serial data outputs
 
-const float VREF_VOLTAGE = 3.0;  // ADC reference voltage, default is 3.0 with reference
-const uint8_t ADC_RES = 12;      // Use 12-bit ADC resolution
+const float VREF_VOLTAGE = 3.0;             // ADC reference voltage, default is 3.0 with reference
+const uint8_t ADC_RES = 12;                 // Use 12-bit ADC resolution
+const uint16_t ADC_BINS = 0x01 << ADC_RES;  // Number of ADC bins
 
-volatile uint32_t spectrum[uint16_t(pow(2, ADC_RES))];          // Holds the output histogram (spectrum)
-volatile uint32_t display_spectrum[uint16_t(pow(2, ADC_RES))];  // Holds the display histogram (spectrum)
+volatile uint32_t spectrum[ADC_BINS];          // Holds the output histogram (spectrum)
+volatile uint32_t display_spectrum[ADC_BINS];  // Holds the display histogram (spectrum)
 
 volatile uint16_t events[EVENT_BUFFER];  // Buffer array for single events
 volatile uint32_t event_position = 0;    // Target index in events array
@@ -180,14 +180,14 @@ Scheduler schedule;
 
 
 void clearSpectrum() {
-  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
+  for (size_t i = 0; i < ADC_BINS; i++) {
     spectrum[i] = 0;
   }
 }
 
 
 void clearSpectrumDisplay() {
-  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
+  for (size_t i = 0; i < ADC_BINS; i++) {
     display_spectrum[i] = 0;
   }
   start_time = millis();  // Spectrum pulse collection has started
@@ -281,7 +281,7 @@ void dataOutput() {
   if (conf.ser_output) {
     if (Serial || Serial2) {
       if (conf.print_spectrum) {
-        for (uint16_t index = 0; index < uint16_t(pow(2, ADC_RES)); index++) {
+        for (uint16_t index = 0; index < ADC_BINS; index++) {
           cleanPrint(String(spectrum[index]) + ";");
           //spectrum[index] = 0; // Uncomment for differential histogram
         }
@@ -343,7 +343,7 @@ float readTemp() {
 
 void recordCycle() {
   static unsigned long saveTime = 0;
-  static uint32_t recordingSpectrum[uint16_t(pow(2, ADC_RES))];
+  static uint32_t recordingSpectrum[ADC_BINS];
 
   const unsigned long nowTime = millis();
 
@@ -353,7 +353,7 @@ void recordCycle() {
     saveTime = nowTime;
 
     // Copy original spectrum data into recordingSpectrum
-    for (uint16_t i = 0; i < uint16_t(pow(2, ADC_RES)); i++) {
+    for (uint16_t i = 0; i < ADC_BINS; i++) {
       recordingSpectrum[i] = spectrum[i];
     }
   }
@@ -374,13 +374,13 @@ void recordCycle() {
     data_0_deviceData["deviceName"] = "Open Gamma Detector Rev. 4";
 
     JsonObject data_0_resultData_energySpectrum = data_0["resultData"]["energySpectrum"].to<JsonObject>();
-    data_0_resultData_energySpectrum["numberOfChannels"] = uint16_t(pow(2, ADC_RES));
+    data_0_resultData_energySpectrum["numberOfChannels"] = ADC_BINS;
     data_0_resultData_energySpectrum["measurementTime"] = round((nowTime - recordingStartTime) / 1000.0);
 
     JsonArray data_0_resultData_energySpectrum_spectrum = data_0_resultData_energySpectrum["spectrum"].to<JsonArray>();
 
     uint32_t sum = 0;
-    for (uint16_t i = 0; i < uint16_t(pow(2, ADC_RES)); i++) {
+    for (uint16_t i = 0; i < ADC_BINS; i++) {
       uint32_t diff = spectrum[i] - recordingSpectrum[i];
       data_0_resultData_energySpectrum_spectrum.add(diff);
       sum += diff;
@@ -713,7 +713,7 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Temperature: \t" + String(round(readTemp() * 10.0) / 10.0, 1) + " °C");
   println("USB Connection: \t" + String(digitalRead(VBUS_MEAS)));
 
-  const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (pow(2, ADC_RES) - 1);
+  const float v = 3.0 * analogRead(VSYS_MEAS) * VREF_VOLTAGE / (ADC_BINS - 1);
 
   println("Supply Voltage: \t" + String(round(v * 10.0) / 10.0, 1) + " V");
 
@@ -728,7 +728,7 @@ void deviceInfo([[maybe_unused]] String *args) {
 void getSpectrumData([[maybe_unused]] String *args) {
   cleanPrintln();
   println("Pulse height histogram:");
-  for (size_t i = 0; i < pow(2, ADC_RES); i++) {
+  for (size_t i = 0; i < ADC_BINS; i++) {
     cleanPrintln(spectrum[i]);
   }
   cleanPrintln();
@@ -981,7 +981,7 @@ void updateDisplay() {
 
 
 void drawSpectrum() {
-  const uint16_t BINSIZE = floor(pow(2, ADC_RES) / SCREEN_WIDTH);
+  const uint16_t BINSIZE = floor(ADC_BINS / SCREEN_WIDTH);
   uint32_t eventBins[SCREEN_WIDTH];
   uint16_t offset = 0;
   uint32_t max_num = 0;
@@ -1084,7 +1084,7 @@ void drawSpectrum() {
 void drawGeigerCounts() {
   uint32_t total = 0;
 
-  for (uint16_t i = 0; i < pow(2, ADC_RES); i++) {
+  for (uint16_t i = 0; i < ADC_BINS; i++) {
     total += display_spectrum[i];
   }
 
