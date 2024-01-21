@@ -21,7 +21,6 @@
   TODO: Add custom display font
 
   TODO: Restructure files to make ino better readable (also Baseline, Recorder and TRNG classes?)
-  TODO: CONST vars
 
 */
 
@@ -381,7 +380,7 @@ void recordCycle() {
 
     uint32_t sum = 0;
     for (uint16_t i = 0; i < ADC_BINS; i++) {
-      uint32_t diff = spectrum[i] - recordingSpectrum[i];
+      const uint32_t diff = spectrum[i] - recordingSpectrum[i];
       data_0_resultData_energySpectrum_spectrum.add(diff);
       sum += diff;
     }
@@ -452,7 +451,7 @@ void recordStop([[maybe_unused]] String *args) {
     return;
   }
 
-  unsigned long runTime = recordCycleTask.getRunCounter();
+  const unsigned long runTime = recordCycleTask.getRunCounter();
 
   recordCycleTask.setIterations(1);  // Run for one last time
   recordCycleTask.restart();         // Run immediately
@@ -469,7 +468,7 @@ void recordStatus([[maybe_unused]] String *args) {
     return;
   }
 
-  float runTime = (millis() - recordingStartTime) / 1000.0 / 60.0;
+  const float runTime = (millis() - recordingStartTime) / 1000.0 / 60.0;
 
   println("Recording Status: \tRunning...");
   print("Recording File: \t");
@@ -676,17 +675,10 @@ void deviceInfo([[maybe_unused]] String *args) {
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, debugFile);
 
-  uint32_t power_cycle, power_on;
+  const uint32_t power_cycle = (!debugFile || error) ? 0 : doc["power_cycle_count"];
+  const uint32_t power_on = (!debugFile || error) ? 0 : doc["power_on_hours"];
 
-  if (!debugFile || error) {
-    power_cycle = 0;
-    power_on = 0;
-  } else {
-    power_cycle = doc["power_cycle_count"];
-    power_on = doc["power_on_hours"];
-  }
-
-  float avg_dt = dead_time.getMedianAverage(50);
+  const float avg_dt = dead_time.getMedianAverage(50);
 
   debugFile.close();
 
@@ -822,11 +814,8 @@ void writeDebugFileTime() {
 
   debugFile.close();
 
-  uint32_t temp = 0;
-  if (doc.containsKey("power_on_hours")) {
-    temp = doc["power_on_hours"];
-  }
-  doc["power_on_hours"] = ++temp;
+  const uint32_t temp = doc.containsKey("power_on_hours") ? doc["power_on_hours"] : 0;
+  doc["power_on_hours"] = temp + 1;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
   doc.shrinkToFit();                           // Optional
@@ -853,8 +842,8 @@ void writeDebugFileBoot() {
 
   debugFile.close();
 
-  uint32_t temp = doc.containsKey("power_cycle_count") ? doc["power_cycle_count"] : 0;
-  doc["power_cycle_count"] = ++temp;
+  const uint32_t temp = doc.containsKey("power_cycle_count") ? doc["power_cycle_count"] : 0;
+  doc["power_cycle_count"] = temp + 1;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
   doc.shrinkToFit();                           // Optional
@@ -955,7 +944,7 @@ bool writeSettingsFile() {
 
 
 bool saveSettings() {
-  Config read_conf = loadSettings(false);
+  const Config read_conf = loadSettings(false);
 
   if (read_conf == conf) {
     //println("Settings did not change... not writing to flash.");
@@ -1004,15 +993,12 @@ void drawSpectrum() {
     total += totalValue;
   }
 
-  unsigned long now_time = millis();
+  const unsigned long now_time = millis();
 
-  float scale_factor = 0.0;
+  // No events accumulated, catch divide by zero
+  const float scale_factor = (max_num > 0) ? float(SCREEN_HEIGHT - 11) / float(max_num) : 0.;
 
-  if (max_num > 0) {  // No events accumulated, catch divide by zero
-    scale_factor = float(SCREEN_HEIGHT - 11) / float(max_num);
-  }
-
-  uint32_t new_total = total - last_total;
+  const uint32_t new_total = total - last_total;
   last_total = total;
 
   if (now_time < last_time) {  // Catch Millis() Rollover
@@ -1037,8 +1023,8 @@ void drawSpectrum() {
 
   counts.add(new_total * 1000.0 / time_delta);
 
-  float avg_cps = counts.getAverage();
-  float avg_dt = dead_time.getAverage();
+  const float avg_cps = counts.getAverage();
+  const float avg_dt = dead_time.getAverage();
   float avg_cps_corrected = avg_cps;
   if (avg_dt > 0.) {
     avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1.0e6);
@@ -1068,7 +1054,7 @@ void drawSpectrum() {
   display.println(" s");
 
   for (uint16_t i = 0; i < SCREEN_WIDTH; i++) {
-    uint32_t val = round(eventBins[i] * scale_factor);
+    const uint32_t val = round(eventBins[i] * scale_factor);
     display.drawFastVLine(i, SCREEN_HEIGHT - val - 1, val, DISPLAY_WHITE);
   }
   display.drawFastHLine(0, SCREEN_HEIGHT - 1, SCREEN_WIDTH, DISPLAY_WHITE);
@@ -1088,9 +1074,9 @@ void drawGeigerCounts() {
     total += display_spectrum[i];
   }
 
-  unsigned long now_time = millis();
+  const unsigned long now_time = millis();
 
-  uint32_t new_total = total - last_total;
+  const uint32_t new_total = total - last_total;
   last_total = total;
 
   if (now_time < last_time) {  // Catch Millis() Rollover
@@ -1107,8 +1093,8 @@ void drawGeigerCounts() {
 
   counts.add(new_total * 1000.0 / time_delta);
 
-  float avg_cps = counts.getAverage();
-  float avg_dt = dead_time.getAverage();  //+ 5.0;
+  const float avg_cps = counts.getAverage();
+  const float avg_dt = dead_time.getAverage();  //+ 5.0;
   float avg_cps_corrected = avg_cps;
   if (avg_dt > 0.) {
     avg_cps_corrected = avg_cps / (1.0 - avg_cps * avg_dt / 1.0e6);

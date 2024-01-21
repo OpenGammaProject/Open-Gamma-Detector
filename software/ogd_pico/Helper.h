@@ -59,7 +59,7 @@ const uint8_t opengamma_pcb[] = {
 };
 
 // play_solid, 6x8 px
-const unsigned char play_solid[] = {
+const uint8_t play_solid[] = {
   0x00, 0xe0, 0xf0, 0xfc, 0xfc, 0xf0, 0xe0, 0x00
 };
 

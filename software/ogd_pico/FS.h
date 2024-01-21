@@ -13,7 +13,7 @@
 
 #include "Helper.h"  // Misc helper functions (Serial, data types, ...)
 
-#define DATA_DIR_PATH "/data/"
+const String DATA_DIR_PATH = "/data/";
 
 void fsInfo(String *args);
 void readDirFS(String *args);
