@@ -50,26 +50,26 @@ Usage:
 Commands:
 	read spectrum	: Read the spectrum histogram collected since the last reset.
 	read settings	: Read the current settings (file).
-	read info		: Read misc info about the firmware and state of the device.
-	read fs			: Read misc info about the used filesystem.
-	read dir		: Show contents of the data directory.
-	read file		: <filename> Print the contents of the file <filename> from the data directory.
-	remove file		: <filename> Remove the file <filename> from the data directory.
+	read info	: Read misc info about the firmware and state of the device.
+	read fs		: Read misc info about the used filesystem.
+	read dir	: Show contents of the data directory.
+	read file	: <filename> Print the contents of the file <filename> from the data directory.
+	remove file	: <filename> Remove the file <filename> from the data directory.
 	set baseline	: <toggle> Automatically subtract the DC bias (baseline) from each signal.
-	set trng		: <toggle> Either 'on' or 'off' to toggle the true random number generator output.
-	set display		: <toggle> Either 'on' or 'off' to enable or force disable OLED support.
+	set trng	: <toggle> Either 'on' or 'off' to toggle the true random number generator output.
+	set display	: <toggle> Either 'on' or 'off' to enable or force disable OLED support.
 	set correction	: <toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels.
-	set mode		: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster.
-	set out			: <mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
+	set mode	: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster.
+	set out		: <mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
 	set averaging	: <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
 	set tickrate	: <number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1.
-	set ticker		: <toggle> Either 'on' or 'off' to enable or disable the onboard ticker.
+	set ticker	: <toggle> Either 'on' or 'off' to enable or disable the onboard ticker.
 	record start	: <time [min]> <filename> Start spectrum recording for duration <time> in minutes, (auto)save to <filename>.
-	record stop		: Stop the recording.
+	record stop	: Stop the recording.
 	record status	: Get the recording status.
 	reset spectrum	: Reset the on-board spectrum histogram.
 	reset settings	: Reset all the settings/revert them back to default values.
-	reboot			: Reboot the device.
+	reboot		: Reboot the device.
 ```
 
 All of these commands should be pretty straightforward with their respective description.
