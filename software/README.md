@@ -4,6 +4,12 @@
 
 If you want to play around with the firmware, the Arduino sketch can be found inside `opengamma_pico`. It also includes some instructions on how to program.
 
+---
+
+**Forward compatibility to Rev. 4 FW:** If you want to use the latest Rev. 4 firmware on the Rev. 3 boards, you can do so by using a custom fork of this repository: [dc1rdb/Open-Gamma-Detector](https://github.com/dc1rdb/Open-Gamma-Detector). User [@dc1rdb](https://github.com/dc1rdb/) changed some of the pin declarations to fit the new boards. The devices are pretty similar hardware-wise, so it should work just fine. Keep in mind, though, that any subsequent update to the Rev. 4 FW could ruin this, although it's not very likely to be honest.
+
+---
+
 ## Programming the Pi Pico
 
 ### Firmware File
