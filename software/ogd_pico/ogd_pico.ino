@@ -13,10 +13,8 @@
   ## except you know exactly what you are doing!
   ## Flash with default settings and
   ##   Flash Size: "2MB (Sketch: 1MB, FS: 1MB)"
-
-  TODO: (?) Adafruit TinyUSB lib: WebUSB support
   
-  TODO: Retry a coincidence detection feature
+
   TODO: Add cps line trend to geiger mode
   TODO: Add custom display font
 
@@ -390,6 +388,9 @@ void recordCycle() {
     doc.shrinkToFit();
 
     File saveFile = LittleFS.open(DATA_DIR_PATH + recordingFile, "w");  // Open read and write
+    if (!saveFile) {
+      println("Could not create file to save recording data!", true);
+    }
     serializeJson(doc, saveFile);
     saveFile.close();
 
@@ -408,6 +409,12 @@ void recordStart(String *args) {
   if (isRecording) {
     println("Device is already recording! You must stop the current recording to start a new one.", true);
     return;
+  }
+
+  // Check and warn if the filesystem is almost full
+  if (getUsedPercentageFS() > 90) {
+    println("WARNING: Filesystem is almost full. Check if you have enough space for an additional recording.", true);
+    println("The device might not be able to save the data. Delete old files if you need more free space.", true);
   }
 
   // Find the position of the first space

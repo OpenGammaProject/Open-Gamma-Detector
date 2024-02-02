@@ -15,6 +15,8 @@
 
 const String DATA_DIR_PATH = "/data/";
 
+uint8_t getUsedPercentageFS();
+
 void fsInfo(String *args);
 void readDirFS(String *args);
 void readFileFS(String *args);

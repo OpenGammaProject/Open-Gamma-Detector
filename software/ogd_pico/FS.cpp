@@ -12,6 +12,14 @@
 
 #include <LittleFS.h>  // Needed to interface with the FS on flash
 
+uint8_t getUsedPercentageFS() {
+  FSInfo fsinfo;
+  LittleFS.info(fsinfo);
+
+  return round(float(fsinfo.usedBytes) / fsinfo.totalBytes * 100.0);
+}
+
+
 void fsInfo([[maybe_unused]] String *args) {
   FSInfo fsinfo;
   LittleFS.info(fsinfo);
@@ -24,7 +32,7 @@ void fsInfo([[maybe_unused]] String *args) {
 
   println("Total Size: \t" + String(fsinfo.totalBytes / 1000.0) + " kB");
   print("Used Size: \t\t" + String(fsinfo.usedBytes / 1000.0) + " kB");
-  cleanPrintln(" / " + String(float(fsinfo.usedBytes) / fsinfo.totalBytes * 100) + " %");
+  cleanPrintln(" / " + String(getUsedPercentageFS()) + " %");
   println("Data Dir Size: \t" + String(dirSize / 1000.0) + " kB");
   // Uncomment these for advanced users
   //println("Block Size: " + String(fsinfo.blockSize / 1000.0) + " kB");
