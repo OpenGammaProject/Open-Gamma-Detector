@@ -83,7 +83,7 @@ struct Config {
     =================
 */
 
-const String FW_VERSION = "4.2.0";  // Firmware Version Code
+const String FW_VERSION = "4.2.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -143,6 +143,10 @@ RunningMedian dead_time(100);
 // Configuration struct with all user settings
 Config conf;
 
+// Set up serial shells
+CShell shell(Serial);
+CShell shell1(Serial2);
+
 // Check for the right display type
 #if (SCREEN_TYPE == SCREEN_SH1106)
 #include <Adafruit_SH110X.h>
@@ -174,6 +178,16 @@ Task recordCycleTask(60000, 0, &recordCycle);
 
 // Scheduler
 Scheduler schedule;
+
+// Declare CommandFunction type
+using CommandFunction = void (*)(String *);
+
+// Define a struct for command information
+struct CommandInfo {
+  CommandFunction function;
+  const char *name;
+  const char *description;
+};
 
 
 void clearSpectrum() {
@@ -789,12 +803,14 @@ void rebootNow([[maybe_unused]] String *args) {
 
 
 void serialEvent() {
-  Shell.handleEvent();  // Handle the serial input for the USB Serial
+  shell.handleEvent();  // Handle the serial input for the USB Serial
+  //shell1.handleEvent();  // Handle the serial input for the Hardware Serial
 }
 
 
 void serialEvent2() {
-  Shell.handleEvent();  // Handle the serial input for the Hardware Serial
+  //shell.handleEvent();  // Handle the serial input for the USB Serial
+  shell1.handleEvent();  // Handle the serial input for the Hardware Serial
 }
 /*
   END SERIAL COMMANDS
@@ -1341,32 +1357,40 @@ void setup1() {
   pinMode(VBUS_MEAS, INPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-  Shell.registerCommand(new ShellCommand(getSpectrumData, "read spectrum", "Read the spectrum histogram collected since the last reset."));
-  Shell.registerCommand(new ShellCommand(readSettings, "read settings", "Read the current settings (file)."));
-  Shell.registerCommand(new ShellCommand(deviceInfo, "read info", "Read misc info about the firmware and state of the device."));
-  Shell.registerCommand(new ShellCommand(fsInfo, "read fs", "Read misc info about the used filesystem."));
-  Shell.registerCommand(new ShellCommand(readDirFS, "read dir", "Show contents of the data directory."));
-  Shell.registerCommand(new ShellCommand(readFileFS, "read file", "<filename> Print the contents of the file <filename> from the data directory."));
-  Shell.registerCommand(new ShellCommand(removeFileFS, "remove file", "<filename> Remove the file <filename> from the data directory."));
+  // Define an array of CommandInfo objects with function pointers and descriptions
+  CommandInfo allCommands[] = {
+    { getSpectrumData, "read spectrum", "Read the spectrum histogram collected since the last reset." },
+    { readSettings, "read settings", "Read the current settings (file)." },
+    { deviceInfo, "read info", "Read misc info about the firmware and state of the device." },
+    { fsInfo, "read fs", "Read misc info about the used filesystem." },
+    { readDirFS, "read dir", "Show contents of the data directory." },
+    { readFileFS, "read file", "<filename> Print the contents of the file <filename> from the data directory." },
+    { removeFileFS, "remove file", "<filename> Remove the file <filename> from the data directory." },
+    { toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal." },
+    { toggleTRNG, "set trng", "<toggle> Either 'on' or 'off' to toggle the true random number generator output." },
+    { toggleDisplay, "set display", "<toggle> Either 'on' or 'off' to enable or force disable OLED support." },
+    { toggleCPSCorrection, "set correction", "<toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels." },
+    { setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster." },
+    { setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram." },
+    { setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1." },
+    { setTickerRate, "set tickrate", "<number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1." },
+    { toggleTicker, "set ticker", "<toggle> Either 'on' or 'off' to enable or disable the onboard ticker." },
+    { recordStart, "record start", "<time [min]> <filename> Start spectrum recording for duration <time> in minutes, (auto)save to <filename>." },
+    { recordStop, "record stop", "Stop the recording." },
+    { recordStatus, "record status", "Get the recording status." },
+    { clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram." },
+    { resetSettings, "reset settings", "Reset all the settings/revert them back to default values." },
+    { rebootNow, "reboot", "Reboot the device." }
+  };
 
-  Shell.registerCommand(new ShellCommand(toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal."));
-  Shell.registerCommand(new ShellCommand(toggleTRNG, "set trng", "<toggle> Either 'on' or 'off' to toggle the true random number generator output."));
-  Shell.registerCommand(new ShellCommand(toggleDisplay, "set display", "<toggle> Either 'on' or 'off' to enable or force disable OLED support."));
-  Shell.registerCommand(new ShellCommand(toggleCPSCorrection, "set correction", "<toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels."));
+  // Get the number of allCommands
+  const size_t numCommands = sizeof(allCommands) / sizeof(allCommands[0]);
 
-  Shell.registerCommand(new ShellCommand(setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster."));
-  Shell.registerCommand(new ShellCommand(setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram."));
-  Shell.registerCommand(new ShellCommand(setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1."));
-  Shell.registerCommand(new ShellCommand(setTickerRate, "set tickrate", "<number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1."));
-  Shell.registerCommand(new ShellCommand(toggleTicker, "set ticker", "<toggle> Either 'on' or 'off' to enable or disable the onboard ticker."));
-
-  Shell.registerCommand(new ShellCommand(recordStart, "record start", "<time [min]> <filename> Start spectrum recording for duration <time> in minutes, (auto)save to <filename>."));
-  Shell.registerCommand(new ShellCommand(recordStop, "record stop", "Stop the recording."));
-  Shell.registerCommand(new ShellCommand(recordStatus, "record status", "Get the recording status."));
-
-  Shell.registerCommand(new ShellCommand(clearSpectrumData, "reset spectrum", "Reset the on-board spectrum histogram."));
-  Shell.registerCommand(new ShellCommand(resetSettings, "reset settings", "Reset all the settings/revert them back to default values."));
-  Shell.registerCommand(new ShellCommand(rebootNow, "reboot", "Reboot the device."));
+  // Loop through allCommands and register commands with both shell instances
+  for (size_t i = 0; i < numCommands; ++i) {
+    shell.registerCommand(new ShellCommand(allCommands[i].function, allCommands[i].name, allCommands[i].description));
+    shell1.registerCommand(new ShellCommand(allCommands[i].function, allCommands[i].name, allCommands[i].description));
+  }
 
   // Starts FileSystem, autoformats if no FS is detected
   LittleFS.begin();
@@ -1392,8 +1416,8 @@ void setup1() {
   gpio_set_slew_rate(BUZZER_PIN, GPIO_SLEW_RATE_SLOW);  // Slow slew rate to reduce EMI
   digitalWrite(BUZZER_PIN, LOW);
 
-  Shell.begin(2000000);
-  Serial2.begin(2000000);
+  shell.begin(2000000);
+  shell1.begin(2000000);
 
   println("Welcome to the Open Gamma Detector!");
   println("Firmware Version " + FW_VERSION);
