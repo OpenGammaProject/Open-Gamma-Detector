@@ -118,6 +118,8 @@ If flashed with the correct settings (see above), the flash filesystem on the Pi
 
 The detector board features an I2C header where you can connect any standard SSD1306 or SH1106 OLED display that will be supported with minimal changes to the Arduino IDE sketch. If no display is connected the device will work as usual only via a Serial interface. You can also force the device _not_ to use the display even if one is connected via the I2C header, if you choose to do so for whatever weird reason.
 
+**Please note:** The default state for the display is set to `off` due to some issues with the display library. For that reason, you have to manually enable it once you want to use it.
+
 The default firmware uses a 128 x 64 px SSD1306 OLED. If you want to change the display resolution or switch to SH1106-based screens, you will have to recompile and upload the Arduino sketch to your device.
 
 At the moment the software only draws the energy spectrum and the current cps value to the screen in energy mode. These stats are reset once a specific number of counts have been collected - this number can be changed in the Arduino sketch. This is sufficient in most (simple) cases and more features will be implemented over time.
