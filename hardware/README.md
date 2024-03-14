@@ -117,7 +117,7 @@ There is an additional LED on the board called `ACT` for "activity". It's direct
 
 However, it's helpful when setting the correct threshold voltage, because as soon as you decrease it too low and completely get into the noise floor, the LED will visibly light up.
 
-On top of that, since it's not connected to the microcontroller in any way, it's a nice backup for when the device crashes and/or the count rates get so high that it's completely saturating otherwise. So if you see the LED visible light up and you're sure it's not random noise or something else with the settings or temperature, you might be in real danger.
+On top of that, since it's not connected to the microcontroller in any way, it's a nice backup for when the device crashes and/or the count rates get so high that it's completely saturating otherwise. **The detector will display ZERO counts per second when it saturates at very high count rates: the count rate will actually gradually go down to zero the higher and higher your ACTUAL (real) count rate is.** So if the device displays 0.0 cps, but the LED is lit up brightly, you either have a light leak or you should run for your own safety.
 
 ## 3D Printed Case
 
