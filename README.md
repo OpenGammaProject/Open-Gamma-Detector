@@ -4,7 +4,7 @@
 
 ---
 
-**This is the latest hardware revision 4.0. For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 4.0 and 3.x hardware can be found [here](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/225597-revision-40-status-report).**
+**This is the latest hardware revision 4.1. For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 4.0 and 3.x hardware can be found [here](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/225597-revision-40-status-report).**
 
 **This project is also on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I post important project updates and other announcements!**
 
@@ -24,7 +24,7 @@ If you want a more barebones version of the Open Gamma Detector to only count pu
 
 Here are some of the most important specs:
 
-- Compact design: Total size 120 x 50 mm. Approx. 70 x 50 mm area for electronics and additional 50 x 50 mm to mount a scintillator.
+- Compact design: Total size 120 x 50 mm. Approx. 70.5 x 50 mm area for electronics and additional 49.5 x 50 mm to mount a scintillator.
 - All-in-one: No external parts (e.g. sound card) required to record gamma spectra.
 - Standalone spectra recordings on built-in flash.
 - Easily programmable using drag-and-drop firmware files or the standard Arduino IDE.
@@ -42,8 +42,8 @@ Here are some of the most important specs:
 
 ## How To Get One
 
-* For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/) (may be outdated!).
-* Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own. All the files you'll need can be found in this repo.
+- For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/) (may be outdated!).
+- Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own. All the files you'll need can be found in this repo.
 
 **You will also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR) and scintillator (NaI(Tl) recommended) separately at a distributor of your choice.** You might also want to grab one of the countless SiPM breakout boards I made.
 
