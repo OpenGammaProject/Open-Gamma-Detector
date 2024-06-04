@@ -44,6 +44,7 @@ Here are some of the most important specs:
 
 - For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/) (may be outdated!).
 - Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own. All the files you'll need can be found in this repo.
+* If you don't want to deal with all of that, feel free to contact me. Just send me an e-mail if you want and we'll figure something out.
 
 **You will also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR) and scintillator (NaI(Tl) recommended) separately at a distributor of your choice.** You might also want to grab one of the countless SiPM breakout boards I made.
 
