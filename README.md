@@ -92,7 +92,7 @@ Spectrum (2h) of a small tea cup with pure Uraninite (also known as pitchblende)
 
 ![Uraninite Glaze](docs/glaze.png)
 
-Spectrum of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse energy resolution than the latest version). You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy) as well as the compton edge and continuum:
+Spectrum (30min) of a Na-22 test source, about ~2 µCi made with a Rev.2 board (worse energy resolution than the latest version). You can see the 511 keV annihilation peak and the small 1275 keV gamma peak (much smaller due to limited NaI efficiency and small scintillator size for this energy) as well as the compton edge and continuum:
 
 ![Na-22](docs/na-22.png)
 
