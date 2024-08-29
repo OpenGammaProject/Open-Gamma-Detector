@@ -6,15 +6,15 @@ If you want to play around with the firmware, the Arduino sketch can be found in
 
 **Note about HW compatability:** Each hardware revision of the detector has its own major version of the Arduino sketch indicated by the leading number of the version code. The versions are only tested on their respective hardware, so they might and probably will not work with newer or older detector boards. As an example, FW **4**.0.2 is designed to only run on Rev. **4** boards, while **3**.5.2 is only designed to run on Rev. **3** boards.
 
-## Programming the Pi Pico
+## Programming the Pi Pico 2
 
 ### Firmware Files
 
 This is the easiest way to get started! You'll not have to download anything else besides the firmware UF2 file. This is the latest default firmware that you can use if you don't plan to modify any of the hardware aspects (such as the voltage reference, ADC resolution, etc) on the board itself. You can of course also use it with the Open Gamma Detector purchased from my Tindie store.
 
-To get started with a fresh device, plug in the Raspberry Pi Pico via the micro-USB connection. A file manager window should now pop up. Drag and drop the `ogd_pico-XXX.uf2` file that you downloaded into this directory. The device will restart automatically once the transmission is completed and is ready to use!
+To get started with a fresh device, plug in the Raspberry Pi Pico 2 via the micro-USB connection. A file manager window should now pop up. Drag and drop the `ogd_pico-XXX.uf2` file that you downloaded into this directory. The device will restart automatically once the transmission is completed and is ready to use!
 
-If you want to update or re-flash the firmware, press and hold the `BOOTSEL` button on the Raspberry Pi Pico _while_ plugging it in the USB port of your computer. A file manager windows should once again pop up and you can let go of the button. Drag and drop the UF2 file just like above.
+If you want to update or re-flash the firmware, press and hold the `BOOTSEL` button on the Raspberry Pi Pico 2 _while_ plugging it in the USB port of your computer. A file manager windows should once again pop up and you can let go of the button. Drag and drop the UF2 file just like above.
 
 ### Arduino IDE
 
@@ -35,9 +35,9 @@ They can be installed by searching their names using the IDE's built-in library 
 
 Please have a look at the `USER SETTINGS` in the Arduino sketch. You might need to change the default display parameters, such as I2C address, screen width and height depending on what display you are using.
 
-Flash the Pico by choosing the `Raspberry Pi Pico` under `Tools/Board/Raspberry Pi RP2040 Boards` and then selecting `Flash Size: 2MB (Sketch: 1MB, FS: 1MB)`, leaving everything else at the default value. You can then press the big `Upload` button.
+Flash the Pico by choosing the `Raspberry Pi Pico 2` under `Board: Raspberry Pi Pico/RP2040` and then selecting `Flash Size: 4MB (Sketch: 1MB, FS: 3MB)`, leaving everything else at the default value. You can then press the big `Upload` button.
 
-You can also try to **overclock** the device if you want. You cannot destroy anything as far as I know, so be experimental. The worst thing that can happen is the Pico locking up and you needing to reflash it by holding the `BOOTSEL` button. Mine ran stable at up to 225 with reduced core voltage and 250 MHz with the default voltage (almost double the stock clock!!!) and that had actually significantly improved the [detector dead time](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/213190-pico-performance-improvements). Also flashing with `-Ofast` enabled also improved performance for me.
+You can also try to **overclock** the device if you want. You cannot destroy anything as far as I know, so be experimental. The worst thing that can happen is the Pico locking up and you needing to reflash it by holding the `BOOTSEL` button. Mine ran stable at up to 250 MHz with reduced core voltage (66% increase from stock!!!) and that will actually significantly improve the detector dead time as well. Also flashing with `-Ofast` enabled improved performance for me too. There is a more detailed comparison on this [for the Pico 1 on Hackaday](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/213190-pico-performance-improvements), performance changes might be different for the Pico 2 though.
 
 ## Serial Interface
 
@@ -50,26 +50,25 @@ Usage:
 Commands:
 	read spectrum	: Read the spectrum histogram collected since the last reset.
 	read settings	: Read the current settings (file).
-	read info	: Read misc info about the firmware and state of the device.
-	read fs		: Read misc info about the used filesystem.
-	read dir	: Show contents of the data directory.
-	read file	: <filename> Print the contents of the file <filename> from the data directory.
-	remove file	: <filename> Remove the file <filename> from the data directory.
+	read info		: Read misc info about the firmware and state of the device.
+	read fs			: Read misc info about the used filesystem.
+	read dir		: Show contents of the data directory.
+	read file		: <filename> Print the contents of the file <filename> from the data directory.
+	remove file		: <filename> Remove the file <filename> from the data directory.
 	set baseline	: <toggle> Automatically subtract the DC bias (baseline) from each signal.
-	set trng	: <toggle> Either 'on' or 'off' to toggle the true random number generator output.
-	set display	: <toggle> Either 'on' or 'off' to enable or force disable OLED support.
-	set correction	: <toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels.
-	set mode	: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster.
-	set out		: <mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
+	set trng		: <toggle> Either 'on' or 'off' to toggle the true random number generator output.
+	set display		: <toggle> Either 'on' or 'off' to enable or force disable OLED support.
+	set mode		: <mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster.
+	set out			: <mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram.
 	set averaging	: <number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1.
 	set tickrate	: <number> Rate at which the buzzer ticks, ticks once every <number> of pulses. Takes ints, minimum is 1.
-	set ticker	: <toggle> Either 'on' or 'off' to enable or disable the onboard ticker.
+	set ticker		: <toggle> Either 'on' or 'off' to enable or disable the onboard ticker.
 	record start	: <time [min]> <filename> Start spectrum recording for duration <time> in minutes, (auto)save to <filename>.
-	record stop	: Stop the recording.
+	record stop		: Stop the recording.
 	record status	: Get the recording status.
 	reset spectrum	: Reset the on-board spectrum histogram.
 	reset settings	: Reset all the settings/revert them back to default values.
-	reboot		: Reboot the device.
+	reboot			: Reboot the device.
 ```
 
 All of these commands should be pretty straightforward with their respective description.
@@ -112,7 +111,7 @@ After the recording has ended, you can use a number of serial commands to query 
 
 The files are automatically saved in a compatible JSON format ([NPES-JSON](https://github.com/OpenGammaProject/NPES-JSON)), which you only need to copy paste from the serial interface once the recording is finished. The file can then be loaded in any compatible program, like [Gamma MCA](https://github.com/OpenGammaProject/Gamma-MCA) for viewing.
 
-If flashed with the correct settings (see above), the flash filesystem on the Pico can hold around 50 - 100 spectra.
+If flashed with the correct settings (see above), the flash filesystem on the Pico can hold around 150 - 300 spectra.
 
 ## I2C and OLED Support
 
@@ -127,7 +126,7 @@ At the moment the software only draws the energy spectrum and the current cps va
 In Geiger mode the min/max cps as well as the average cps will be displayed on the screen.
 
 ![OLED display](../docs/oled.jpg)
-*(Photo of an older Rev 3 board, but you get the gist)*
+_(Photo of an older Rev 3 board, but you get the gist)_
 
 Of course the I2C header can also be used for any other I2C devices, not only displays! But you will have to write the software on your own.
 

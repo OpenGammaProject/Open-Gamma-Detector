@@ -4,7 +4,7 @@
 
 ---
 
-**This is the latest hardware revision 4.1. For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 4.0 and 3.x hardware can be found [here](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/225597-revision-40-status-report).**
+**This is the latest hardware revision 4.2 using the Pico 2! For older revisions, please have a look at the [other branches](https://github.com/OpenGammaProject/Open-Gamma-Detector/branches). A comparison between the 4.0 and 3.x hardware can be found [here](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer/log/225597-revision-40-status-report).**
 
 **This project is also on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I post important project updates and other announcements!**
 
@@ -32,9 +32,9 @@ Here are some of the most important specs:
 - Can use SiPMs in the voltage range of 27.5 V to 33.8 V.
 - 4096 ADC channels with built-in 3 V voltage reference.
 - Energy resolution of up to 7% @ 662 keV possible; highly dependent on your SiPM/scintillator assembly.
-- Energy Mode: ~20 µs total dead time while measuring energy (default settings).
-- Geiger Mode: <5 µs total dead time without energy measurements (default settings).
-- Low power consumption: ~20 mA @ 5 V with default firmware at normal background.
+- Energy Mode: ~10 µs total dead time while measuring energy (default settings).
+- Geiger Mode: ~1 µs total dead time without energy measurements (default settings).
+- Low power consumption: ~15 mA @ 5 V with default firmware at normal background.
 - Built-in ticker (buzzer) for audible pulse count rate output.
 - Additional broken-out power pins and I2C, SPI and UART headers for custom parts (e.g. display, µSD card, etc.).
 - Simple OLED support out of the box (SSD1306 and SH110x).
@@ -42,9 +42,9 @@ Here are some of the most important specs:
 
 ## How To Get One
 
-- For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/) (may be outdated!).
+- For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/boards/github.com/opengammaproject/open-gamma-detector/) (**may be outdated!**).
 - Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own. All the files you'll need can be found in this repo.
-* If you don't want to deal with all of that, feel free to contact me. Just send me an e-mail if you want and we'll figure something out.
+- If you don't want to deal with all of that, feel free to contact me. Just send me an e-mail if you want and we'll figure something out.
 
 **You will also need to buy a SiPM (e.g. the MICROFC-60035-SMT-TR) and scintillator (NaI(Tl) recommended) separately at a distributor of your choice.** You might also want to grab one of the countless SiPM breakout boards I made.
 
@@ -62,9 +62,9 @@ Detailed information about the hardware of the detector as well as the potentiom
 
 ## Software
 
-The software aims to be as simple as possible to understand and maintain. To achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/). This board can be programmed with the Arduino IDE over micro-USB and is powerful (dual core, fast ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
+The software aims to be as simple as possible to understand and maintain. To achieve this I decided to use an off-the-shelf microcontroller - the [Raspberry Pi Pico 2](https://www.raspberrypi.com/products/raspberry-pi-pico-2/). This board can be programmed with the Arduino IDE over micro-USB and is powerful (dual core, fast ADC, plenty of memory, ...) enough for the purpose and also exceptionally cheap.
 
-To program the Pico and/or play around with the firmware, head to the [software directory](/software/). There you will also find documentation on the serial interface (!), display support, and much more.
+To program the Pico 2 and/or play around with the firmware, head to the [software directory](/software/). There you will also find documentation on the serial interface (!), display support, and much more.
 
 ## Troubleshooting and FAQ
 
@@ -114,7 +114,7 @@ Spectrum (1h) of a small batch of Lutetium(III) oxide. It contains Lu-176 just l
 
 ## Known Limitations
 
-1. The Raspberry Pi Pico's ADC has some pretty [severe DNL issues](https://pico-adc.markomo.me/INL-DNL/#dnl) that result in four channels being much more sensitive (wider input range) than the rest. For now the simplest solution was to discard all four of them, by printing a `0` when any of them comes up in the measurement (to not affect the cps readings). You can turn this behavior off by using the `set correction` command. This is by no means perfect or ideal, but it works for now until this gets fixed in a later hardware revision of the RP2040 (wish us luck!).
+1. ~~The Raspberry Pi Pico's ADC has some pretty [severe DNL issues](https://pico-adc.markomo.me/INL-DNL/#dnl) that result in four channels being much more sensitive (wider input range) than the rest. For now the simplest solution was to discard all four of them, by printing a `0` when any of them comes up in the measurement (to not affect the cps readings). You can turn this behavior off by using the `set correction` command. This is by no means perfect or ideal, but it works for now until this gets fixed in a later hardware revision of the RP2040 (wish us luck!).~~ Fixed by the Pico 2!
 2. The power supply is **not** temperature corrected itself, meaning changes in the ambient temperature with a constant voltage affect the gain of the SiPM. This will naturally result in a different DC bias, energy range and S/N ratio. This effect is negligible around room temperature, though. The temperature dependence of the gain is -0.8%/°C (21°C) for the MicroFC SiPMs. **The latest [MicroFC SiPM carrier board](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board) has automatic temperature compensation on-board however! So use that if you want to get the best performance out of it.**
 
 ## Some Ideas

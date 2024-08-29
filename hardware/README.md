@@ -19,10 +19,10 @@ Here are some very helpful in-depth datasheets about the particular MicroFC SiPM
 
 The hardware consists of the main detector (hardware in this folder) which includes amplification, pulse detection and energy measurement. If you already have a SiPM/crystal assembly compatible with voltages around 30 V, you may use it with the detector board and connecting wires directly to the correct pads. Otherwise, you can use my [SiPM carrier board](https://github.com/OpenGammaProject/MicroFC-SiPM-Carrier-Board), which holds the SiPM and all the optional decoupling as well as a temperature compensation circuit for the SiPM. There is also a carrier board for the Broadcom SiPM.
 
-The heart of the detector board is the Raspberry Pi Pico which uses its ADC to measure the pulse amplitude (i.e. the energy) immediately after an event occurs starting with an interrupt. I can really recommend you reading the datasheet or maybe also having a look at a deeper analysis of the Pico ADC, if you're interested:
+The heart of the detector board is the Raspberry Pi Pico 2 which uses its ADC to measure the pulse amplitude (i.e. the energy) immediately after an event occurs starting with an interrupt. I can really recommend you reading the datasheet ~~or maybe also having a look at a deeper analysis of the Pico ADC~~ (only relevant to Pico 1), if you're interested:
 
-* [Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf)
-* [Characterizing the Raspberry Pi Pico ADC](https://pico-adc.markomo.me/)
+* [Raspberry Pi Pico 2](https://datasheets.raspberrypi.com/pico/pico-2-datasheet.pdf)
+* ~~[Characterizing the Raspberry Pi Pico ADC](https://pico-adc.markomo.me/)~~ (only relevant to Pico 1)
 
 Here are some front and back side renders of the detector PCB. Size is about 120 x 50 mm. If you don't need the additional space to mechanically mount the SiPM/scintillator assembly to the rest of the detector board, you can just cut it off at the white line and you're left with an even smaller detector.
 
@@ -32,7 +32,7 @@ Here are some front and back side renders of the detector PCB. Size is about 120
 
 On the back side of the PCB there is also a jumper to connect the analog ground to the rest of the ground plane. You can solder that if you want to and you know exactly what you're doing. It's not needed, though, that's why it's open by default.
 
-There are also broken-out pins for the power supply, I2C, SPI and UART connections. These can be used to modify the device, e.g. by adding a display or using a battery charger. You can have a look at the great [Raspberry Pi Pico datasheet](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf) for more info on this.
+There are also broken-out pins for the power supply, I2C, SPI and UART connections. These can be used to modify the device, e.g. by adding a display or using a battery charger. You can have a look at the great [Raspberry Pi Pico 2 datasheet](https://datasheets.raspberrypi.com/pico/pico-2-datasheet.pdf) for more info on this.
 
 Some more info on the peripheral headers can be found in the `software` section of this project.
 
@@ -40,7 +40,7 @@ Some more info on the peripheral headers can be found in the `software` section 
 
 ![Header Pinout](../docs/pinout.png)
 
-You can also put a little jumper from `VBUS` to `VSYS` if you **only** want to use the detector with the USB connection on the Pico. This bridges the diode on the Raspberry Pi Pico and saves you a couple of mW.
+You can also put a little jumper from `VBUS` to `VSYS` if you **only** want to use the detector with the USB connection on the Pico. This bridges the diode on the Raspberry Pi Pico 2 and saves you a couple of mW.
 
 As for the **SiPM connections**, there is a female 2.54mm pin header on the board and also two MCX jacks. The pin headers are just a very easy way to get everything up and running and are fine if you're not really touching them and the scintillator is mounted very close to the header (i.e. on the PCB).
 
@@ -48,7 +48,7 @@ If you want to have a more secure and more importantly shielded way of connectin
 
 ## Potentiometers
 
-Here is a helpful image about the potentiometer settings for revision 4.0:
+Here is a helpful image about the potentiometer settings for revision 4.x:
 
 ![Potentiometer Controls](../docs/controls.png)
 
@@ -58,7 +58,7 @@ As you can see it is pretty simple to set the required voltage and threshold. **
 
 There are two buttons on the device:
 
-* A small one on the Raspberry Pi Pico itself that is only used to reboot the device into bootloader mode. This is handy if you want to change or update the firmware of the device.
+* A small one on the Raspberry Pi Pico 2 itself that is only used to reboot the device into bootloader mode. This is handy if you want to change or update the firmware of the device.
 * A larger one next to the Pico that is used to toggle between spectrum and Geiger mode by **short-pressing** (<1 second) and toggling the buzzer by **long-pressing** (>=1 second) it.
 
 ![Potentiometer Controls](../docs/buttons.jpg)
@@ -79,8 +79,8 @@ Two sources of new NaI(Tl) scintillators are:
 
 | Brand | Location | Comment |
 |-------|----------|---------|
-|[OST - Photonics](https://www.ost-photonics.com/products/scintillation-crystal/encapsulated-scintillator/standard-type-naitl-scintillator/)| China | Can purchase directly from website |
-| [Epic-Crystal](https://www.epic-crystal.com/) | China | Also sold by [GammaSpectacular](https://www.gammaspectacular.com/)
+| [OST - Photonics](https://www.ost-photonics.com/products/scintillation-crystal/encapsulated-scintillator/standard-type-naitl-scintillator/) | China | Can purchase directly from website |
+| [Epic-Crystal](https://www.epic-crystal.com/) | China | Also sold by [GammaSpectacular](https://www.gammaspectacular.com/) |
 
 **Since this is a fixed-gain device, I can only highly recommend you to get a scintillator that fits on the PCB and is of a comparable volume as the scintillators I tested.** I am using an 18 x 30 mm crystal for most of the spectra that you can see here and it works great. Also, due to the small size of the SiPM in comparison to the scintillator opening, try to use narrower crystals than wider ones if you can. That way, there aren't many light losses to the SiPM. In general, just be sure the volume/size is not orders of magnitue larger or smaller. If that's not possible, consider using the array board. **The array board works great with a 1" x 1" NaI(Tl) with this detector for example. There is also an optional trim pot for the gain on the Rev. 4 boards that you can solder and use to change the preamp gain.**
 
@@ -139,12 +139,12 @@ The four screw holes on the PCB's actual detector part are connected to the circ
 
 As some level of protection against EMI, the peak and hold capacitor is periodically discharged as to avoid it being charged ever so slightly by interference and the feedback path. This takes place every millisecond by default and cannot be switched on or off via a serial command. This adds less than 1% of additional dead time (~2.5 µs per reset every ms), so should be completely negligible.
 
-## Raspberry Pi Pico W
+## Raspberry Pi Pico 2 W
 
-Since the Pico W has functionally the exact same size and pinout, it can be a trivial replacement for the standard Pico. This can be a great place to start experimenting with connecting to the Open Gamma Detector via Bluetooth or WiFi, there are endless possibilities what you can do with that.
+Since the Pico 2 W has functionally the exact same size and pinout, it can be a trivial replacement for the standard Pico 2. This can be a great place to start experimenting with connecting to the Open Gamma Detector via Bluetooth or WiFi, there are endless possibilities what you can do with that.
 
-If you switch to the Pico W, though, you will need to modify the stock firmware slightly since internal pins like the input voltage pin are changed.
+If you switch to the Pico 2 W, though, you will need to modify the stock firmware slightly since internal pins like the input voltage pin are changed.
 
-There is also no firmware build for the Pico W and I don't plan to make one in the near future, since I'm busy enough with the stock firmware, hardware and Gamma MCA, to start building yet another Bluetooth- or WiFi-connected app or whatever.
+There is also no firmware build for the Pico 2 W and I don't plan to make one in the near future, since I'm busy enough with the stock firmware, hardware and Gamma MCA, to start building yet another Bluetooth- or WiFi-connected app or whatever.
 
 I'll happily accept PRs if you make something like that, though, so let me know! ;)

@@ -16,23 +16,23 @@ If this isn't the case for you and it doesn't get recognized at all (even while 
 
 ### Settings on the device are not saved
 
-If you flashed it via the Arduino IDE be sure to select `Flash Size: "2MB (Sketch: 1984KB, FS: 64KB)"`. Without these 64 KB of flash assigned to the file system, the Pico is unable to create and save a settings file.
+If you flashed it via the Arduino IDE be sure to select `Flash Size: "4MB (Sketch: 1MB, FS: 3MB)"`. Without these 64 KB of flash assigned to the file system, the Pico is unable to create and save a settings file.
 
-### I am seeing a sharp peak immediately around ADC channel 511
+### ~~I am seeing a sharp peak immediately around ADC channel 511~~
 
-That is right, this is due to the DNL issues with the RP2040 ADC as described in the [Known Limitations](README.md#known-limitations) section of the readme.
+~~That is right, this is due to the DNL issues with the RP2040 ADC as described in the [Known Limitations](README.md#known-limitations) section of the readme.~~
 
-This effect would have been much worse without some simple corrections in the firmware. Since there is currently no hardware fix, this is what we have to live with unfortunately. If you know about it, you can just ignore it since all the *real* peaks of the scintillator are much wider than that.
+~~This effect would have been much worse without some simple corrections in the firmware. Since there is currently no hardware fix, this is what we have to live with unfortunately. If you know about it, you can just ignore it since all the *real* peaks of the scintillator are much wider than that.~~ Fixed by the Pico 2.
 
-### There is always a peak at ADC channel 0
+### ~~There is always a peak at ADC channel 0~~
 
-That is intentional behavior of the device. For the same reason as above, four ADC channels are ignored for the energy measurement.
+~~That is intentional behavior of the device. For the same reason as above, four ADC channels are ignored for the energy measurement.~~
 
-Since this would potentially highly influence the count rate, giving lower values than there actually are, these counts are added back to the spectrum to ADC channel 0.
+~~Since this would potentially highly influence the count rate, giving lower values than there actually are, these counts are added back to the spectrum to ADC channel 0.~~
 
-This way, all the counts are registered, but since there is actually never a signal near channel 0, you can clearly distinguish between the "right" spectrum and the rest.
+~~This way, all the counts are registered, but since there is actually never a signal near channel 0, you can clearly distinguish between the "right" spectrum and the rest.~~
 
-If you want to disable this behavior, you can do so by using the  `set correction` command over the serial interface. This will still omit the ADC channel readings, but won't create another peak at 0. In geiger mode, there will always only be a channel `0` since this is how the current cps is calculated.
+~~If you want to disable this behavior, you can do so by using the  `set correction` command over the serial interface. This will still omit the ADC channel readings, but won't create another peak at 0. In geiger mode, there will always only be a channel `0` since this is how the current cps is calculated.~~  Fixed by the Pico 2.
 
 ### There is always a peak near ADC channel 4095
 
@@ -78,4 +78,4 @@ Instead of something like 8-10% energy resolution @ 662 keV (highly dependent on
 
 ### Notes on different microcontrollers
 
-The Pico is readily available virtually everywhere and it's really cheap. This makes it ideal for use in this kind of "simple" and cheap project. There are a couple of reasons I like to use it. You can read more about it in the [discussions thread about switching to the ESP32](https://github.com/OpenGammaProject/Open-Gamma-Detector/discussions/43).
+The Pico 2 is readily available virtually everywhere and it's really cheap. This makes it ideal for use in this kind of "simple" and cheap project. There are a couple of reasons I like to use it. You can read more about it in the [discussions thread about switching to the ESP32](https://github.com/OpenGammaProject/Open-Gamma-Detector/discussions/43).
