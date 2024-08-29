@@ -1,18 +1,18 @@
 /*
 
   Open Gamma Detector Sketch
-  Only works on the Raspberry Pi Pico with arduino-pico!
+  Only works on the Raspberry Pi Pico 2 (!) with arduino-pico!
 
   Triggers on newly detected pulses and measures their energy.
 
-  2023, NuclearPhoenix. Open Gamma Project.
+  2024, NuclearPhoenix. Open Gamma Project.
   https://github.com/OpenGammaProject/Open-Gamma-Detector
 
   ## NOTE:
   ## Only change the highlighted USER SETTINGS below
   ## except you know exactly what you are doing!
   ## Flash with default settings and
-  ##   Flash Size: "2MB (Sketch: 1MB, FS: 1MB)"
+  ##   Flash Size: "4MB (Sketch: 1MB, FS: 3MB)"
   
 
   TODO: Add cps line trend to geiger mode
@@ -68,13 +68,12 @@ struct Config {
   bool enable_display = false;    // Enable I2C Display, see settings above
   bool enable_trng = false;       // Enable the True Random Number Generator
   bool subtract_baseline = true;  // Subtract the DC bias from each pulse
-  bool cps_correction = false;    // Correct the cps for the DNL compensation
   bool enable_ticker = false;     // Enable the buzzer to be used as a ticker for pulses
   size_t tick_rate = 20;          // Buzzer ticks once every tick_rate pulses
 
   // Do NOT modify the following operator function
   bool operator==(const Config &other) const {
-    return (tick_rate == other.tick_rate && enable_ticker == other.enable_ticker && cps_correction == other.cps_correction && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && enable_trng == other.enable_trng && subtract_baseline == other.subtract_baseline);
+    return (tick_rate == other.tick_rate && enable_ticker == other.enable_ticker && ser_output == other.ser_output && geiger_mode == other.geiger_mode && print_spectrum == other.print_spectrum && meas_avg == other.meas_avg && enable_display == other.enable_display && enable_trng == other.enable_trng && subtract_baseline == other.subtract_baseline);
   }
 };
 /*
@@ -83,7 +82,7 @@ struct Config {
     =================
 */
 
-const String FW_VERSION = "4.2.2";  // Firmware Version Code
+const String FW_VERSION = "4.3.0";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -653,26 +652,6 @@ void toggleBaseline(String *args) {
 }
 
 
-void toggleCPSCorrection(String *args) {
-  String command = *args;
-  command.replace("set correction", "");
-  command.trim();
-
-  if (command == "on") {
-    conf.cps_correction = true;
-    println("Enabled CPS correction.");
-  } else if (command == "off") {
-    conf.cps_correction = false;
-    println("Disabled CPS correction.");
-  } else {
-    println("Invalid input '" + command + "'.", true);
-    println("Must be 'on' or 'off'.", true);
-    return;
-  }
-  saveSettings();
-}
-
-
 void setMeasAveraging(String *args) {
   String command = *args;
   command.replace("set averaging", "");
@@ -706,19 +685,19 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("=========================");
   println("-- Open Gamma Detector --");
   println("By NuclearPhoenix, Open Gamma Project");
-  println("2023. https://github.com/OpenGammaProject");
+  println("2024. https://github.com/OpenGammaProject");
   println("Firmware Version: " + FW_VERSION);
   println("=========================");
   println("Runtime: \t\t" + String(millis() / 1000.0) + " s");
   print("Average Dead Time: \t");
 
-  cleanPrint((total_events == 0) ? "n/a" : String(round(avg_dt), 0));
-
-  cleanPrintln(" µs");
+  cleanPrintln((total_events == 0) ? "n/a" : String(round(avg_dt), 0) + " µs");
 
   const float deadtime_frac = avg_dt * total_events / 1000.0 / float(millis()) * 100.0;
 
-  println("Total Dead Time: \t" + String(deadtime_frac) + " %");
+  print("Total Dead Time: \t");
+  cleanPrintln(isnan(deadtime_frac) ? "n/a" : String(deadtime_frac) + " %");
+
   println("Total Pulses: \t" + String(total_events));
   println("CPU Frequency: \t" + String(rp2040.f_cpu() / 1e6) + " MHz");
   println("Used Heap Memory: \t" + String(rp2040.getUsedHeap() / 1000.0) + " kB / " + String(rp2040.getUsedHeap() * 100.0 / rp2040.getTotalHeap(), 0) + "%");
@@ -919,9 +898,6 @@ Config loadSettings(bool msg = true) {
   if (doc.containsKey("subtract_baseline")) {
     new_conf.subtract_baseline = doc["subtract_baseline"];
   }
-  if (doc.containsKey("cps_correction")) {
-    new_conf.cps_correction = doc["cps_correction"];
-  }
   if (doc.containsKey("enable_ticker")) {
     new_conf.enable_ticker = doc["enable_ticker"];
   }
@@ -953,7 +929,6 @@ bool writeSettingsFile() {
   doc["enable_display"] = conf.enable_display;
   doc["enable_trng"] = conf.enable_trng;
   doc["subtract_baseline"] = conf.subtract_baseline;
-  doc["cps_correction"] = conf.cps_correction;
   doc["enable_ticker"] = conf.enable_ticker;
   doc["tick_rate"] = conf.tick_rate;
 
@@ -1192,9 +1167,10 @@ void eventInt() {
   // Directly uses Core0 IRQ Ctrl (core1 does not set the interrupt).
   // Thanks a lot to all the replies at
   // https://github.com/earlephilhower/arduino-pico/discussions/1397!
-  static io_rw_32 *addr = &(iobank0_hw->proc0_irq_ctrl.inte[INT_PIN / 8]);
-  static uint32_t mask1 = 0b1111 << (INT_PIN % 8) * 4u;
-  hw_clear_bits(addr, mask1);
+  // NOTE: NOT SUPPORTED ON PICO 2 / RP2350
+  //static io_rw_32 *addr = &(iobank0_hw->proc0_irq_ctrl.inte[INT_PIN / 8]);
+  //static uint32_t mask1 = 0b1111 << (INT_PIN % 8) * 4u;
+  //hw_clear_bits(addr, mask1);
 
   const unsigned long start = micros();
 
@@ -1219,28 +1195,15 @@ void eventInt() {
 
   if (!conf.geiger_mode && !adc_lock) {
     uint32_t sum = 0;
-    uint8_t num = 0;
 
     for (size_t i = 0; i < conf.meas_avg; i++) {
-      const uint16_t m = analogRead(AIN_PIN);
-      // Pico-ADC DNL issues, see https://pico-adc.markomo.me/INL-DNL/#dnl
-      // Discard channels 512, 1536, 2560, and 3584. For now.
-      // See RP2040 datasheet Appendix B: Errata
-      if (m == 511 || m == 1535 || m == 2559 || m == 3583) {
-        continue;  // Discard single measurement
-        //break; // Completely disregard this measurement entirely
-      }
-      sum += m;
-      num++;
+      sum += analogRead(AIN_PIN);
     }
 
     resetSampleHold();
 
-    float avg = 0.0;  // Use median instead of average?
-
-    if (num > 0) {
-      avg = float(sum) / float(num);
-    }
+    float avg = float(sum) / float(conf.meas_avg);
+    ;  // Use median instead of average?
 
     if (current_baseline <= avg) {  // Catch negative numbers
       // Subtract DC bias from pulse avg and then convert float --> uint16_t ADC channel
@@ -1248,7 +1211,7 @@ void eventInt() {
     }
   }
 
-  if ((conf.ser_output || conf.enable_display || isRecording) && (conf.cps_correction || mean != 0 || conf.geiger_mode)) {
+  if ((conf.ser_output || conf.enable_display || isRecording)) {
     events[event_position] = mean;
     spectrum[mean] += 1;
     display_spectrum[mean] += 1;
@@ -1305,12 +1268,14 @@ void eventInt() {
     dead_time.add(end - start);
   }
 
+
+  // NOTE: NOT SUPPORTED ON PICO 2 / RP2350
   // Re-enable interrupts
-  static uint32_t mask2 = 0b0100 << (INT_PIN % 8) * 4u;
-  hw_set_bits(addr, mask2);
+  //static uint32_t mask2 = 0b0100 << (INT_PIN % 8) * 4u;
+  //hw_set_bits(addr, mask2);
 
   // Clear all interrupts on the executing core
-  irq_clear(15);  // IRQ 15 = SIO_IRQ_PROC0
+  //irq_clear(15);  // IRQ 15 = SIO_IRQ_PROC0
 }
 
 /*
@@ -1369,7 +1334,6 @@ void setup1() {
     { toggleBaseline, "set baseline", "<toggle> Automatically subtract the DC bias (baseline) from each signal." },
     { toggleTRNG, "set trng", "<toggle> Either 'on' or 'off' to toggle the true random number generator output." },
     { toggleDisplay, "set display", "<toggle> Either 'on' or 'off' to enable or force disable OLED support." },
-    { toggleCPSCorrection, "set correction", "<toggle> Either 'on' or 'off' to toggle the CPS correction for the 4 faulty ADC channels." },
     { setMode, "set mode", "<mode> Either 'geiger' or 'energy' to disable or enable energy measurements. Geiger mode only counts pulses, but is a lot faster." },
     { setSerialOutMode, "set out", "<mode> Either 'events', 'spectrum' or 'off'. 'events' prints events as they arrive, 'spectrum' prints the accumulated histogram." },
     { setMeasAveraging, "set averaging", "<number> Number of ADC averages for each energy measurement. Takes ints, minimum is 1." },
