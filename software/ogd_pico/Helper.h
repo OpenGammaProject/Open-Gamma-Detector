@@ -12,6 +12,8 @@
 
 #include <Arduino.h>  // Needed for Serial, String and uint data types
 
+const String RESET_REASON_TEXT[8] = { "unknown", "power-on", "run pin", "software", "watchdog", "debug", "glitch", "brownout" };
+
 void cleanPrintln(const String &text = String(""));
 void cleanPrintln(unsigned int number, int base = DEC);
 void cleanPrint(const String &text = String(""));

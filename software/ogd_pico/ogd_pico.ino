@@ -82,7 +82,7 @@ struct Config {
     =================
 */
 
-const String FW_VERSION = "4.3.0";  // Firmware Version Code
+const String FW_VERSION = "4.3.1";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -689,6 +689,10 @@ void deviceInfo([[maybe_unused]] String *args) {
   println("Firmware Version: " + FW_VERSION);
   println("=========================");
   println("Runtime: \t\t" + String(millis() / 1000.0) + " s");
+  print("Last reset reason: \t");
+
+  cleanPrintln(RESET_REASON_TEXT[rp2040.getResetReason()]);  // Get reset reason text
+
   print("Average Dead Time: \t");
 
   cleanPrintln((total_events == 0) ? "n/a" : String(round(avg_dt), 0) + " µs");
