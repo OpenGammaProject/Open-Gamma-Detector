@@ -14,7 +14,7 @@
   ## Flash with default settings and
   ##   Flash Size: "4MB (Sketch: 1MB, FS: 3MB)"
   
-
+  
   TODO: Add cps line trend to geiger mode
   TODO: Add custom display font
 
@@ -47,7 +47,6 @@
 #define SCREEN_HEIGHT 64            // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C         // See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
 #define EVENT_BUFFER 50000          // Buffer this many events for Serial.print
-#define TRNG_BITS 8                 // Number of bits for each random number, max 8
 #define BASELINE_NUM 101            // Number of measurements taken to determine the DC baseline
 #define CONFIG_FILE "/config.json"  // File to store the settings
 #define DEBUG_FILE "/debug.json"    // File to store some misc debug info
@@ -82,7 +81,7 @@ struct Config {
     =================
 */
 
-const String FW_VERSION = "4.3.1";  // Firmware Version Code
+const String FW_VERSION = "4.3.2";  // Firmware Version Code
 
 const uint8_t GND_PIN = A2;    // GND meas pin
 const uint8_t VSYS_MEAS = A3;  // VSYS/3
@@ -116,12 +115,13 @@ volatile unsigned long start_time = 0;   // Time in ms when the spectrum collect
 volatile unsigned long last_time = 0;    // Last time the display has been refreshed
 volatile uint32_t last_total = 0;        // Last total pulse count for display
 
-volatile unsigned long trng_stamps[3];     // Timestamps for True Random Number Generator
-volatile uint8_t random_num = 0b00000000;  // Generated random bits that form a byte together
-volatile uint8_t bit_index = 0;            // Bit index for the generated number
-volatile uint32_t trng_nums[1000];         // TRNG number output array
-volatile uint16_t number_index = 0;        // Amount of saved numbers to the TRNG array
-volatile uint32_t total_events = 0;        // Total number of all registered pulses
+const uint16_t TRNG_STORAGE_SIZE = 1024;        // Number of trng bytes stored in memory
+volatile unsigned long trng_stamps[3];          // Timestamps for True Random Number Generator
+volatile uint8_t random_num = 0b00000000;       // Generated random bits that form a byte together
+volatile uint8_t bit_index = 0;                 // Bit index for the generated number
+volatile uint8_t trng_nums[TRNG_STORAGE_SIZE];  // TRNG number output array
+volatile uint16_t number_index = 0;             // Amount of saved numbers to the TRNG array
+volatile size_t total_events = 0;               // Total number of all registered pulses
 
 RunningMedian baseline(BASELINE_NUM);  // Array of a number of baseline (DC bias) measurements at the SiPM input
 uint16_t current_baseline = 0;         // Median value of the input baseline voltage
@@ -820,7 +820,7 @@ void writeDebugFileTime() {
 
   debugFile.close();
 
-  const uint32_t temp = doc.containsKey("power_on_hours") ? doc["power_on_hours"] : 0;
+  const uint32_t temp = doc["power_on_hours"].is<uint32_t>() ? doc["power_on_hours"] : 0;
   doc["power_on_hours"] = temp + 1;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
@@ -848,7 +848,7 @@ void writeDebugFileBoot() {
 
   debugFile.close();
 
-  const uint32_t temp = doc.containsKey("power_cycle_count") ? doc["power_cycle_count"] : 0;
+  const uint32_t temp = doc["power_cycle_count"].is<uint32_t>() ? doc["power_cycle_count"] : 0;
   doc["power_cycle_count"] = temp + 1;
 
   debugFile = LittleFS.open(DEBUG_FILE, "w");  // Open read and write
@@ -881,31 +881,31 @@ Config loadSettings(bool msg = true) {
     return new_conf;
   }
 
-  if (doc.containsKey("ser_output")) {
+  if (doc["ser_output"].is<bool>()) {
     new_conf.ser_output = doc["ser_output"];
   }
-  if (doc.containsKey("geiger_mode")) {
+  if (doc["geiger_mode"].is<bool>()) {
     new_conf.geiger_mode = doc["geiger_mode"];
   }
-  if (doc.containsKey("print_spectrum")) {
+  if (doc["print_spectrum"].is<bool>()) {
     new_conf.print_spectrum = doc["print_spectrum"];
   }
-  if (doc.containsKey("meas_avg")) {
+  if (doc["meas_avg"].is<size_t>()) {
     new_conf.meas_avg = doc["meas_avg"];
   }
-  if (doc.containsKey("enable_display")) {
+  if (doc["enable_display"].is<bool>()) {
     new_conf.enable_display = doc["enable_display"];
   }
-  if (doc.containsKey("enable_trng")) {
+  if (doc["enable_trng"].is<bool>()) {
     new_conf.enable_trng = doc["enable_trng"];
   }
-  if (doc.containsKey("subtract_baseline")) {
+  if (doc["subtract_baseline"].is<bool>()) {
     new_conf.subtract_baseline = doc["subtract_baseline"];
   }
-  if (doc.containsKey("enable_ticker")) {
+  if (doc["enable_ticker"].is<bool>()) {
     new_conf.enable_ticker = doc["enable_ticker"];
   }
-  if (doc.containsKey("tick_rate")) {
+  if (doc["tick_rate"].is<size_t>()) {
     new_conf.tick_rate = doc["tick_rate"];
   }
 
@@ -1242,12 +1242,12 @@ void eventInt() {
 
         bitWrite(random_num, bit_index, (delta0 < delta1));
 
-        if (bit_index < TRNG_BITS - 1) {
+        if (bit_index < 7) {  // Check if still less than a byte
           bit_index++;
         } else {
           trng_nums[number_index] = random_num;
 
-          if (number_index < 999) {
+          if (number_index < TRNG_STORAGE_SIZE - 1) {  // Check if TRNG byte storage array is full
             number_index++;
           } else {
             number_index = 0;  // Catch overflow
@@ -1367,6 +1367,8 @@ void setup1() {
   saveSettings();        // Create settings file if none is present
   writeDebugFileBoot();  // Update power cycle count
 
+  // Disable unused UART0
+  Serial1.end();
   // Set the correct SPI pins
   SPI.setRX(4);
   SPI.setTX(3);
