@@ -8,7 +8,7 @@
 
 **This project is also on [Hackaday.io](https://hackaday.io/project/185211-all-in-one-gamma-ray-spectrometer), where I post important project updates and other announcements!**
 
-Open hardware for a hackable gamma spectrometer all-in-one device using a popular NaI(Tl) scintillation crystal and a silicon photomultiplier (SiPM). Extremely affordable design for a powerful DIY gamma spectroscopy setup with a total parts cost of under around 200 USD.
+Open hardware for a hackable gamma spectrometer all-in-one device using a popular NaI(Tl) scintillation crystal and a silicon photomultiplier (SiPM). Extremely affordable design for a powerful DIY gamma spectroscopy setup with a total parts cost of around 200 USD if you get all the individual parts and assemble them on your own.
 
 The detector uses a standard serial-over-USB and hardware UART connections so that it can be integrated into as many other projects as possible, for example data logging with a Raspberry Pi, weather stations, Arduino projects, etc. It includes both scintillation counter and multichannel analyzer (MCA) functions depending on how you want to use it.
 
