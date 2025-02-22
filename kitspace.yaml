@@ -22,3 +22,7 @@ bom: hardware/BOM.csv
   # Check out https://github.com/kitspace/1clickBOM#readme for more details
 
 gerbers: hardware/Gerber_PCB/ # A path to your folder of gerbers in case it isn't `gerbers/`.
+
+eda:
+  type: easyeda # kicad | eagle | easyeda
+  pcb: hardware/PCB_Project_EasyEDA.json # | your/eagle.brd | your/easyeda.json
