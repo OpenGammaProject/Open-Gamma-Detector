@@ -42,7 +42,7 @@ Here are some of the most important specs:
 
 ## How To Get One
 
-- For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/opengammaproject/open-gamma-detector).
+- For quick access and purchase of all the parts (PCB and BOM), you can use [Kitspace](https://kitspace.org/opengammaproject/open-gamma-detector) (non-affiliated).
 - Otherwise, use a PCB manufacturer and an electronics distributor of your choice and proceed on your own. All the files you'll need can be found in this repo.
 - If you don't want to deal with all of that, feel free to contact me. Just send me an e-mail if you want and we'll figure something out.
 
