@@ -137,6 +137,16 @@ Shielding the ambient background can be done ideally using a wide enough layer o
 
 See Wikipedia: [Lead Castle](https://en.wikipedia.org/w/index.php?title=Lead_castle&oldid=991799816)
 
+## Related Projects
+
+This is a list of other awesome projects that are relevant or directly related to this one:
+
+- [OpenDosimeter](https://opendosimeter.org/): A low-cost dosimeter with open-source hardware and software inspired heavily by the Open Gamma Detector.
+- [CosmicWatch](http://www.cosmicwatch.lns.mit.edu/): A neat all-in-one device to detect muons. Completely open-source and designed for university students and schools. This project was the original inspiration to start with the Open Gamma Project.
+- [OpenGammaKit](https://github.com/vikulin/OpenGammaKit/): Re-design of the Open Gamma Detector hardware using KiCAD, with additionally updated software for mobile use.
+
+Check them out and let me know what you think. Special thanks to all of the contributors and the entire community for making this possible!
+
 ---
 
 Thanks for reading.
