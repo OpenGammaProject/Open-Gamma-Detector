@@ -20,6 +20,8 @@ The detector uses a standard serial-over-USB and hardware UART connections so th
 
 If you want a more barebones version of the Open Gamma Detector to only count pulses or similar, you can have a look at the [Mini SiPM Driver](https://github.com/OpenGammaProject/Mini-SiD) board.
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J61GLR3G)
+
 ## Features
 
 Here are some of the most important specs:
