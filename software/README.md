@@ -148,7 +148,7 @@ If you enable the TRNG via the serial command, it will periodically (once they a
 
 ## Data Analysis & Live Plotting
 
-To get the data from the detector, a serial connection (either the serial-over-USB port or hardware UART) is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.xyz/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files and communicate over a serial console. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/OpenGammaProject/Gamma-MCA) to find more specific info about this project.
+To get the data from the detector, a serial connection (either the serial-over-USB port or hardware UART) is used by default. The quickest and easiest way to do this is by using my own web application called [Gamma MCA](https://spectrum.nuclearphoenix.net/) where you can connect straight to the serial port and plot the data live as well as import and export finished spectrum files and communicate over a serial console. You don't even need to install it, it can work out of any Chrome-based browser! Please head to the [repository](https://github.com/OpenGammaProject/Gamma-MCA) to find more specific info about this project.
 
 **TL;DR:** [Youtube Teaser](https://www.youtube.com/watch?v=dkMhoUwDla0)
 
